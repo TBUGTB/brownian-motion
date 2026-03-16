@@ -27,7 +27,7 @@ namespace MeasureTheory
 system `q` of `𝓚` such that `s` is the projections of a set `t` that satisfies
 `memProdSigmaDelta p q`. -/
 def IsPavingAnalyticFor (p : Set 𝓧 → Prop) (𝓚 : Type*) (s : Set 𝓧) : Prop :=
-  ∃ q : Set 𝓚 → Prop, q ∅ ∧ IsCompactSystem q ∧
+  ∃ q : Set 𝓚 → Prop, q ∅ ∧ IsCompactSystem {x | q x} ∧
     ∃ t : Set (𝓧 × 𝓚), memProdSigmaDelta p q t ∧ s = Prod.fst '' t
 
 /-- A set `s` is analytic for a paving (predicate) `p` if there exists a type `𝓚` and a compact
@@ -40,12 +40,16 @@ lemma IsPavingAnalyticFor.isPavingAnalytic {𝓚 : Type} [Nonempty 𝓚]
     (hs : IsPavingAnalyticFor p 𝓚 s) :
     IsPavingAnalytic p s := ⟨𝓚, ‹_›, hs⟩
 
+lemma isCompactSystem_singleton_empty {α : Type*} : IsCompactSystem {(∅ : Set α)} :=
+  fun C hC _ ↦ ⟨0, by simpa using hC 0⟩
+
 lemma isPavingAnalyticFor_of_prop (𝓚 : Type*) [Nonempty 𝓚] (hs : p s) :
     IsPavingAnalyticFor p 𝓚 s := by
   classical
   refine ⟨fun t ↦ t = ∅ ∨ t = .univ, ?_, ?_, ⟨s ×ˢ .univ, ?_, by ext; simp⟩⟩
   · simp
-  · sorry
+  · suffices IsCompactSystem (insert Set.univ {∅}) by convert this using 1; grind
+    exact IsCompactSystem.insert_univ isCompactSystem_singleton_empty
   · exact memProdSigmaDelta_of_prop hs (by simp)
 
 lemma isPavingAnalytic_of_prop (hs : p s) : IsPavingAnalytic p s :=
@@ -82,10 +86,10 @@ lemma IsPavingAnalyticFor.exists_memSigma_superset (hs : IsPavingAnalyticFor p �
 lemma IsPavingAnalyticFor.empty (𝓚 : Type*) (hp_empty : p ∅) : IsPavingAnalyticFor p 𝓚 ∅ := by
   rcases isEmpty_or_nonempty 𝓚 with h_empty | h_nonempty
   · refine ⟨fun _ ↦ true, by simp, ?_, ∅ ×ˢ ∅, memProdSigmaDelta_of_prop hp_empty rfl, by simp⟩
-    simp only [IsCompactSystem, implies_true, forall_const]
-    intro C _
+    simp only [IsCompactSystem]
+    intro C _ _
     have h_eq_empty n : C n = ∅ := Set.eq_empty_of_isEmpty (C n)
-    refine ⟨{0}, ?_⟩
+    refine ⟨0, ?_⟩
     simpa using h_eq_empty 0
   · exact isPavingAnalyticFor_of_prop 𝓚 hp_empty
 
