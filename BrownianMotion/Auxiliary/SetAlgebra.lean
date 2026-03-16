@@ -220,6 +220,7 @@ end Generate
 instance : Inhabited (MonotoneClass α) := ⟨generate univ⟩
 
 /-- If a Monotone class is a set algebra, then it forms a `σ`-algebra. -/
+@[implicit_reducible]
 def toMeasurableSpace (C : MonotoneClass α) (h : IsSetAlgebra C.Has) :
     MeasurableSpace α where
   MeasurableSet' := C.Has
