@@ -39,7 +39,7 @@ lemma memProd.mono {p' : Set (Set 𝓧)} (hp : ∀ s, s ∈ p → s ∈ p') {q' 
 def memSigma (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
   {s | ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ s = ⋃ n, A n}
 
-lemma memSigma_of_prop (hs : s ∈ p) : s ∈ memSigma p := ⟨fun _ ↦ s, by simp [hs, Set.iUnion_const]⟩
+lemma memSigma_of_mem (hs : s ∈ p) : s ∈ memSigma p := ⟨fun _ ↦ s, by simp [hs, Set.iUnion_const]⟩
 
 lemma memSigma.iUnion {s : ℕ → Set 𝓧} (hs : ∀ n, s n ∈ memSigma p) :
     ⋃ n, s n ∈ memSigma p := by
@@ -55,7 +55,7 @@ lemma memSigma.union (hs : s ∈ memSigma p) (ht : t ∈ memSigma p) :
 def memDelta (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
   {s | ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ s = ⋂ n, A n}
 
-lemma memDelta_of_prop (hs : s ∈ p) : s ∈ memDelta p :=
+lemma memDelta_of_mem (hs : s ∈ p) : s ∈ memDelta p :=
   ⟨fun _ ↦ s, by simp [hs, Set.iInter_const]⟩
 
 lemma memDelta.iInter {s : ℕ → Set 𝓧} (hs : ∀ n, s n ∈ memDelta p) :
@@ -75,7 +75,7 @@ def memProdSigmaDelta (p : Set (Set 𝓧)) (q : Set (Set 𝓚)) : Set (Set (𝓧
 def memFiniteInter (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
   {s | ∃ (t : Finset ℕ) (A : ℕ → Set 𝓧), (∀ n ∈ t, A n ∈ p) ∧ s = ⋂ n ∈ t, A n}
 
-lemma memFiniteInter_of_prop (hs : s ∈ p) : s ∈ memFiniteInter p :=
+lemma memFiniteInter_of_mem (hs : s ∈ p) : s ∈ memFiniteInter p :=
   ⟨{0}, fun _ ↦ s, by simp [hs]⟩
 
 lemma memFiniteInter.inter (hs : s ∈ memFiniteInter p) (ht : t ∈ memFiniteInter p) :
@@ -88,7 +88,7 @@ lemma memFiniteInter.inter (hs : s ∈ memFiniteInter p) (ht : t ∈ memFiniteIn
 def memFiniteUnion (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
   {s | ∃ (t : Finset ℕ) (A : ℕ → Set 𝓧), (∀ n ∈ t, A n ∈ p) ∧ s = ⋃ n ∈ t, A n}
 
-lemma memFiniteUnion_of_prop (hs : s ∈ p) : s ∈ memFiniteUnion p :=
+lemma memFiniteUnion_of_mem (hs : s ∈ p) : s ∈ memFiniteUnion p :=
   ⟨{0}, fun _ ↦ s, by simp [hs]⟩
 
 lemma memFiniteUnion.union (hs : s ∈ memFiniteUnion p) (ht : t ∈ memFiniteUnion p) :
@@ -129,7 +129,7 @@ lemma memSigma_memProd_iff {s : Set (𝓧 × 𝓚)} :
   · obtain ⟨A, K, hK, hA, rfl⟩ := h
     exact ⟨fun n ↦ A n ×ˢ K n, fun n ↦ ⟨A n, hA n, K n, hK n, rfl⟩, rfl⟩
 
-lemma memProdSigmaDelta_of_prop {s : Set 𝓧} {t : Set 𝓚} (hs : s ∈ p) (hq : t ∈ q) :
+lemma memProdSigmaDelta_of_mem {s : Set 𝓧} {t : Set 𝓚} (hs : s ∈ p) (hq : t ∈ q) :
     s ×ˢ t ∈ memProdSigmaDelta p q := by
   rw [memProdSigmaDelta_iff]
   exact ⟨fun n m ↦ s, fun n m ↦ t, fun _ _ ↦ hs, fun _ _ ↦ hq, by
@@ -142,7 +142,7 @@ lemma memProdSigmaDelta.mono {p' : Set (Set 𝓧)} (hp : ∀ s, s ∈ p → s �
   obtain ⟨A, K, hA, hK, rfl⟩ := hs
   refine ⟨A, K, fun n m ↦ hp _ (hA n m), fun n m ↦ hq _ (hK n m), rfl⟩
 
-lemma memDelta_iff_of_inter (hp : ∀ s t, s ∈ p → t ∈ p → (s ∩ t) ∈ p) {s : Set 𝓧} :
+lemma memDelta_iff_of_infClosed (hp : InfClosed p) {s : Set 𝓧} :
     s ∈ memDelta p ↔ ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ Antitone A ∧ s = ⋂ n, A n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   swap
@@ -154,10 +154,10 @@ lemma memDelta_iff_of_inter (hp : ∀ s t, s ∈ p → t ∈ p → (s ∩ t) ∈
     | zero => simp [hA]
     | succ n hn =>
       rw [Set.dissipate_succ]
-      exact hp _ _ hn (hA _)
+      exact hp hn (hA _)
     · rwa [Set.iInter_dissipate]
 
-lemma memSigma_iff_of_union (hp : ∀ s t, s ∈ p → t ∈ p → (s ∪ t) ∈ p) {s : Set 𝓧} :
+lemma memSigma_iff_of_supClosed (hp : SupClosed p) {s : Set 𝓧} :
     s ∈ memSigma p ↔ ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ Monotone A ∧ s = ⋃ n, A n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   swap
@@ -169,7 +169,7 @@ lemma memSigma_iff_of_union (hp : ∀ s t, s ∈ p → t ∈ p → (s ∪ t) ∈
     | zero => simp [hA]
     | succ n hn =>
       rw [Set.accumulate_succ]
-      exact hp _ _ hn (hA _)
+      exact hp hn (hA _)
     · rwa [Set.iUnion_accumulate]
 
 lemma _root_.IsCompactSystem.memProd (hp : IsCompactSystem p) (hq : IsCompactSystem q) :

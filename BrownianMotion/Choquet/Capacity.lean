@@ -64,7 +64,7 @@ lemma Measure.capacity_apply {m𝓧 : MeasurableSpace 𝓧} (μ : Measure 𝓧) 
 
 -- Bichteler A.5.8 (ii); He 1.35
 /-- The capacity obtained by composition of a capacity with a projection. -/
-def Capacity.comp_fst (hp_empty : ∅ ∈ p) (hp_union : ∀ s t, s ∈ p → t ∈ p → s ∪ t ∈ p)
+def Capacity.comp_fst (hp_empty : ∅ ∈ p) (hp_union : SupClosed p)
     (m : Capacity p) (hq : IsCompactSystem q) :
     Capacity (memFiniteUnion (memProd p q)) where
   capacityOf s := m (Prod.fst '' s)
@@ -92,7 +92,7 @@ def Capacity.comp_fst (hp_empty : ∅ ∈ p) (hp_union : ∀ s t, s ∈ p → t 
     | empty => simpa
     | insert a s has h =>
       rw [Finset.set_biUnion_insert]
-      refine hp_union _ _ ?_ ?_
+      refine hp_union ?_ ?_
       · exact hS a (Finset.mem_insert_self a s)
       · refine h ?_ ?_
         · exact fun i hi ↦ hu_prod i (Finset.mem_insert_of_mem hi)
@@ -103,17 +103,16 @@ from above by countable intersections of sets `t n` such that `p (t n)` and `⋂
 def IsCapacitable (m : Capacity p) (s : Set 𝓧) : Prop :=
   ∀ a, a < m s → ∃ t, t ∈ memDelta p ∧ t ⊆ s ∧ a ≤ m t
 
-lemma isCapacitable_of_prop (hs : s ∈ p) : IsCapacitable m s :=
-  fun a ha ↦ ⟨s, memDelta_of_prop hs, by simp, ha.le⟩
+lemma isCapacitable_of_mem (hs : s ∈ p) : IsCapacitable m s :=
+  fun a ha ↦ ⟨s, memDelta_of_mem hs, by simp, ha.le⟩
 
 -- He 1.34
 lemma isCapacitable_memDelta_memSigma (m : Capacity p)
-    (hp_empty : ∅ ∈ p) (hp_inter : ∀ s t, s ∈ p → t ∈ p → s ∩ t ∈ p)
-    (hp_union : ∀ s t, s ∈ p → t ∈ p → s ∪ t ∈ p)
+    (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
     (hs : s ∈ memDelta (memSigma p)) :
     IsCapacitable m s := by
   obtain ⟨A, hA, hs_eq⟩ := hs
-  simp_rw [memSigma_iff_of_union hp_union] at hA
+  simp_rw [memSigma_iff_of_supClosed hp_union] at hA
   choose A hpA hA_mono h_eq using hA
   simp_rw [h_eq] at hs_eq
   intro a ha
@@ -127,7 +126,7 @@ lemma isCapacitable_memDelta_memSigma (m : Capacity p)
     | zero => simp [hpA]
     | succ n hn =>
       rw [Set.dissipate_succ]
-      exact hp_inter _ _ hn (hpA _ _)
+      exact hp_inter hn (hpA _ _)
   refine ⟨⋂ n, B n, ⟨B, hB_mem, rfl⟩, ?_, ?_⟩
   · rw [hs_eq]
     gcongr with n
@@ -138,22 +137,20 @@ lemma isCapacitable_memDelta_memSigma (m : Capacity p)
     simp only [le_iInf_iff]
     exact fun n ↦ (hB_gt n).le
 
-lemma aux1 {s t : Set (𝓧 × 𝓚)} (hp_empty : ∅ ∈ p) (hp_inter : ∀ s t, s ∈ p → t ∈ p → s ∩ t ∈ p)
-    (hp_union : ∀ s t, s ∈ p → t ∈ p → s ∪ t ∈ p) (hq_empty : ∅ ∈ q)
-    (hq_inter : ∀ s t, s ∈ q → t ∈ q → s ∩ t ∈ q) (hq : IsCompactSystem q)
-    (hs : s ∈ memFiniteUnion (memProd p q)) (ht : t ∈ memFiniteUnion (memProd p q)) :
-    s ∩ t ∈ memFiniteUnion (memProd p q) := by
+lemma aux1 (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
+    (hq_empty : ∅ ∈ q) (hq_inter : InfClosed q) (hq : IsCompactSystem q) :
+    InfClosed (memFiniteUnion (memProd p q)) := by
+  intro s hs t ht
   obtain ⟨S, A, hA, rfl⟩ := hs
   obtain ⟨T, B, hB, rfl⟩ := ht
   sorry
 
-lemma memDelta_fst {s : Set (𝓧 × 𝓚)} (hp_empty : ∅ ∈ p)
-    (hp_inter : ∀ s t, s ∈ p → t ∈ p → s ∩ t ∈ p)
-    (hp_union : ∀ s t, s ∈ p → t ∈ p → s ∪ t ∈ p) (hq_empty : ∅ ∈ q)
-    (hq_inter : ∀ s t, s ∈ q → t ∈ q → s ∩ t ∈ q) (hq : IsCompactSystem q)
+lemma memDelta_fst {s : Set (𝓧 × 𝓚)}
+    (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
+    (hq_empty : ∅ ∈ q) (hq_inter : InfClosed q) (hq : IsCompactSystem q)
     (hs : s ∈ memDelta (memFiniteUnion (memProd p q))) :
     (Prod.fst '' s) ∈ memDelta p := by
-  rw [memDelta_iff_of_inter (fun s t ↦ aux1 hp_empty hp_inter hp_union hq_empty hq_inter hq)] at hs
+  rw [memDelta_iff_of_infClosed (aux1 hp_empty hp_inter hp_union hq_empty hq_inter hq)] at hs
   obtain ⟨A, hA, hA_anti, rfl⟩ := hs
   rw [fst_iInter_of_memFiniteUnion_memProd_of_antitone hq hA_anti hA]
   refine ⟨fun n ↦ Prod.fst '' A n, fun n ↦ ?_, rfl⟩
@@ -166,7 +163,7 @@ lemma memDelta_fst {s : Set (𝓧 × 𝓚)} (hp_empty : ∅ ∈ p)
   | empty => simpa
   | insert a s has h =>
     rw [Finset.set_biUnion_insert]
-    refine hp_union _ _ ?_ (h ?_)
+    refine hp_union ?_ (h ?_)
     · obtain ⟨u, v, hu, hv, h_eq⟩ := hB a (Finset.mem_insert_self a s)
       rcases Set.eq_empty_or_nonempty v with hv | hv
       · simp only [hv, Set.prod_empty] at h_eq
@@ -174,11 +171,9 @@ lemma memDelta_fst {s : Set (𝓧 × 𝓚)} (hp_empty : ∅ ∈ p)
       · simpa [h_eq, Set.fst_image_prod _ hv]
     · exact fun i hi ↦ hB i (Finset.mem_insert_of_mem hi)
 
-lemma IsCapacitable.fst (hp_empty : ∅ ∈ p) (hp_inter : ∀ s t, s ∈ p → t ∈ p → s ∩ t ∈ p)
-    (hp_union : ∀ s t, s ∈ p → t ∈ p → s ∪ t ∈ p) (m : Capacity p)
-    (hq_empty : ∅ ∈ q) (hq_inter : ∀ s t, s ∈ q → t ∈ q → s ∩ t ∈ q) (hq : IsCompactSystem q)
-    {s : Set (𝓧 × 𝓚)}
-    (hs : IsCapacitable (m.comp_fst hp_empty hp_union hq) s) :
+lemma IsCapacitable.fst (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
+    (m : Capacity p) (hq_empty : ∅ ∈ q) (hq_inter : InfClosed q) (hq : IsCompactSystem q)
+    {s : Set (𝓧 × 𝓚)} (hs : IsCapacitable (m.comp_fst hp_empty hp_union hq) s) :
     IsCapacitable m (Prod.fst '' s) := by
   intro a ha
   choose t ht_mono ht_subset ht_le using hs a ha
@@ -186,34 +181,32 @@ lemma IsCapacitable.fst (hp_empty : ∅ ∈ p) (hp_inter : ∀ s t, s ∈ p → 
     Set.image_mono ht_subset, ht_le⟩
 
 /-- **Choquet's capacitability theorem**. -/
-theorem IsPavingAnalyticFor.isCapacitable (hp_empty : ∅ ∈ p)
-    (hp_inter : ∀ s t, s ∈ p → t ∈ p → s ∩ t ∈ p)
-    (hp_union : ∀ s t, s ∈ p → t ∈ p → s ∪ t ∈ p) (hs : IsPavingAnalyticFor p 𝓚 s) :
+theorem IsPavingAnalyticFor.isCapacitable (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p)
+    (hp_union : SupClosed p) (hs : IsPavingAnalyticFor p 𝓚 s) :
     IsCapacitable m s := by
   obtain ⟨q, hq_empty, hq, A, hA, rfl⟩ := hs
   let q' := memFiniteInter q
-  have hq'_empty : q' ∅ := memFiniteInter_of_prop hq_empty
-  have hq'_inter s t (hs : s ∈ q') (ht : t ∈ q') : s ∩ t ∈ q' := memFiniteInter.inter hs ht
+  have hq'_empty : q' ∅ := memFiniteInter_of_mem hq_empty
+  have hq'_inter : InfClosed q' := fun s hs t ht ↦ memFiniteInter.inter hs ht
   have hq' : IsCompactSystem q' := hq.memFiniteInter
   refine IsCapacitable.fst hp_empty hp_inter hp_union m hq'_empty hq'_inter hq' ?_
   refine isCapacitable_memDelta_memSigma _ ?_ ?_ ?_ ?_
-  · exact memFiniteUnion_of_prop ⟨∅, ∅, hp_empty, hq'_empty, by simp⟩
-  · exact fun s t ↦ aux1 hp_empty hp_inter hp_union hq'_empty hq'_inter hq'
-  · exact fun s t hs ht ↦ memFiniteUnion.union hs ht
+  · exact memFiniteUnion_of_mem ⟨∅, ∅, hp_empty, hq'_empty, by simp⟩
+  · exact aux1 hp_empty hp_inter hp_union hq'_empty hq'_inter hq'
+  · exact fun s hs t ht ↦ memFiniteUnion.union hs ht
   · obtain ⟨B, hB, rfl⟩ := hA
     refine ⟨B, fun n ↦ ?_, rfl⟩
     obtain ⟨C, hC, hB_eq⟩ := hB n
     simp_rw [hB_eq]
     refine ⟨C, fun m ↦ ?_, rfl⟩
-    refine memFiniteUnion_of_prop ?_
+    refine memFiniteUnion_of_mem ?_
     obtain ⟨u, v, hu, hv, h_eq⟩ := hC m
-    exact ⟨u, v, hu, memFiniteInter_of_prop hv, h_eq⟩
+    exact ⟨u, v, hu, memFiniteInter_of_mem hv, h_eq⟩
 
 /-- **Choquet's capacitability theorem**. Every analytic set for a paving stable by intersection
 and union is capacitable. -/
-theorem IsPavingAnalytic.isCapacitable (hp_empty : ∅ ∈ p)
-    (hp_inter : ∀ s t, s ∈ p → t ∈ p → s ∩ t ∈ p)
-    (hp_union : ∀ s t, s ∈ p → t ∈ p → s ∪ t ∈ p) (hs : IsPavingAnalytic p s) :
+theorem IsPavingAnalytic.isCapacitable (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p)
+    (hp_union : SupClosed p) (hs : IsPavingAnalytic p s) :
     IsCapacitable m s := by
   obtain ⟨𝓚, h𝓚, hs𝓚⟩ := hs
   exact hs𝓚.isCapacitable hp_empty hp_inter hp_union
@@ -223,7 +216,7 @@ lemma isCapacitable_measure_iff {m𝓧 : MeasurableSpace 𝓧} (μ : Measure �
     IsCapacitable μ.capacity s ↔ NullMeasurableSet s μ := by
   refine ⟨fun hs ↦ ?_, fun hs ↦ ?_⟩
   · sorry
-  · refine fun a ha ↦ ⟨(toMeasurable μ sᶜ)ᶜ, memDelta_of_prop ?_, ?_, ?_⟩
+  · refine fun a ha ↦ ⟨(toMeasurable μ sᶜ)ᶜ, memDelta_of_mem ?_, ?_, ?_⟩
     · exact (measurableSet_toMeasurable _ _).compl
     · rw [Set.compl_subset_comm]
       exact subset_toMeasurable μ sᶜ
@@ -239,8 +232,8 @@ lemma IsPavingAnalytic.nullMeasurableSet {m𝓧 : MeasurableSpace 𝓧}
     NullMeasurableSet s μ := by
   rw [← isCapacitable_measure_iff μ]
   refine IsPavingAnalytic.isCapacitable (p := MeasurableSet (α := 𝓧)) MeasurableSet.empty ?_ ?_ hs
-  · exact fun s t hs ht ↦ hs.inter ht
-  · exact fun s t hs ht ↦ hs.union ht
+  · exact fun s hs t ht ↦ hs.inter ht
+  · exact fun s hs t ht ↦ hs.union ht
 
 /-- An analytic set is universally measurable: it is null-measurable with respect to any
 finite measure. -/
