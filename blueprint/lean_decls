@@ -247,8 +247,8 @@ MeasureTheory.memFiniteUnion
 MeasureTheory.memFiniteInter
 MeasureTheory.memSigma
 MeasureTheory.memDelta
-MeasureTheory.memDelta_iff_of_inter
-MeasureTheory.memSigma_iff_of_union
+MeasureTheory.memDelta_iff_of_infClosed
+MeasureTheory.memSigma_iff_of_supClosed
 IsCompactSystem
 isCompactSystem_isCompact_isClosed
 isCompactSystem_isCompact
@@ -259,7 +259,7 @@ IsCompactSystem.memFiniteInter
 MeasureTheory.fst_iInter_of_memFiniteUnion_memProd_of_antitone
 MeasureTheory.IsPavingAnalytic
 MeasureTheory.IsPavingAnalyticFor
-MeasureTheory.isPavingAnalytic_of_prop
+MeasureTheory.isPavingAnalytic_of_mem
 MeasureTheory.IsPavingAnalytic.mono
 MeasureTheory.IsPavingAnalyticFor.exists_memSigma_superset
 MeasureTheory.IsPavingAnalytic.iUnion
@@ -284,7 +284,7 @@ MeasureTheory.Capacity
 MeasureTheory.Capacity.comp_fst
 MeasureTheory.Capacity.comp_fst
 MeasureTheory.IsCapacitable
-MeasureTheory.isCapacitable_of_prop
+MeasureTheory.isCapacitable_of_mem
 MeasureTheory.isCapacitable_memDelta_memSigma
 MeasureTheory.memDelta_fst
 MeasureTheory.IsCapacitable.fst

@@ -185,10 +185,9 @@ theorem IsPavingAnalyticFor.isCapacitable (hp_empty : ∅ ∈ p) (hp_inter : Inf
     (hp_union : SupClosed p) (hs : IsPavingAnalyticFor p 𝓚 s) :
     IsCapacitable m s := by
   obtain ⟨q, hq_empty, hq, A, hA, rfl⟩ := hs
-  let q' := memFiniteInter q
-  have hq'_empty : q' ∅ := memFiniteInter_of_mem hq_empty
-  have hq'_inter : InfClosed q' := fun s hs t ht ↦ memFiniteInter.inter hs ht
-  have hq' : IsCompactSystem q' := hq.memFiniteInter
+  have hq'_empty : ∅ ∈ memFiniteInter q := memFiniteInter_of_mem hq_empty
+  have hq'_inter : InfClosed (memFiniteInter q) := fun s hs t ht ↦ memFiniteInter.inter hs ht
+  have hq' : IsCompactSystem (memFiniteInter q) := hq.memFiniteInter
   refine IsCapacitable.fst hp_empty hp_inter hp_union m hq'_empty hq'_inter hq' ?_
   refine isCapacitable_memDelta_memSigma _ ?_ ?_ ?_ ?_
   · exact memFiniteUnion_of_mem ⟨∅, ∅, hp_empty, hq'_empty, by simp⟩
