@@ -22,6 +22,9 @@ variable {𝓧 𝓨 𝓚 : Type*} {p : Set (Set 𝓧)} {q : Set (Set 𝓚)} {s t
 
 namespace MeasureTheory
 
+lemma isCompactSystem_Icc : IsCompactSystem {t | ∃ a b : ℝ, Set.Icc a b = t} :=
+  (isCompactSystem_isCompact _).mono fun _ ⟨_, _, heq⟩ ↦ heq ▸ isCompact_Icc
+
 /-- Product of two sets of sets. -/
 def memProd (p : Set (Set 𝓧)) (q : Set (Set 𝓚)) : Set (Set (𝓧 × 𝓚)) :=
   {s | ∃ A B, A ∈ p ∧ B ∈ q ∧ s = A ×ˢ B}
