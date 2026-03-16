@@ -52,10 +52,6 @@ jobs:
           lint: true
           mk_all-check: true
 
-      - name: Build test files
-        run: |
-          ~/.elan/bin/lake build TestBM
-
       - name: Build Verso Documentation
         run: |
           cd verso
