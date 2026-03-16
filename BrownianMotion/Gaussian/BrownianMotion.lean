@@ -930,7 +930,8 @@ lemma ContinuousMap.borel_eq_iSup_comap_eval [SecondCountableTopology X] [Second
   apply le_antisymm
   swap
   · refine iSup_le fun x ↦ ?_
-    simp_rw [← measurable_iff_comap_le, ← BorelSpace.measurable_eq]
+    rw [← BorelSpace.measurable_eq]
+    simp_rw [← measurable_iff_comap_le]
     exact Continuous.measurable (by fun_prop)
   -- Denote by `M(K, U)` the set of functions `f` such that `Set.MapsTo f K U`. These form a
   -- basis for the compact-open topology when `K` is compact and `U` is open.
@@ -1056,8 +1057,12 @@ lemma ContinuousMap.measurable_iff_eval {α : Type*} [MeasurableSpace α]
     [LocallyCompactSpace X] [RegularSpace Y] [MeasurableSpace Y] [BorelSpace Y]
     (g : α → C(X, Y)) :
     Measurable g ↔ ∀ (x : X), Measurable fun (a : α) ↦ g a x := by
-  simp_rw [ContinuousMap.measurableSpace_eq_iSup_comap_eval, measurable_iff_comap_le,
-    MeasurableSpace.comap_iSup, iSup_le_iff, MeasurableSpace.comap_comp, Function.comp_def]
+  suffices Measurable[_, ⨆ a : X, (inferInstance : MeasurableSpace Y).comap fun b ↦ b a] g ↔
+      ∀ (x : X), Measurable fun (a : α) ↦ g a x by
+    convert this
+    exact ContinuousMap.measurableSpace_eq_iSup_comap_eval
+  simp_rw [measurable_iff_comap_le, MeasurableSpace.comap_iSup, iSup_le_iff,
+    MeasurableSpace.comap_comp, Function.comp_def]
 
 end ContinuousMap.MeasurableSpace
 
