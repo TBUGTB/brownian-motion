@@ -49,7 +49,7 @@ We denote by $S_\delta$ the set of countable intersections of sets in $S$.
 \begin{lemma}\label{lem:memDelta_iff_of_inter}
   \uses{def:memDelta}
   \leanok
-  \lean{MeasureTheory.memDelta_iff_of_inter}
+  \lean{MeasureTheory.memDelta_iff_of_infClosed}
 If a paving $S$ is closed under pairwise intersection, then a set $s$ is in $S_\delta$ if and only if there exists a monotone decreasing family of sets $(A_n)_{n\in\mathbb{N}}$ in $S$ such that $s = \bigcap_{n\in\mathbb{N}} A_n$.
 \end{lemma}
 
@@ -62,7 +62,7 @@ If $s \in S_\delta$ there exists a family $(B_n)$ that satisfies the condition b
 \begin{lemma}\label{lem:memSigma_iff_of_union}
   \uses{def:memSigma}
   \leanok
-  \lean{MeasureTheory.memSigma_iff_of_union}
+  \lean{MeasureTheory.memSigma_iff_of_supClosed}
 If a paving $S$ is closed under pairwise union, then a set $s$ is in $S_\sigma$ if and only if there exists a monotone increasing family of sets $(A_n)_{n\in\mathbb{N}}$ in $S$ such that $s = \bigcup_{n\in\mathbb{N}} A_n$.
 \end{lemma}
 
@@ -195,7 +195,7 @@ Lean note: we can't quantify over universes, so we have to restrict $\mathcal{K}
 \begin{lemma}\label{lem:isPavingAnalytic_of_prop}
   \uses{def:IsPavingAnalytic}
   \leanok
-  \lean{MeasureTheory.isPavingAnalytic_of_prop}
+  \lean{MeasureTheory.isPavingAnalytic_of_mem}
 Every set in $F$ is $F$-analytic: $F \subseteq \mathcal{A}(F)$.
 \end{lemma}
 
@@ -486,7 +486,7 @@ A set $s$ of $\mathcal{X}$ is said to be $I$-capacitable if for all $a < I(s)$, 
 \begin{lemma}\label{lem:isCapacitable_of_prop}
   \uses{def:IsCapacitable}
   \leanok
-  \lean{MeasureTheory.isCapacitable_of_prop}
+  \lean{MeasureTheory.isCapacitable_of_mem}
 For $I$ an $F$-capacity, every set in $F$ is $I$-capacitable.
 \end{lemma}
 
