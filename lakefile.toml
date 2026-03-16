@@ -1,7 +1,6 @@
 name = "BrownianMotion"
 defaultTargets = ["BrownianMotion"]
 lintDriver = "batteries/runLinter"
-testDriver = "TestBM"
 
 [leanOptions]
 pp.unicode.fun = true

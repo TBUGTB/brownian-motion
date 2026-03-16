@@ -95,7 +95,8 @@ lemma measure_iInter_of_ae_antitone {ι : Type*}
 lemma isLocalizingSequence_of_isPreLocalizingSequence
     {τ : ℕ → Ω → WithTop ι} (h𝓕 : IsRightContinuous 𝓕) (hτ : IsPreLocalizingSequence 𝓕 τ P) :
     IsLocalizingSequence 𝓕 (fun i ω ↦ ⨅ j ≥ i, τ j ω) P where
-  isStoppingTime (n : ℕ) := IsStoppingTime.iInf {j | j ≥ n} h𝓕 (fun j ↦ hτ.isStoppingTime j)
+  isStoppingTime (n : ℕ) := IsStoppingTime.biInf (s := {j | j ≥ n})
+    (Set.to_countable {j | j ≥ n}) (fun j _ ↦ hτ.isStoppingTime j)
   mono :=  ae_of_all _ <| fun ω n m hnm ↦ iInf_le_iInf_of_subset <| fun k hk ↦ hnm.trans hk
   tendsto_top := by
     filter_upwards [hτ.tendsto_top] with ω hω

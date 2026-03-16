@@ -472,7 +472,7 @@ lemma isPavingAnalytic_memProd_measurableSet_isCompact_iff {s : Set (𝓧 × ℝ
 lemma isPavingAnalytic_fst_of_memProd_measurableSet_isCompact [MeasurableSpace 𝓧] {s : Set (𝓧 × ℝ)}
     (hs : IsPavingAnalytic (memProd MeasurableSet IsCompact) s) :
     IsPavingAnalytic MeasurableSet (Prod.fst '' s) :=
-  hs.fst isCompact_empty isCompactSystem_isCompact
+  hs.fst isCompact_empty (isCompactSystem_isCompact _)
 
 lemma _root_.MeasurableSet.isPavingAnalytic_fst {m𝓧 : MeasurableSpace 𝓧} {s : Set (𝓧 × ℝ)}
     (hs : MeasurableSet s) :
