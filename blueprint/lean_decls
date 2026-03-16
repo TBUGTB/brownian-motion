@@ -36,7 +36,7 @@ ProbabilityTheory.IsGaussian.ext
 ProbabilityTheory.IsGaussian.ext_iff
 ProbabilityTheory.stdGaussian
 MeasureTheory.integral_comp_eval
-ProbabilityTheory.isCentered_stdGaussian
+ProbabilityTheory.integral_strongDual_stdGaussian
 ProbabilityTheory.isProbabilityMeasure_stdGaussian
 ProbabilityTheory.charFun_stdGaussian
 ProbabilityTheory.isGaussian_stdGaussian
