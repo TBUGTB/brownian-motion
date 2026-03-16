@@ -18,92 +18,91 @@ ones), because it's sufficient for our applications, and because it's easier to 
 
 open scoped ENNReal NNReal
 
-variable {𝓧 𝓨 𝓚 : Type*} {p : Set 𝓧 → Prop} {q : Set 𝓚 → Prop} {s t : Set 𝓧} {f : ℕ → Set 𝓧}
+variable {𝓧 𝓨 𝓚 : Type*} {p : Set (Set 𝓧)} {q : Set (Set 𝓚)} {s t : Set 𝓧} {f : ℕ → Set 𝓧}
 
 namespace MeasureTheory
 
 /-- Product of two sets of sets. -/
-def memProd (p : Set 𝓧 → Prop) (q : Set 𝓚 → Prop) : Set (𝓧 × 𝓚) → Prop :=
-  fun s ↦ ∃ A B, p A ∧ q B ∧ s = A ×ˢ B
+def memProd (p : Set (Set 𝓧)) (q : Set (Set 𝓚)) : Set (Set (𝓧 × 𝓚)) :=
+  {s | ∃ A B, A ∈ p ∧ B ∈ q ∧ s = A ×ˢ B}
 
-lemma memProd_prod {A : Set 𝓧} {B : Set 𝓚} (hp : p A) (hq : q B) : memProd p q (A ×ˢ B) :=
+lemma memProd_prod {A : Set 𝓧} {B : Set 𝓚} (hp : A ∈ p) (hq : B ∈ q) : (A ×ˢ B) ∈ memProd p q :=
   ⟨A, B, hp, hq, rfl⟩
 
-lemma memProd.mono {p' : Set 𝓧 → Prop} (hp : ∀ s, p s → p' s) {q' : Set 𝓚 → Prop}
-    (hq : ∀ s, q s → q' s) {s : Set (𝓧 × 𝓚)} (hs : memProd p q s) :
-    memProd p' q' s := by
+lemma memProd.mono {p' : Set (Set 𝓧)} (hp : ∀ s, s ∈ p → s ∈ p') {q' : Set (Set 𝓚)}
+    (hq : ∀ s, s ∈ q → s ∈ q') {s : Set (𝓧 × 𝓚)} (hs : s ∈ memProd p q) :
+    s ∈ memProd p' q' := by
   obtain ⟨A, B, hpA, hqB, rfl⟩ := hs
   exact ⟨A, B, hp _ hpA, hq _ hqB, rfl⟩
 
 /-- The set is a countable union of sets that satisfy the property. -/
-def memSigma (p : Set 𝓧 → Prop) : Set 𝓧 → Prop :=
-  fun s ↦ ∃ A : ℕ → Set 𝓧, (∀ n, p (A n)) ∧ s = ⋃ n, A n
+def memSigma (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
+  {s | ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ s = ⋃ n, A n}
 
-lemma memSigma_of_prop (hs : p s) : memSigma p s :=
-  ⟨fun _ ↦ s, by simp [hs, Set.iUnion_const]⟩
+lemma memSigma_of_prop (hs : s ∈ p) : s ∈ memSigma p := ⟨fun _ ↦ s, by simp [hs, Set.iUnion_const]⟩
 
-lemma memSigma.iUnion {s : ℕ → Set 𝓧} (hs : ∀ n, memSigma p (s n)) :
-    memSigma p (⋃ n, s n) := by
+lemma memSigma.iUnion {s : ℕ → Set 𝓧} (hs : ∀ n, s n ∈ memSigma p) :
+    ⋃ n, s n ∈ memSigma p := by
   sorry
 
-lemma memSigma.union (hs : memSigma p s) (ht : memSigma p t) :
-    memSigma p (s ∪ t) := by
+lemma memSigma.union (hs : s ∈ memSigma p) (ht : t ∈ memSigma p) :
+    s ∪ t ∈ memSigma p := by
   obtain ⟨A, hA, rfl⟩ := hs
   obtain ⟨B, hB, rfl⟩ := ht
   sorry
 
 /-- The set is a countable intersection of sets that satisfy the property. -/
-def memDelta (p : Set 𝓧 → Prop) : Set 𝓧 → Prop :=
-  fun s ↦ ∃ A : ℕ → Set 𝓧, (∀ n, p (A n)) ∧ s = ⋂ n, A n
+def memDelta (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
+  {s | ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ s = ⋂ n, A n}
 
-lemma memDelta_of_prop (hs : p s) : memDelta p s :=
+lemma memDelta_of_prop (hs : s ∈ p) : s ∈ memDelta p :=
   ⟨fun _ ↦ s, by simp [hs, Set.iInter_const]⟩
 
-lemma memDelta.iInter {s : ℕ → Set 𝓧} (hs : ∀ n, memDelta p (s n)) :
-    memDelta p (⋂ n, s n) := by
+lemma memDelta.iInter {s : ℕ → Set 𝓧} (hs : ∀ n, s n ∈ memDelta p) :
+    ⋂ n, s n ∈ memDelta p := by
   sorry
 
-lemma memDelta.inter (hs : memDelta p s) (ht : memDelta p t) :
-    memDelta p (s ∩ t) := by
+lemma memDelta.inter (hs : s ∈ memDelta p) (ht : t ∈ memDelta p) :
+    s ∩ t ∈ memDelta p := by
   sorry
 
 /-- The set is a countable intersection of countable unions of sets that can be written as a
 product of two sets, each satisfying a property. -/
-def memProdSigmaDelta (p : Set 𝓧 → Prop) (q : Set 𝓚 → Prop) : Set (𝓧 × 𝓚) → Prop :=
+def memProdSigmaDelta (p : Set (Set 𝓧)) (q : Set (Set 𝓚)) : Set (Set (𝓧 × 𝓚)) :=
   memDelta (memSigma (memProd p q))
 
 /-- The set is a finite intersection of sets that satisfy the property. -/
-def memFiniteInter (p : Set 𝓧 → Prop) : Set 𝓧 → Prop :=
-  fun s ↦ ∃ (t : Finset ℕ) (A : ℕ → Set 𝓧), (∀ n ∈ t, p (A n)) ∧ s = ⋂ n ∈ t, A n
+def memFiniteInter (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
+  {s | ∃ (t : Finset ℕ) (A : ℕ → Set 𝓧), (∀ n ∈ t, A n ∈ p) ∧ s = ⋂ n ∈ t, A n}
 
-lemma memFiniteInter_of_prop (hs : p s) : memFiniteInter p s :=
+lemma memFiniteInter_of_prop (hs : s ∈ p) : s ∈ memFiniteInter p :=
   ⟨{0}, fun _ ↦ s, by simp [hs]⟩
 
-lemma memFiniteInter.inter (hs : memFiniteInter p s) (ht : memFiniteInter p t) :
-    memFiniteInter p (s ∩ t) := by
+lemma memFiniteInter.inter (hs : s ∈ memFiniteInter p) (ht : t ∈ memFiniteInter p) :
+    s ∩ t ∈ memFiniteInter p := by
   obtain ⟨S, A, hA, rfl⟩ := hs
   obtain ⟨T, B, hB, rfl⟩ := ht
   sorry
 
 /-- The set is a finite union of sets that satisfy the property. -/
-def memFiniteUnion (p : Set 𝓧 → Prop) : Set 𝓧 → Prop :=
-  fun s ↦ ∃ (t : Finset ℕ) (A : ℕ → Set 𝓧), (∀ n ∈ t, p (A n)) ∧ s = ⋃ n ∈ t, A n
+def memFiniteUnion (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
+  {s | ∃ (t : Finset ℕ) (A : ℕ → Set 𝓧), (∀ n ∈ t, A n ∈ p) ∧ s = ⋃ n ∈ t, A n}
 
-lemma memFiniteUnion_of_prop (hs : p s) : memFiniteUnion p s :=
+lemma memFiniteUnion_of_prop (hs : s ∈ p) : s ∈ memFiniteUnion p :=
   ⟨{0}, fun _ ↦ s, by simp [hs]⟩
 
-lemma memFiniteUnion.union (hs : memFiniteUnion p s) (ht : memFiniteUnion p t) :
-    memFiniteUnion p (s ∪ t) := by
+lemma memFiniteUnion.union (hs : s ∈ memFiniteUnion p) (ht : t ∈ memFiniteUnion p) :
+    s ∪ t ∈ memFiniteUnion p := by
   obtain ⟨S, A, hA, rfl⟩ := hs
   obtain ⟨T, B, hB, rfl⟩ := ht
   sorry
 
 lemma memProdSigmaDelta_iff {s : Set (𝓧 × 𝓚)} :
-    memProdSigmaDelta p q s ↔
-      ∃ (A : ℕ → ℕ → Set 𝓧) (K : ℕ → ℕ → Set 𝓚)
-        (_ : ∀ n m, p (A n m)) (_ : ∀ n m, q (K n m)),
+    s ∈ memProdSigmaDelta p q ↔
+      ∃ (A : ℕ → ℕ → Set 𝓧) (K : ℕ → ℕ → Set 𝓚) (_ : ∀ n m, A n m ∈ p) (_ : ∀ n m, K n m ∈ q),
         s = ⋂ n, ⋃ m, A n m ×ˢ K n m := by
-  simp only [memProdSigmaDelta, memDelta, memSigma, memProd, exists_and_left, exists_prop]
+  unfold memProdSigmaDelta memDelta memSigma memProd
+  simp only [exists_and_left, exists_prop]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · choose A hA hs using h
     choose B hB hB' using hA
@@ -117,10 +116,11 @@ lemma memProdSigmaDelta_iff {s : Set (𝓧 × 𝓚)} :
     exact ⟨A n m, hA n m, ⟨K n m, hK n m, rfl⟩⟩
 
 lemma memSigma_memProd_iff {s : Set (𝓧 × 𝓚)} :
-    memSigma (memProd p q) s ↔
-      ∃ (A : ℕ → Set 𝓧) (K : ℕ → Set 𝓚) (_ : ∀ n, p (A n)) (_ : ∀ n, q (K n)),
+    s ∈ memSigma (memProd p q) ↔
+      ∃ (A : ℕ → Set 𝓧) (K : ℕ → Set 𝓚) (_ : ∀ n, A n ∈ p) (_ : ∀ n, K n ∈ q),
         s = ⋃ n, A n ×ˢ K n := by
-  simp only [memSigma, memProd, exists_and_left, exists_prop]
+  unfold memSigma memProd
+  simp only [exists_and_left, exists_prop]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · choose A hA hs using h
     choose B hB C hC hA_eq using hA
@@ -129,21 +129,21 @@ lemma memSigma_memProd_iff {s : Set (𝓧 × 𝓚)} :
   · obtain ⟨A, K, hK, hA, rfl⟩ := h
     exact ⟨fun n ↦ A n ×ˢ K n, fun n ↦ ⟨A n, hA n, K n, hK n, rfl⟩, rfl⟩
 
-lemma memProdSigmaDelta_of_prop {s : Set 𝓧} {t : Set 𝓚} (hs : p s) (hq : q t) :
-    memProdSigmaDelta p q (s ×ˢ t) := by
+lemma memProdSigmaDelta_of_prop {s : Set 𝓧} {t : Set 𝓚} (hs : s ∈ p) (hq : t ∈ q) :
+    s ×ˢ t ∈ memProdSigmaDelta p q := by
   rw [memProdSigmaDelta_iff]
   exact ⟨fun n m ↦ s, fun n m ↦ t, fun _ _ ↦ hs, fun _ _ ↦ hq, by
     simp [Set.iInter_const, Set.iUnion_const]⟩
 
-lemma memProdSigmaDelta.mono {p' : Set 𝓧 → Prop} (hp : ∀ s, p s → p' s) {q' : Set 𝓚 → Prop}
-    (hq : ∀ s, q s → q' s) {s : Set (𝓧 × 𝓚)} (hs : memProdSigmaDelta p q s) :
-    memProdSigmaDelta p' q' s := by
+lemma memProdSigmaDelta.mono {p' : Set (Set 𝓧)} (hp : ∀ s, s ∈ p → s ∈ p') {q' : Set (Set 𝓚)}
+    (hq : ∀ s, s ∈ q → s ∈ q') {s : Set (𝓧 × 𝓚)} (hs : s ∈ memProdSigmaDelta p q) :
+    s ∈ memProdSigmaDelta p' q' := by
   simp_rw [memProdSigmaDelta_iff] at hs ⊢
   obtain ⟨A, K, hA, hK, rfl⟩ := hs
   refine ⟨A, K, fun n m ↦ hp _ (hA n m), fun n m ↦ hq _ (hK n m), rfl⟩
 
-lemma memDelta_iff_of_inter (hp : ∀ s t, p s → p t → p (s ∩ t)) {s : Set 𝓧} :
-    memDelta p s ↔ ∃ A : ℕ → Set 𝓧, (∀ n, p (A n)) ∧ Antitone A ∧ s = ⋂ n, A n := by
+lemma memDelta_iff_of_inter (hp : ∀ s t, s ∈ p → t ∈ p → (s ∩ t) ∈ p) {s : Set 𝓧} :
+    s ∈ memDelta p ↔ ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ Antitone A ∧ s = ⋂ n, A n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   swap
   · obtain ⟨A, hA, _, rfl⟩ := h
@@ -157,8 +157,8 @@ lemma memDelta_iff_of_inter (hp : ∀ s t, p s → p t → p (s ∩ t)) {s : Set
       exact hp _ _ hn (hA _)
     · rwa [Set.iInter_dissipate]
 
-lemma memSigma_iff_of_union (hp : ∀ s t, p s → p t → p (s ∪ t)) {s : Set 𝓧} :
-    memSigma p s ↔ ∃ A : ℕ → Set 𝓧, (∀ n, p (A n)) ∧ Monotone A ∧ s = ⋃ n, A n := by
+lemma memSigma_iff_of_union (hp : ∀ s t, s ∈ p → t ∈ p → (s ∪ t) ∈ p) {s : Set 𝓧} :
+    s ∈ memSigma p ↔ ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ Monotone A ∧ s = ⋃ n, A n := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   swap
   · obtain ⟨A, hA, _, rfl⟩ := h
@@ -251,7 +251,7 @@ lemma fst_iInter_of_memFiniteUnion_memProd_of_antitone (hq : IsCompactSystem q)
     refine Set.image_mono ?_
     simp only [Set.subset_inter_iff, Set.inter_subset_left, true_and]
     exact Set.inter_subset_right.trans (hB_anti hnm)
-  have hC''q n : memFiniteUnion q (C'' n) := by
+  have hC''q n : C'' n ∈ memFiniteUnion q := by
     simp only [C'']
     sorry
   have hC''_nonempty n : (C'' n).Nonempty := by
