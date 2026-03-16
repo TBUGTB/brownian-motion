@@ -22,38 +22,6 @@ variable {𝓧 𝓨 𝓚 : Type*} {p : Set 𝓧 → Prop} {q : Set 𝓚 → Prop
 
 namespace MeasureTheory
 
-lemma Set.dissipate_eq_iInter_Iic {β : Type*} (s : ℕ → Set β) (n : ℕ) :
-    Set.dissipate s n = ⋂ y ∈ Finset.Iic n, s y := by simp [Set.dissipate_def]
-
-lemma _root_.isCompactSystem_isCompact_isClosed [TopologicalSpace 𝓧] :
-    IsCompactSystem (fun K : Set 𝓧 ↦ IsCompact K ∧ IsClosed K) := by
-  intro C hC_cc hC_inter
-  by_contra! h_nonempty
-  refine absurd hC_inter ?_
-  rw [← ne_eq, ← Set.nonempty_iff_ne_empty, ← Set.iInter_dissipate]
-  refine IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed (Set.dissipate C)
-    (fun n ↦ ?_) (fun n ↦ ?_) ?_ (fun n ↦ ?_)
-  · exact Set.antitone_dissipate (by lia)
-  · simp only [Set.dissipate_eq_iInter_Iic]
-    exact h_nonempty _
-  · simp only [Set.dissipate_zero_nat]
-    exact (hC_cc 0).1
-  · induction n with
-    | zero => simp only [Set.dissipate_zero_nat]; exact (hC_cc 0).2
-    | succ n hn =>
-      rw [Set.dissipate_succ]
-      exact hn.inter (hC_cc (n + 1)).2
-
-lemma _root_.isCompactSystem_isCompact [TopologicalSpace 𝓧] [T2Space 𝓧] :
-    IsCompactSystem (fun K : Set 𝓧 ↦ IsCompact K) := by
-  convert isCompactSystem_isCompact_isClosed with s
-  exact ⟨fun hs ↦ ⟨hs, hs.isClosed⟩, fun hs ↦ hs.1⟩
-
-lemma _root_.IsCompactSystem.mono {q' : Set 𝓚 → Prop} (hq : IsCompactSystem q)
-    (h_mono : ∀ s, q' s → q s) :
-    IsCompactSystem q' :=
-  fun C hC_cc hC_inter ↦ hq C (fun i ↦ h_mono (C i) (hC_cc i)) hC_inter
-
 /-- Product of two sets of sets. -/
 def memProd (p : Set 𝓧 → Prop) (q : Set 𝓚 → Prop) : Set (𝓧 × 𝓚) → Prop :=
   fun s ↦ ∃ A B, p A ∧ q B ∧ s = A ×ˢ B
