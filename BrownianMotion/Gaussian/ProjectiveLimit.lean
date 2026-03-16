@@ -109,9 +109,9 @@ lemma covariance_eval_gaussianProjectiveFamily (I : Finset ℝ≥0) (s t : I) :
   have (u : I) : (fun x : EuclideanSpace ℝ I ↦ x u) =
       fun x ↦ ⟪EuclideanSpace.basisFun I ℝ u, x⟫ := by ext; simp [PiLp.inner_apply]
   rw [this, this, ← covarianceBilin_apply_eq_cov,
-    covarianceBilin_multivariateGaussian (posSemidef_brownianCovMatrix I),
-    ContinuousBilinForm.ofMatrix_orthonormalBasis, brownianCovMatrix_apply]
-  exact IsGaussian.memLp_two_id
+    covarianceBilin_multivariateGaussian (posSemidef_brownianCovMatrix I)]
+  · simp [brownianCovMatrix_apply]
+  · exact IsGaussian.memLp_two_id
 
 set_option backward.isDefEq.respectTransparency false in
 lemma variance_eval_gaussianProjectiveFamily {I : Finset ℝ≥0} (s : I) :
@@ -163,7 +163,7 @@ lemma isProjectiveMeasureFamily_gaussianProjectiveFamily :
         (MeasurableEquiv.toLp 2 (J → ℝ)).symm ∘ (EuclideanSpace.restrict₂ hJI) := by
       ext; simp
     rw [this, ((measurePreserving_equiv_multivariateGaussian J).comp
-      (measurePreserving_restrict_multivariateGaussian
+      (measurePreserving_restrict₂_multivariateGaussian
         (posSemidef_brownianCovMatrix I) hJI)).map_eq]
   · exact Finset.measurable_restrict₂ _ -- fun_prop fails
   · fun_prop
