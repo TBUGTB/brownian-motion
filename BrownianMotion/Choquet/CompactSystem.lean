@@ -100,8 +100,40 @@ lemma memFiniteUnion.union (hs : s ∈ memFiniteUnion p) (ht : t ∈ memFiniteUn
   obtain ⟨T, B, hB, rfl⟩ := ht
   sorry
 
-lemma memFiniteUnion.biUnion_finset {s : Finset ℕ} {A : ℕ → Set 𝓧} (hs : ∀ n ∈ s, A n ∈ p) :
+lemma memFiniteUnion.biUnion_finset' {s : Finset ℕ} {A : ℕ → Set 𝓧} (hs : ∀ n ∈ s, A n ∈ p) :
     (⋃ n ∈ s, A n) ∈ memFiniteUnion p := ⟨s, A, hs, rfl⟩
+
+lemma memFiniteUnion.biUnion_finset {s : Finset ℕ} {A : ℕ → Set 𝓧}
+    (hs : ∀ n ∈ s, A n ∈ memFiniteUnion p) :
+    (⋃ n ∈ s, A n) ∈ memFiniteUnion p := by
+  choose S B hA using hs
+  sorry
+
+lemma _root_.InfClosed.memProd (hp_inter : InfClosed p) (hq_inter : InfClosed q) :
+    InfClosed (memProd p q) := by
+  intro A hA B hB
+  obtain ⟨u, v, hu, hv, h_eq⟩ := hA
+  obtain ⟨s, t, hs, ht, h_eq'⟩ := hB
+  simp only [h_eq, h_eq']
+  refine ⟨u ∩ s, v ∩ t, hp_inter hu hs, hq_inter hv ht, ?_⟩
+  simp
+  grind
+
+protected
+lemma _root_.InfClosed.memFiniteUnion (hp_inter : InfClosed p) :
+    InfClosed (memFiniteUnion p) := by
+  intro S hS T hT
+  simp only [Set.inf_eq_inter]
+  obtain ⟨u, v, hu, hv, h_eq⟩ := hS
+  obtain ⟨s, t, hs, ht, h_eq'⟩ := hT
+  suffices ⋃ i ∈ u, ⋃ j ∈ s, v i ∩ t j ∈ memFiniteUnion p by
+    convert this
+    ext
+    simp
+    grind
+  refine memFiniteUnion.biUnion_finset fun i hi ↦ ?_
+  refine memFiniteUnion.biUnion_finset' fun j hj ↦ ?_
+  exact hp_inter (hu i hi) (hs j hj)
 
 lemma memProdSigmaDelta_iff {s : Set (𝓧 × 𝓚)} :
     s ∈ memProdSigmaDelta p q ↔
@@ -259,7 +291,7 @@ lemma fst_iInter_of_memFiniteUnion_memProd_of_antitone (hp_empty : ∅ ∈ q) (h
     exact Set.inter_subset_right.trans (hB_anti hnm)
   have hC''q n : C'' n ∈ memFiniteUnion q := by
     simp only [C'']
-    refine memFiniteUnion.biUnion_finset fun m hm ↦ ?_
+    refine memFiniteUnion.biUnion_finset' fun m hm ↦ ?_
     by_cases hx : x ∈ D n m
     · simp only [hx, Set.iUnion_true]
       exact hC n m hm
