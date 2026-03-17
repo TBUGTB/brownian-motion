@@ -118,6 +118,39 @@ Any sequence of sets in $S$ is a sequence of sets in $T$, so if the intersection
 \end{proof}
 
 
+\begin{lemma}\label{lem:isCompactSystem_Icc}
+  \uses{def:IsCompactSystem}
+  \leanok
+  \lean{isCompactSystem_Icc}
+The family of closed compact intervals of $\mathbb{R}$ is a compact system.
+\end{lemma}
+
+\begin{proof}\leanok
+  \uses{lem:isCompactSystem_isCompact, lem:IsCompactSystem.mono}
+The family of closed compact intervals of $\mathbb{R}$ is a family of compact sets, so it is a compact system by Lemma~\ref{lem:isCompactSystem_isCompact} and~\ref{lem:IsCompactSystem.mono}.
+\end{proof}
+
+
+\begin{lemma}\label{lem:IsCompactSystem.pi}
+  \uses{def:IsCompactSystem}
+The product of a countable family of compact systems is a compact system.
+\end{lemma}
+
+\begin{proof}
+
+\end{proof}
+
+
+\begin{lemma}\label{lem:IsCompactSystem.sigma}
+  \uses{def:IsCompactSystem}
+The sum of a countable family of compact systems is a compact system.
+\end{lemma}
+
+\begin{proof}
+
+\end{proof}
+
+
 \begin{lemma}\label{lem:IsCompactSystem.memProd}
   \uses{def:IsCompactSystem}
   \leanok
@@ -142,6 +175,16 @@ If $S$ is a compact system, then $S^{\cup f}$ is a compact system.
 \end{proof}
 
 
+\begin{lemma}\label{lem:IsCompactSystem.memDelta}
+  \uses{def:IsCompactSystem, def:memDelta}
+If $S$ is a compact system, then $S_\delta$ is a compact system.
+\end{lemma}
+
+\begin{proof}
+
+\end{proof}
+
+
 \begin{lemma}\label{lem:IsCompactSystem.memFiniteInter}
   \uses{def:IsCompactSystem, def:memFiniteInter}
   \leanok
@@ -149,10 +192,9 @@ If $S$ is a compact system, then $S^{\cup f}$ is a compact system.
 If $S$ is a compact system, then $S^{\cap f}$ is a compact system.
 \end{lemma}
 
-TODO: $S_\delta$ is also a compact system, but we won't need that. We could prove the result for $S^{\cap f}$ by proving it for $S_\delta$ and then using the fact that $S^{\cap f} \subseteq S_\delta$ and applying Lemma~\ref{lem:IsCompactSystem.mono}.
-
 \begin{proof}
-
+  \uses{lem:IsCompactSystem.mono, lem:IsCompactSystem.memDelta}
+$S_\delta$ is a compact system by Lemma~\ref{lem:IsCompactSystem.memDelta}, and $S^{\cap f} \subseteq S_\delta$, so we can apply Lemma~\ref{lem:IsCompactSystem.mono}.
 \end{proof}
 
 
@@ -235,7 +277,8 @@ If $s$ is $F$-analytic, then there exists a set $t$ in $F_\sigma$ such that $s \
 A countable union of $F$-analytic sets is $F$-analytic.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
+  \uses{lem:IsCompactSystem.pi}
 
 \end{proof}
 
@@ -247,7 +290,8 @@ A countable union of $F$-analytic sets is $F$-analytic.
 A countable intersection of $F$-analytic sets is $F$-analytic.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
+  \uses{lem:IsCompactSystem.sigma}
 
 \end{proof}
 
@@ -307,7 +351,7 @@ $\mathcal{A}(\mathcal{A}(F)) = \mathcal{A}(F)$.
 
 \subsection{Analytic sets in measurable spaces}
 
-We denote by $K_{\mathbb{R}}$ the paving of compact sets of $\mathbb{R}$.
+We denote by $K_{\mathbb{R}}$ the paving of compact sets of $\mathbb{R}$ and let $I_{\mathbb{R}}$ be the paving of closed compact intervals of $\mathbb{R}$.
 For a measurable space $\mathcal{X}$, we denote by $M_{\mathcal{X}}$ the paving of measurable sets of $\mathcal{X}$.
 
 \begin{lemma}\label{lem:isPavingAnalytic_of_measurableSet_generateFrom}
@@ -325,29 +369,29 @@ Then every set in $\sigma(F)$ is $F$-analytic: $\sigma(F) \subseteq \mathcal{A}(
 \end{proof}
 
 
-\begin{lemma}\label{lem:MeasurableSet.isPavingAnalytic_isCompact_real}
+\begin{lemma}\label{lem:MeasurableSet.isPavingAnalytic_Icc_real}
   \uses{def:IsPavingAnalytic}
   \leanok
-  \lean{MeasurableSet.isPavingAnalytic_isCompact_real}
-A measurable set of $\mathbb{R}$ is $K_{\mathbb{R}}$-analytic.
-That is, $M_{\mathbb{R}} \subseteq \mathcal{A}(K_{\mathbb{R}})$.
+  \lean{MeasurableSet.isPavingAnalytic_Icc_real}
+A measurable set of $\mathbb{R}$ is $I_{\mathbb{R}}$-analytic.
+That is, $M_{\mathbb{R}} \subseteq \mathcal{A}(I_{\mathbb{R}})$.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{lem:isPavingAnalytic_of_measurableSet_generateFrom, lem:IsPavingAnalytic.iUnion, lem:isPavingAnalytic_of_prop}
 
 \end{proof}
 
 
-\begin{lemma}\label{lem:IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_compact}
+\begin{lemma}\label{lem:IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_Icc}
   \uses{def:IsPavingAnalytic}
   \leanok
-  \lean{MeasureTheory.IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_compact}
-A set of $\mathbb{R}$ is $M_{\mathbb{R}}$-analytic if and only if it is $K_{\mathbb{R}}$-analytic.
+  \lean{MeasureTheory.IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_Icc}
+A set of $\mathbb{R}$ is $M_{\mathbb{R}}$-analytic if and only if it is $I_{\mathbb{R}}$-analytic.
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:isPavingAnalytic_isPavingAnalytic, lem:MeasurableSet.isPavingAnalytic_isCompact_real}
+  \uses{lem:isPavingAnalytic_isPavingAnalytic, lem:MeasurableSet.isPavingAnalytic_Icc_real}
 
 \end{proof}
 
@@ -357,7 +401,7 @@ A set of $\mathbb{R}$ is $M_{\mathbb{R}}$-analytic if and only if it is $K_{\mat
   \leanok
   \lean{MeasurableSet.isPavingAnalytic_memProd}
 Let $\mathcal{X}$ be a measurable space and $s$ be a measurable set of $\mathcal{X} \times \mathbb{R}$.
-Then $s$ is $(M_{\mathcal{X}} \times K_{\mathbb{R}})$-analytic.
+Then $s$ is $(M_{\mathcal{X}} \times I_{\mathbb{R}})$-analytic.
 \end{lemma}
 
 \begin{proof}\leanok
@@ -366,16 +410,16 @@ Then $s$ is $(M_{\mathcal{X}} \times K_{\mathbb{R}})$-analytic.
 \end{proof}
 
 
-\begin{lemma}\label{lem:isPavingAnalytic_fst_of_memProd_measurableSet_isCompact}
+\begin{lemma}\label{lem:isPavingAnalytic_fst_of_memProd_measurableSet_Icc}
   \uses{def:IsPavingAnalytic}
   \leanok
-  \lean{MeasureTheory.isPavingAnalytic_fst_of_memProd_measurableSet_isCompact}
-Let $\mathcal{X}$ be a measurable space and $s$ be a set of $\mathcal{X} \times \mathbb{R}$ which is $(M_{\mathcal{X}} \times K_{\mathbb{R}})$-analytic.
+  \lean{MeasureTheory.isPavingAnalytic_fst_of_memProd_measurableSet_Icc}
+Let $\mathcal{X}$ be a measurable space and $s$ be a set of $\mathcal{X} \times \mathbb{R}$ which is $(M_{\mathcal{X}} \times I_{\mathbb{R}})$-analytic.
 Then the projection $\pi_{\mathcal{X}}(s)$ is $M_{\mathcal{X}}$-analytic.
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:IsPavingAnalytic.fst}
+  \uses{lem:IsPavingAnalytic.fst, lem:isCompactSystem_Icc}
 
 \end{proof}
 
@@ -389,7 +433,7 @@ Then the projection of $s$ on $\mathcal{X}$ is $M_{\mathcal{X}}$-analytic.
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:MeasurableSet.isPavingAnalytic_memProd, lem:isPavingAnalytic_fst_of_memProd_measurableSet_isCompact}
+  \uses{lem:MeasurableSet.isPavingAnalytic_memProd, lem:isPavingAnalytic_fst_of_memProd_measurableSet_Icc}
 
 \end{proof}
 

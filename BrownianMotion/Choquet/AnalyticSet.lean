@@ -744,6 +744,15 @@ lemma _root_.MeasurableSet.isPavingAnalytic_Icc_real {s : Set ℝ} (hs : Measura
       (fun K hK ↦ isPavingAnalytic_of_mem hK)
     exact aux_Icc l u
 
+lemma IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_Icc (s : Set ℝ) :
+    IsPavingAnalytic {t | MeasurableSet t} s ↔ IsPavingAnalytic {t | ∃ a b, Set.Icc a b = t} s := by
+  refine ⟨fun hs ↦ ?_, fun hs ↦ ?_⟩
+  · rw [← isPavingAnalytic_isPavingAnalytic_iff]
+    exact hs.mono fun s hs ↦ MeasurableSet.isPavingAnalytic_Icc_real hs
+  · refine hs.mono fun s hs ↦ ?_
+    obtain ⟨l, u, rfl⟩ := hs
+    simp
+
 lemma isCountablySpanning_isCompact : IsCountablySpanning (IsCompact (X := ℝ)) := by
   refine ⟨fun n : ℕ ↦ Set.Icc (-n : ℝ) n, fun _ ↦ isCompact_Icc, ?_⟩
   ext x
@@ -759,7 +768,7 @@ lemma isCountablySpanning_Icc : IsCountablySpanning {t | ∃ a b : ℝ, Set.Icc 
   exact ⟨⌈|x|⌉₊, Nat.le_ceil _⟩
 
 -- Icc version of He 1.32 (2)
-lemma _root_.MeasurableSet.isPavingAnalytic_memProd' {s : Set (𝓧 × ℝ)} {m𝓧 : MeasurableSpace 𝓧}
+lemma _root_.MeasurableSet.isPavingAnalytic_memProd {s : Set (𝓧 × ℝ)} {m𝓧 : MeasurableSpace 𝓧}
     (hs : MeasurableSet s) :
     IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s := by
   have h_compl (t : Set (𝓧 × ℝ)) (ht : t ∈ memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) :
@@ -790,7 +799,7 @@ lemma isPavingAnalytic_memProd_measurableSet_Icc_iff {s : Set (𝓧 × ℝ)} [Me
   · obtain ⟨A, K, hA, ⟨a, b, rfl⟩, rfl⟩ := hs
     exact hA.prod measurableSet_Icc
   · exact isPavingAnalytic_isPavingAnalytic
-      (hs.mono fun _ ↦ MeasurableSet.isPavingAnalytic_memProd')
+      (hs.mono fun _ ↦ MeasurableSet.isPavingAnalytic_memProd)
 
 -- Icc version of He 1.32 (3)
 lemma isPavingAnalytic_fst_of_memProd_measurableSet_Icc [MeasurableSpace 𝓧] {s : Set (𝓧 × ℝ)}
@@ -802,7 +811,7 @@ lemma _root_.MeasurableSet.isPavingAnalytic_fst {m𝓧 : MeasurableSpace 𝓧} {
     (hs : MeasurableSet s) :
     IsPavingAnalytic MeasurableSet (Prod.fst '' s) :=
   isPavingAnalytic_fst_of_memProd_measurableSet_Icc
-    (MeasurableSet.isPavingAnalytic_memProd' hs)
+    (MeasurableSet.isPavingAnalytic_memProd hs)
 
 /-- A set `s` of a measurable space `𝓧` is measurably analytic for a measurable space `𝓚` if it
 is the projection of a measurable set of `𝓧 × 𝓚`. -/
