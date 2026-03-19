@@ -20,6 +20,9 @@ open scoped ENNReal NNReal
 
 variable {𝓧 𝓨 𝓚 : Type*} {p : Set (Set 𝓧)} {q : Set (Set 𝓚)} {s t : Set 𝓧} {f : ℕ → Set 𝓧}
 
+lemma isCompactSystem_Icc : IsCompactSystem {t | ∃ a b : ℝ, Set.Icc a b = t} :=
+  (isCompactSystem_isCompact _).mono fun _ ⟨_, _, heq⟩ ↦ heq ▸ isCompact_Icc
+
 namespace MeasureTheory
 
 /-- Product of two sets of sets. -/
@@ -96,6 +99,41 @@ lemma memFiniteUnion.union (hs : s ∈ memFiniteUnion p) (ht : t ∈ memFiniteUn
   obtain ⟨S, A, hA, rfl⟩ := hs
   obtain ⟨T, B, hB, rfl⟩ := ht
   sorry
+
+lemma memFiniteUnion.biUnion_finset' {s : Finset ℕ} {A : ℕ → Set 𝓧} (hs : ∀ n ∈ s, A n ∈ p) :
+    (⋃ n ∈ s, A n) ∈ memFiniteUnion p := ⟨s, A, hs, rfl⟩
+
+lemma memFiniteUnion.biUnion_finset {s : Finset ℕ} {A : ℕ → Set 𝓧}
+    (hs : ∀ n ∈ s, A n ∈ memFiniteUnion p) :
+    (⋃ n ∈ s, A n) ∈ memFiniteUnion p := by
+  choose S B hA using hs
+  sorry
+
+lemma _root_.InfClosed.memProd (hp_inter : InfClosed p) (hq_inter : InfClosed q) :
+    InfClosed (memProd p q) := by
+  intro A hA B hB
+  obtain ⟨u, v, hu, hv, h_eq⟩ := hA
+  obtain ⟨s, t, hs, ht, h_eq'⟩ := hB
+  simp only [h_eq, h_eq']
+  refine ⟨u ∩ s, v ∩ t, hp_inter hu hs, hq_inter hv ht, ?_⟩
+  simp
+  grind
+
+protected
+lemma _root_.InfClosed.memFiniteUnion (hp_inter : InfClosed p) :
+    InfClosed (memFiniteUnion p) := by
+  intro S hS T hT
+  simp only [Set.inf_eq_inter]
+  obtain ⟨u, v, hu, hv, h_eq⟩ := hS
+  obtain ⟨s, t, hs, ht, h_eq'⟩ := hT
+  suffices ⋃ i ∈ u, ⋃ j ∈ s, v i ∩ t j ∈ memFiniteUnion p by
+    convert this
+    ext
+    simp
+    grind
+  refine memFiniteUnion.biUnion_finset fun i hi ↦ ?_
+  refine memFiniteUnion.biUnion_finset' fun j hj ↦ ?_
+  exact hp_inter (hu i hi) (hs j hj)
 
 lemma memProdSigmaDelta_iff {s : Set (𝓧 × 𝓚)} :
     s ∈ memProdSigmaDelta p q ↔
@@ -185,7 +223,7 @@ lemma _root_.IsCompactSystem.memFiniteUnion (hp : IsCompactSystem p) :
   sorry
 
 -- He (35.1) in the proof of 1.35
-lemma fst_iInter_of_memFiniteUnion_memProd_of_antitone (hq : IsCompactSystem q)
+lemma fst_iInter_of_memFiniteUnion_memProd_of_antitone (hp_empty : ∅ ∈ q) (hq : IsCompactSystem q)
     {B : ℕ → Set (𝓧 × 𝓚)} (hB_anti : Antitone B)
     (hB : ∀ n, memFiniteUnion (memProd p q) (B n)) :
     Prod.fst '' (⋂ n, B n) = ⋂ n, Prod.fst '' B n := by
@@ -253,13 +291,32 @@ lemma fst_iInter_of_memFiniteUnion_memProd_of_antitone (hq : IsCompactSystem q)
     exact Set.inter_subset_right.trans (hB_anti hnm)
   have hC''q n : C'' n ∈ memFiniteUnion q := by
     simp only [C'']
-    sorry
+    refine memFiniteUnion.biUnion_finset' fun m hm ↦ ?_
+    by_cases hx : x ∈ D n m
+    · simp only [hx, Set.iUnion_true]
+      exact hC n m hm
+    · simpa [hx, Set.iUnion_of_empty]
+  -- `C'' n` is nonempty for all `n` since `x` is in the intersection of the `B n`,
+  -- and if it were empty, then the intersection would be empty, contradiction
   have hC''_nonempty n : (C'' n).Nonempty := by
-    sorry
-  -- use that `memFiniteUnion q` is a compact paving (Bichteler A.5.6 (ii))
+    specialize h_inter n
+    by_contra! hC_empty
+    simp only [hC_empty, Set.prod_empty] at h_inter
+    suffices x ∈ Prod.fst '' ({x} ×ˢ Set.univ ∩ B n) by simp [h_inter] at this
+    simp only [Set.mem_image, Set.mem_inter_iff, Set.mem_prod, Set.mem_singleton_iff, Set.mem_univ,
+      and_true, Prod.exists, exists_and_right, exists_and_left, exists_eq_right, true_and]
+    simp only [Set.mem_iInter, Set.mem_image, Prod.exists, exists_and_right, exists_eq_right] at hx
+    exact hx n
+  -- use that `memFiniteUnion q` is a compact paving
   -- if the intersection is empty, there is a finite subintersection that is empty
   -- that subintersection is just `C'' n` for some `n` since `C''` is antitone,
   -- so `C'' n` is empty, contradiction
-  sorry
+  have hq_compact' := hq.memFiniteUnion
+  refine hq_compact'.nonempty_iInter hC''q fun n ↦ ?_
+  -- dissipate_of_antitone?
+  convert hC''_nonempty n using 1
+  refine le_antisymm (Set.dissipate_subset le_rfl) ?_
+  simp only [Set.dissipate, Set.le_eq_subset, Set.subset_iInter_iff]
+  exact fun i hi ↦ h_anti hi
 
 end MeasureTheory

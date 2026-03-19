@@ -613,7 +613,7 @@ lemma exists_isPavingAnalyticFor_of_inter_set (t : Set 𝓧)
 
 -- He 1.31
 lemma isPavingAnalytic_of_measurableSet_generateFrom (hp_empty : ∅ ∈ p)
-    (hp : ∀ s, p s → IsPavingAnalytic p sᶜ)
+    (hp : ∀ s, s ∈ p → IsPavingAnalytic p sᶜ)
     (hs : MeasurableSet[MeasurableSpace.generateFrom p] s) :
     IsPavingAnalytic p s := by
   let G : Set (Set 𝓧) := {t | IsPavingAnalytic p t ∧ IsPavingAnalytic p tᶜ}
@@ -646,17 +646,69 @@ lemma isPavingAnalytic_of_measurableSet_generateFrom (hp_empty : ∅ ∈ p)
     exact ⟨IsPavingAnalytic.iUnion fun n ↦ (hfG n).1,
       IsPavingAnalytic.iInter fun n ↦ (hfG n).2⟩
 
-lemma aux (K : Set ℝ) (hK : IsCompact K) : Kᶜ ∈ memSigma IsCompact := by
-  sorry
+lemma Iic_memSigma_Icc (u : ℝ) : Set.Iic u ∈ memSigma {t | ∃ a b, Set.Icc a b = t} := by
+  refine ⟨fun n ↦ Set.Icc (-(n : ℝ)) u, fun n ↦ ⟨-n, u, rfl⟩, ?_⟩
+  ext x
+  simp only [Set.mem_Iic, Set.mem_iUnion, Set.mem_Icc, exists_and_right, iff_and_self]
+  intro hxu
+  simp_rw [neg_le]
+  exact ⟨⌈-x⌉₊, Nat.le_ceil (-x)⟩
 
-lemma aux' [MeasurableSpace 𝓧] (s : Set (𝓧 × ℝ)) (hs : s ∈ memProd MeasurableSet IsCompact) :
-     sᶜ ∈ memSigma (memProd MeasurableSet IsCompact) := by
-  obtain ⟨A, K, hA, hK, rfl⟩ := hs
-  have hK' := aux K hK
+lemma Ici_memSigma_Icc (u : ℝ) : Set.Ici u ∈ memSigma {t | ∃ a b, Set.Icc a b = t} := by
+  refine ⟨fun n ↦ Set.Icc u n, fun n ↦ ⟨u, n, rfl⟩, ?_⟩
+  ext x
+  simp only [Set.mem_Ici, Set.mem_iUnion, Set.mem_Icc, exists_and_left, iff_self_and]
+  intro hxu
+  exact ⟨⌈x⌉₊, Nat.le_ceil x⟩
+
+lemma Iio_memSigma_Icc (u : ℝ) : Set.Iio u ∈ memSigma {t | ∃ a b, Set.Icc a b = t} := by
+  obtain ⟨s, hs_mono, hs_lt, hs_tendsto⟩ := exists_seq_strictMono_tendsto u
+  have : Set.Iio u = ⋃ n, Set.Iic (s n) := by
+    ext x
+    simp only [Set.mem_Iio, Set.mem_iUnion, Set.mem_Iic]
+    refine ⟨fun hxu ↦ ?_, fun ⟨i, hi⟩ ↦ hi.trans_lt (hs_lt i)⟩
+    exact (hs_tendsto.eventually_const_le hxu).exists
+  rw [this]
+  exact memSigma.iUnion fun n ↦ Iic_memSigma_Icc (s n)
+
+lemma Ioi_memSigma_Icc (u : ℝ) : Set.Ioi u ∈ memSigma {t | ∃ a b, Set.Icc a b = t} := by
+  obtain ⟨s, hs_mono, hs_gt, hs_tendsto⟩ := exists_seq_strictAnti_tendsto u
+  have : Set.Ioi u = ⋃ n, Set.Ici (s n) := by
+    ext x
+    simp only [Set.mem_Ioi, Set.mem_iUnion, Set.mem_Ici]
+    refine ⟨fun hxu ↦ ?_, fun ⟨i, hi⟩ ↦ (hs_gt i).trans_le hi⟩
+    exact (hs_tendsto.eventually_le_const hxu).exists
+  rw [this]
+  exact memSigma.iUnion fun n ↦ Ici_memSigma_Icc (s n)
+
+lemma univ_memSigma_Icc : (Set.univ : Set ℝ) ∈ memSigma {t | ∃ a b, Set.Icc a b = t} := by
+  have : (Set.univ : Set ℝ) = Set.Iic 0 ∪ Set.Ioi 0 := by ext; simp
+  rw [this]
+  exact memSigma.union (Iic_memSigma_Icc 0) (Ioi_memSigma_Icc 0)
+
+lemma aux_Icc (l u : ℝ) : (Set.Icc l u)ᶜ ∈ memSigma {t | ∃ a b, Set.Icc a b = t} := by
+  rcases lt_or_ge u l with hlu | hlu
+  · simp only [not_le, hlu, Set.Icc_eq_empty, Set.compl_empty]
+    exact univ_memSigma_Icc
+  · have : (Set.Icc l u)ᶜ = Set.Iio l ∪ Set.Ioi u := by ext; simp; grind
+    rw [this]
+    exact memSigma.union (Iio_memSigma_Icc l) (Ioi_memSigma_Icc u)
+
+lemma aux'_Icc [MeasurableSpace 𝓧] (s : Set (𝓧 × ℝ))
+    (hs : s ∈ memProd MeasurableSet {t | ∃ a b, Set.Icc a b = t}) :
+     sᶜ ∈ memSigma (memProd MeasurableSet {t | ∃ a b, Set.Icc a b = t}) := by
+  obtain ⟨A, K, hA, ⟨l, u, rfl⟩, rfl⟩ := hs
+  have hK' := aux_Icc l u
   rw [Set.compl_prod_eq_union]
   refine memSigma.union ?_ ?_
-  · sorry
-  · sorry
+  · obtain ⟨B, hB, h_eq⟩ := univ_memSigma_Icc
+    rw [h_eq, Set.prod_iUnion]
+    refine ⟨fun i ↦ Aᶜ ×ˢ B i, fun n ↦ ?_, rfl⟩
+    exact ⟨Aᶜ, B n, hA.compl, hB n, rfl⟩
+  · obtain ⟨B, hB, h_eq⟩ := aux_Icc l u
+    rw [h_eq, Set.prod_iUnion]
+    refine ⟨fun i ↦ Set.univ ×ˢ B i, fun n ↦ ?_, rfl⟩
+    exact ⟨Set.univ, B n, .univ, hB n, rfl⟩
 
 lemma borel_eq_generateFrom_isCompact : borel ℝ = MeasurableSpace.generateFrom IsCompact := by
   refine le_antisymm ?_ ?_
@@ -667,22 +719,39 @@ lemma borel_eq_generateFrom_isCompact : borel ℝ = MeasurableSpace.generateFrom
   · rw [MeasurableSpace.generateFrom_le_iff]
     exact fun _ hs ↦ hs.measurableSet
 
--- He 1.32 (1)
-lemma _root_.MeasurableSet.isPavingAnalytic_isCompact_real {s : Set ℝ} (hs : MeasurableSet s) :
-    IsPavingAnalytic IsCompact s := by
-  have hs' : MeasurableSet[MeasurableSpace.generateFrom IsCompact] s := by
-    rwa [← borel_eq_generateFrom_isCompact]
-  refine isPavingAnalytic_of_measurableSet_generateFrom ?_ ?_ hs'
-  · exact isCompact_empty
-  · intro t ht
-    exact isPavingAnalytic_of_memSigma_of_imp (aux t ht) (fun K hK ↦ isPavingAnalytic_of_mem hK)
+theorem borel_eq_generateFrom_Icc' (α : Type*) [TopologicalSpace α] [SecondCountableTopology α]
+    [LinearOrder α] [OrderTopology α] :
+    borel α = .generateFrom { S : Set α | ∃ (l u : α), Set.Icc l u = S } := by
+  rw [borel_eq_generateFrom_Icc]
+  refine le_antisymm ?_ ?_
+  · exact MeasurableSpace.generateFrom_mono fun s ⟨l, u, hlu, hs⟩ ↦ ⟨l, u, hs⟩
+  · rw [MeasurableSpace.generateFrom_le_iff]
+    rintro - ⟨a, b, rfl⟩
+    rcases le_or_gt a b with hab | hab
+    · exact MeasurableSpace.measurableSet_generateFrom ⟨a, b, hab, rfl⟩
+    · simp [hab]
 
--- He 1.32 (1)
-lemma IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_compact (s : Set ℝ) :
-    IsPavingAnalytic IsCompact s ↔ IsPavingAnalytic MeasurableSet s := by
-  refine ⟨fun hs ↦ hs.mono fun _ hs ↦ hs.measurableSet, fun hs ↦ ?_⟩
-  exact isPavingAnalytic_isPavingAnalytic
-    (hs.mono fun _ ↦ MeasurableSet.isPavingAnalytic_isCompact_real)
+-- Icc variant of He 1.32 (1)
+lemma _root_.MeasurableSet.isPavingAnalytic_Icc_real {s : Set ℝ} (hs : MeasurableSet s) :
+    IsPavingAnalytic {t | ∃ a b, Set.Icc a b = t} s := by
+  have hs' : MeasurableSet[MeasurableSpace.generateFrom {t | ∃ a b, Set.Icc a b = t}] s := by
+    rwa [Real.measurableSpace, borel_eq_generateFrom_Icc'] at hs
+  refine isPavingAnalytic_of_measurableSet_generateFrom ?_ ?_ hs'
+  · simp only [Set.mem_setOf_eq]
+    refine ⟨1, 0, by simp⟩
+  · rintro - ⟨l, u, rfl⟩
+    refine isPavingAnalytic_of_memSigma_of_imp (p' := {t | ∃ a b, Set.Icc a b = t}) ?_
+      (fun K hK ↦ isPavingAnalytic_of_mem hK)
+    exact aux_Icc l u
+
+lemma IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_Icc (s : Set ℝ) :
+    IsPavingAnalytic {t | MeasurableSet t} s ↔ IsPavingAnalytic {t | ∃ a b, Set.Icc a b = t} s := by
+  refine ⟨fun hs ↦ ?_, fun hs ↦ ?_⟩
+  · rw [← isPavingAnalytic_isPavingAnalytic_iff]
+    exact hs.mono fun s hs ↦ MeasurableSet.isPavingAnalytic_Icc_real hs
+  · refine hs.mono fun s hs ↦ ?_
+    obtain ⟨l, u, rfl⟩ := hs
+    simp
 
 lemma isCountablySpanning_isCompact : IsCountablySpanning (IsCompact (X := ℝ)) := by
   refine ⟨fun n : ℕ ↦ Set.Icc (-n : ℝ) n, fun _ ↦ isCompact_Icc, ?_⟩
@@ -691,47 +760,57 @@ lemma isCountablySpanning_isCompact : IsCountablySpanning (IsCompact (X := ℝ))
   simp_rw [← abs_le]
   exact ⟨⌈|x|⌉₊, Nat.le_ceil _⟩
 
--- He 1.32 (2)
+lemma isCountablySpanning_Icc : IsCountablySpanning {t | ∃ a b : ℝ, Set.Icc a b = t} := by
+  refine ⟨fun n : ℕ ↦ Set.Icc (-n : ℝ) n, fun n ↦ ⟨-n, n, rfl⟩, ?_⟩
+  ext x
+  simp only [Set.mem_iUnion, Set.mem_Icc, Set.mem_univ, iff_true]
+  simp_rw [← abs_le]
+  exact ⟨⌈|x|⌉₊, Nat.le_ceil _⟩
+
+-- Icc version of He 1.32 (2)
 lemma _root_.MeasurableSet.isPavingAnalytic_memProd {s : Set (𝓧 × ℝ)} {m𝓧 : MeasurableSpace 𝓧}
     (hs : MeasurableSet s) :
-    IsPavingAnalytic (memProd MeasurableSet IsCompact) s := by
-  have h_compl (t : Set (𝓧 × ℝ)) (ht : t ∈ memProd MeasurableSet IsCompact) :
-      IsPavingAnalytic (memProd MeasurableSet IsCompact) tᶜ := by
-    exact isPavingAnalytic_of_memSigma_of_imp (aux' t ht) fun s hs ↦ isPavingAnalytic_of_mem hs
+    IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s := by
+  have h_compl (t : Set (𝓧 × ℝ)) (ht : t ∈ memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) :
+      IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) tᶜ := by
+    refine isPavingAnalytic_of_memSigma_of_imp ?_ fun s hs ↦ isPavingAnalytic_of_mem hs
+    exact aux'_Icc _ ht
   refine isPavingAnalytic_of_measurableSet_generateFrom ?_ h_compl ?_
   · have : (∅ : Set (𝓧 × ℝ)) = ∅ ×ˢ ∅ := by simp
     rw [this]
-    exact memProd_prod MeasurableSet.empty isCompact_empty
+    exact memProd_prod MeasurableSet.empty ⟨1, 0, by simp⟩
   · convert hs
     have h_prod_eq := generateFrom_eq_prod (α := 𝓧) (β := ℝ) (C := setOf MeasurableSet)
-      (D := setOf IsCompact) MeasurableSpace.generateFrom_measurableSet ?_
-      isCountablySpanning_measurableSet isCountablySpanning_isCompact
+      (D := {t | ∃ a b : ℝ, Set.Icc a b = t}) MeasurableSpace.generateFrom_measurableSet ?_
+      isCountablySpanning_measurableSet isCountablySpanning_Icc
     swap
-    · rw [Real.measurableSpace, borel_eq_generateFrom_isCompact]
-      rfl
+    · rw [Real.measurableSpace, borel_eq_generateFrom_Icc']
     rw [← h_prod_eq]
     congr with s
-    simp only [memProd, exists_and_left, Set.mem_setOf_eq]
-    grind
+    simp only [memProd, eq_comm, Set.mem_setOf_eq, exists_and_left, ↓existsAndEq, true_and,
+      Set.mem_image2]
+    congr!
 
--- He 1.32 (2)
-lemma isPavingAnalytic_memProd_measurableSet_isCompact_iff {s : Set (𝓧 × ℝ)} [MeasurableSpace 𝓧] :
-    IsPavingAnalytic (memProd MeasurableSet IsCompact) s ↔ IsPavingAnalytic MeasurableSet s := by
+-- Icc version of He 1.32 (2)
+lemma isPavingAnalytic_memProd_measurableSet_Icc_iff {s : Set (𝓧 × ℝ)} [MeasurableSpace 𝓧] :
+    IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s ↔
+      IsPavingAnalytic MeasurableSet s := by
   refine ⟨fun hs ↦ hs.mono fun s hs ↦ ?_, fun hs ↦ ?_⟩
-  · obtain ⟨A, K, hA, hK, rfl⟩ := hs
-    exact hA.prod hK.measurableSet
-  · exact isPavingAnalytic_isPavingAnalytic (hs.mono fun _ ↦ MeasurableSet.isPavingAnalytic_memProd)
+  · obtain ⟨A, K, hA, ⟨a, b, rfl⟩, rfl⟩ := hs
+    exact hA.prod measurableSet_Icc
+  · exact isPavingAnalytic_isPavingAnalytic
+      (hs.mono fun _ ↦ MeasurableSet.isPavingAnalytic_memProd)
 
--- He 1.32 (3)
-lemma isPavingAnalytic_fst_of_memProd_measurableSet_isCompact [MeasurableSpace 𝓧] {s : Set (𝓧 × ℝ)}
-    (hs : IsPavingAnalytic (memProd MeasurableSet IsCompact) s) :
+-- Icc version of He 1.32 (3)
+lemma isPavingAnalytic_fst_of_memProd_measurableSet_Icc [MeasurableSpace 𝓧] {s : Set (𝓧 × ℝ)}
+    (hs : IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s) :
     IsPavingAnalytic MeasurableSet (Prod.fst '' s) :=
-  hs.fst isCompact_empty (isCompactSystem_isCompact _)
+  hs.fst (⟨1, 0, by simp⟩ : ∅ ∈ {t | ∃ a b : ℝ, Set.Icc a b = t}) isCompactSystem_Icc
 
 lemma _root_.MeasurableSet.isPavingAnalytic_fst {m𝓧 : MeasurableSpace 𝓧} {s : Set (𝓧 × ℝ)}
     (hs : MeasurableSet s) :
     IsPavingAnalytic MeasurableSet (Prod.fst '' s) :=
-  isPavingAnalytic_fst_of_memProd_measurableSet_isCompact
+  isPavingAnalytic_fst_of_memProd_measurableSet_Icc
     (MeasurableSet.isPavingAnalytic_memProd hs)
 
 /-- A set `s` of a measurable space `𝓧` is measurably analytic for a measurable space `𝓚` if it

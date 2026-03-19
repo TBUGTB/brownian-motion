@@ -65,7 +65,7 @@ lemma Measure.capacity_apply {m𝓧 : MeasurableSpace 𝓧} (μ : Measure 𝓧) 
 -- Bichteler A.5.8 (ii); He 1.35
 /-- The capacity obtained by composition of a capacity with a projection. -/
 def Capacity.comp_fst (hp_empty : ∅ ∈ p) (hp_union : SupClosed p)
-    (m : Capacity p) (hq : IsCompactSystem q) :
+    (m : Capacity p) (hq_empty : ∅ ∈ q) (hq : IsCompactSystem q) :
     Capacity (memFiniteUnion (memProd p q)) where
   capacityOf s := m (Prod.fst '' s)
   mono' s t hst := m.mono (Set.image_mono hst)
@@ -76,7 +76,7 @@ def Capacity.comp_fst (hp_empty : ∅ ∈ p) (hp_union : SupClosed p)
   capacityOf_iInter f hf hp := by
     let g n := Prod.fst '' f n
     have hg : Antitone g := fun n m hnm ↦ Set.image_mono (hf hnm)
-    rw [fst_iInter_of_memFiniteUnion_memProd_of_antitone hq hf hp]
+    rw [fst_iInter_of_memFiniteUnion_memProd_of_antitone hq_empty hq hf hp]
     refine capacity_iInter hg fun n ↦ ?_
     obtain ⟨S, u, hu_prod, hf_eq⟩ := hp n
     simp_rw [hf_eq, Set.image_iUnion]
@@ -137,22 +137,14 @@ lemma isCapacitable_memDelta_memSigma (m : Capacity p)
     simp only [le_iInf_iff]
     exact fun n ↦ (hB_gt n).le
 
-lemma aux1 (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
-    (hq_empty : ∅ ∈ q) (hq_inter : InfClosed q) (hq : IsCompactSystem q) :
-    InfClosed (memFiniteUnion (memProd p q)) := by
-  intro s hs t ht
-  obtain ⟨S, A, hA, rfl⟩ := hs
-  obtain ⟨T, B, hB, rfl⟩ := ht
-  sorry
-
 lemma memDelta_fst {s : Set (𝓧 × 𝓚)}
     (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
     (hq_empty : ∅ ∈ q) (hq_inter : InfClosed q) (hq : IsCompactSystem q)
     (hs : s ∈ memDelta (memFiniteUnion (memProd p q))) :
     (Prod.fst '' s) ∈ memDelta p := by
-  rw [memDelta_iff_of_infClosed (aux1 hp_empty hp_inter hp_union hq_empty hq_inter hq)] at hs
+  rw [memDelta_iff_of_infClosed (InfClosed.memFiniteUnion (hp_inter.memProd hq_inter))] at hs
   obtain ⟨A, hA, hA_anti, rfl⟩ := hs
-  rw [fst_iInter_of_memFiniteUnion_memProd_of_antitone hq hA_anti hA]
+  rw [fst_iInter_of_memFiniteUnion_memProd_of_antitone hq_empty hq hA_anti hA]
   refine ⟨fun n ↦ Prod.fst '' A n, fun n ↦ ?_, rfl⟩
   simp only
   obtain ⟨S, B, hB, h_eq⟩ := hA n
@@ -173,7 +165,7 @@ lemma memDelta_fst {s : Set (𝓧 × 𝓚)}
 
 lemma IsCapacitable.fst (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
     (m : Capacity p) (hq_empty : ∅ ∈ q) (hq_inter : InfClosed q) (hq : IsCompactSystem q)
-    {s : Set (𝓧 × 𝓚)} (hs : IsCapacitable (m.comp_fst hp_empty hp_union hq) s) :
+    {s : Set (𝓧 × 𝓚)} (hs : IsCapacitable (m.comp_fst hp_empty hp_union hq_empty hq) s) :
     IsCapacitable m (Prod.fst '' s) := by
   intro a ha
   choose t ht_mono ht_subset ht_le using hs a ha
@@ -191,7 +183,7 @@ theorem IsPavingAnalyticFor.isCapacitable (hp_empty : ∅ ∈ p) (hp_inter : Inf
   refine IsCapacitable.fst hp_empty hp_inter hp_union m hq'_empty hq'_inter hq' ?_
   refine isCapacitable_memDelta_memSigma _ ?_ ?_ ?_ ?_
   · exact memFiniteUnion_of_mem ⟨∅, ∅, hp_empty, hq'_empty, by simp⟩
-  · exact aux1 hp_empty hp_inter hp_union hq'_empty hq'_inter hq'
+  · exact InfClosed.memFiniteUnion (hp_inter.memProd hq'_inter)
   · exact fun s hs t ht ↦ memFiniteUnion.union hs ht
   · obtain ⟨B, hB, rfl⟩ := hA
     refine ⟨B, fun n ↦ ?_, rfl⟩
