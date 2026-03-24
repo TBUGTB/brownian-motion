@@ -20,6 +20,68 @@ open scoped ENNReal NNReal
 
 variable {𝓧 𝓨 𝓚 : Type*} {p : Set (Set 𝓧)} {q : Set (Set 𝓚)} {s t : Set 𝓧} {f : ℕ → Set 𝓧}
 
+section Aux
+
+variable {α : Type*} {S : Set (Set α)}
+
+lemma mem_supClosure_set_iff (s : Set α) :
+    s ∈ supClosure S ↔ ∃ L : Finset (Set α), L.Nonempty ∧ s = ⋃₀ L ∧ ↑L ⊆ S := by
+  refine ⟨fun ⟨L, hL⟩ ↦ ?_, fun h ↦ ?_⟩
+  · choose hL_nonempty hL_subset hL_sup using hL
+    refine ⟨L, hL_nonempty, ?_, hL_subset⟩
+    rw [← hL_sup, ← Finset.sup_id_set_eq_sUnion, Finset.sup'_eq_sup]
+  · obtain ⟨L, hL_nonempty, hL_eq, hL_subset⟩ := h
+    refine ⟨L, hL_nonempty, hL_subset, ?_⟩
+    rw [hL_eq, ← Finset.sup_id_set_eq_sUnion, Finset.sup'_eq_sup]
+
+lemma mem_infClosure_set_iff (s : Set α) :
+    s ∈ infClosure S ↔ ∃ L : Finset (Set α), L.Nonempty ∧ s = ⋂₀ L ∧ ↑L ⊆ S := by
+  refine ⟨fun ⟨L, hL⟩ ↦ ?_, fun h ↦ ?_⟩
+  · choose hL_nonempty hL_subset hL_sup using hL
+    refine ⟨L, hL_nonempty, ?_, hL_subset⟩
+    rw [← hL_sup, ← Finset.inf_id_set_eq_sInter, Finset.inf'_eq_inf]
+  · obtain ⟨L, hL_nonempty, hL_eq, hL_subset⟩ := h
+    refine ⟨L, hL_nonempty, hL_subset, ?_⟩
+    rw [hL_eq, ← Finset.inf_id_set_eq_sInter, Finset.inf'_eq_inf]
+
+lemma mem_supClosure_insert_empty_iff (s : Set α) :
+    s ∈ supClosure (insert ∅ S) ↔
+      ∃ L : Finset (Set α), s = ⋃₀ L ∧ ↑L ⊆ insert ∅ S := by
+  rw [mem_supClosure_set_iff]
+  refine ⟨fun ⟨L, hL_nonempty, hL_eq, hL_subset⟩ ↦ ⟨L, hL_eq, hL_subset⟩,
+    fun ⟨L, hL_eq, hL_subset⟩ ↦ ?_⟩
+  classical
+  refine ⟨if L.Nonempty then L else {∅}, ?_, ?_, ?_⟩
+  · split_ifs
+    · simpa
+    · simp
+  · rcases Finset.eq_empty_or_nonempty L with (rfl | hL_nonempty)
+    · simpa using hL_eq
+    · simpa [hL_nonempty]
+  · intro
+    simp
+    grind
+
+lemma mem_infClosure_insert_univ_iff (s : Set α) :
+    s ∈ infClosure (insert Set.univ S) ↔
+      ∃ L : Finset (Set α), s = ⋂₀ L ∧ ↑L ⊆ insert Set.univ S := by
+  rw [mem_infClosure_set_iff]
+  refine ⟨fun ⟨L, hL_nonempty, hL_eq, hL_subset⟩ ↦ ⟨L, hL_eq, hL_subset⟩,
+    fun ⟨L, hL_eq, hL_subset⟩ ↦ ?_⟩
+  classical
+  refine ⟨if L.Nonempty then L else {Set.univ}, ?_, ?_, ?_⟩
+  · split_ifs
+    · simpa
+    · simp
+  · rcases Finset.eq_empty_or_nonempty L with (rfl | hL_nonempty)
+    · simpa using hL_eq
+    · simpa [hL_nonempty]
+  · intro
+    simp
+    grind
+
+end Aux
+
 lemma isCompactSystem_Icc : IsCompactSystem {t | ∃ a b : ℝ, Set.Icc a b = t} :=
   (isCompactSystem_isCompact _).mono fun _ ⟨_, _, heq⟩ ↦ heq ▸ isCompact_Icc
 
