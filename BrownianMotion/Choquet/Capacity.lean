@@ -9,7 +9,8 @@ import BrownianMotion.Choquet.AnalyticSet
 # Choquet capacity
 -/
 
-open scoped ENNReal NNReal
+open Filter
+open scoped ENNReal NNReal Topology
 
 variable {𝓧 𝓚 : Type*} {x y : 𝓧} {p : Set (Set 𝓧)} {q : Set (Set 𝓚)}
   {s t : Set 𝓧} {f : ℕ → Set 𝓧}
@@ -202,11 +203,41 @@ theorem IsPavingAnalytic.isCapacitable (hp_empty : ∅ ∈ p) (hp_inter : InfClo
   obtain ⟨𝓚, h𝓚, hs𝓚⟩ := hs
   exact hs𝓚.isCapacitable hp_empty hp_inter hp_union
 
+lemma memDelta_measurableSet {m𝓧 : MeasurableSpace 𝓧} {s : Set 𝓧}
+    (hs : s ∈ memDelta MeasurableSet) :
+    MeasurableSet s := by
+  obtain ⟨A, hA, rfl⟩ := hs
+  exact MeasurableSet.iInter hA
+
 lemma isCapacitable_measure_iff {m𝓧 : MeasurableSpace 𝓧} (μ : Measure 𝓧) [IsFiniteMeasure μ]
     (s : Set 𝓧) :
     IsCapacitable μ.capacity s ↔ NullMeasurableSet s μ := by
   refine ⟨fun hs ↦ ?_, fun hs ↦ ?_⟩
-  · sorry
+  · by_cases! hcs : μ.capacity s = 0
+    · exact NullMeasurableSet.of_null hcs
+    · have (n : ℕ) : μ.capacity s * (1 - (n + 1 : ℝ≥0∞)⁻¹) < μ.capacity s := by
+        nth_rw 2 [← mul_one (μ.capacity s)]
+        refine (ENNReal.mul_lt_mul_iff_right hcs (by simp)).2 (ENNReal.sub_lt_of_lt_add ?_ ?_)
+        · simp
+        · exact ENNReal.lt_add_right (by simp) (by simp)
+      have (n : ℕ) := hs ((μ.capacity s) * (1 - (n + 1 : ℝ≥0∞)⁻¹)) (this n)
+      choose f hf using this
+      have hsub : ⋃ i, f i ⊆ s := Set.iUnion_subset fun i => (hf i).2.1
+      have hm := MeasurableSet.iUnion fun i => memDelta_measurableSet (hf i).1
+      refine ⟨⋃ i, f i, hm, ae_eq_set.2 ⟨?_, ?_⟩⟩
+      · rw [measure_diff hsub hm.nullMeasurableSet (by finiteness)]
+        suffices μ (⋃ i, f i) = μ s from by simp_all
+        refine le_antisymm (measure_mono hsub) ?_
+        have : Tendsto (fun n : ℕ => μ s * (1 - (n + 1 : ℝ≥0∞)⁻¹)) atTop (𝓝 (μ s)) := by
+          nth_rw 2 [← mul_one (μ s)]
+          refine ENNReal.Tendsto.const_mul ?_ (by simp)
+          nth_rw 3 [← tsub_zero 1]
+          refine ENNReal.Tendsto.sub tendsto_const_nhds ?_ (by simp)
+          convert ENNReal.tendsto_inv_nat_nhds_zero.comp (tendsto_add_atTop_nat 1) with n
+          simp
+        refine le_of_tendsto_of_tendsto' this tendsto_const_nhds fun n => (hf n).2.2.trans ?_
+        simpa using measure_mono (Set.subset_iUnion _ _)
+      · simp_all [← Set.diff_eq_empty]
   · refine fun a ha ↦ ⟨(toMeasurable μ sᶜ)ᶜ, memDelta_of_mem ?_, ?_, ?_⟩
     · exact (measurableSet_toMeasurable _ _).compl
     · rw [Set.compl_subset_comm]
