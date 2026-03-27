@@ -254,7 +254,7 @@ lemma _root_.MeasureTheory.Martingale.classDL [PseudoMetrizableSpace ι] [BorelS
       (𝓕.le' t)).aestronglyMeasurable
 
 lemma _root_.MeasureTheory.Martingale.classD_iff_uniformIntegrable
-  [PseudoMetrizableSpace ι] [BorelSpace ι] [IsFiniteMeasure P] (hX1 : Martingale X 𝓕 P)
+    [PseudoMetrizableSpace ι] [BorelSpace ι] [IsFiniteMeasure P] (hX1 : Martingale X 𝓕 P)
     (hX2 : ∀ ω, RightContinuous (X · ω)) :
     ClassD X 𝓕 P ↔ UniformIntegrable X 1 P := by
   let V :={T | IsStoppingTime 𝓕 T ∧ ∃ t : ι, ∀ ω, T ω ≤ t}
