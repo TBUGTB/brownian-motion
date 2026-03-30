@@ -85,7 +85,7 @@ lemma _root_.tendsto_inv_add_atTop_nhds_zero_nat {𝕜 : Type*} [DivisionSemirin
   by simpa using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := 𝕜)
 
 set_option backward.isDefEq.respectTransparency false in
-lemma maximal_ineq_countable_ennReal (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ Y) (ε : ℝ≥0)
+lemma maximal_ineq_countable_ennreal (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ Y) (ε : ℝ≥0)
     (n : ι) :
     ε • P.real {ω | (ε : ℝ≥0∞) ≤ ⨆ i ≤ n, ENNReal.ofReal (Y i ω)} ≤
       ∫ ω in {ω | (ε : ℝ≥0∞) ≤ ⨆ i ≤ n, ENNReal.ofReal (Y i ω)}, Y n ω ∂P := by
@@ -254,7 +254,7 @@ lemma _root_.MeasureTheory.Submartingale.iSup_ofReal_ne_top (hsub : Submartingal
         gcongr with ε
         refine le_iInf fun hε0 ↦ ?_
         rw [ENNReal.ofReal_smul, le_inv_smul_iff_of_pos hε0, ENNReal.le_ofReal_iff_toReal_le]
-        · simpa using maximal_ineq_countable_ennReal hsub hnonneg ε n
+        · simpa using maximal_ineq_countable_ennreal hsub hnonneg ε n
         · finiteness
         · exact setIntegral_nonneg (measurableSet_le measurable_const (by fun_prop))
             fun ω _ ↦ hnonneg n ω
@@ -306,7 +306,7 @@ theorem maximal_ineq_countable (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ 
     change _ ≤ _ ↔ _ ≤ _
     rw [← ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_le_iff_le_toReal htop, this]
   rw [measureReal_congr this, setIntegral_congr_set this]
-  exact maximal_ineq_countable_ennReal hsub hnonneg ε n
+  exact maximal_ineq_countable_ennreal hsub hnonneg ε n
 
 theorem maximal_ineq_norm_countable (hmar : Martingale X 𝓕 P) (ε : ℝ≥0) (n : ι) :
     ε • P.real {ω | (ε : ℝ) ≤ ⨆ i : Set.Iic n, ‖X i ω‖} ≤
@@ -355,7 +355,7 @@ theorem measurable_iSup_of_rightContinuous {β : Type*} {f : ι → Ω → β}
     obtain ⟨k, hk⟩ := hS.exists_mem_open isOpen_Ioo this
     exact Set.mem_biUnion hk.1 (hu.2 hk.2)
 
-theorem maximal_ineq_ennReal (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ Y) (ε : ℝ≥0) (n : ι)
+theorem maximal_ineq_ennreal (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ Y) (ε : ℝ≥0) (n : ι)
     (hY_cont : ∀ ω, RightContinuous (Y · ω)) :
     ε * P.real {ω | (ε : ℝ≥0∞) ≤ ⨆ i : Set.Iic n, ENNReal.ofReal (Y i ω)} ≤
       ∫ ω in {ω | (ε : ℝ≥0∞) ≤ ⨆ i : Set.Iic n, ENNReal.ofReal (Y i ω)}, Y n ω ∂P := by
@@ -401,7 +401,7 @@ theorem maximal_ineq_ennReal (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ Y)
   _ ≤ ∫ ω in {ω | (ε : ℝ≥0∞) ≤ ⨆ s ≤ (⟨⟨n, le_rfl⟩, hn⟩ : S), ENNReal.ofReal (Y s ω)},
     Y n ω ∂P := by
     have : Monotone (fun x : S => x.1.1) := Subtype.mono_coe _
-    exact maximal_ineq_countable_ennReal (hsub.indexComap this) (fun x => hnonneg _) ε _
+    exact maximal_ineq_countable_ennreal (hsub.indexComap this) (fun x => hnonneg _) ε _
   _ ≤ ∫ ω in {ω | (ε : ℝ≥0∞) ≤ ⨆ s : S, ENNReal.ofReal (Y s ω)}, Y n ω ∂P := by simp [h2]
   _ = _ := by simp [h1]
 
@@ -435,7 +435,7 @@ lemma _root_.MeasureTheory.Submartingale.rightCont_iSup_ofReal_ne_top (hsub : Su
         gcongr with ε
         refine le_iInf fun hε0 ↦ ?_
         rw [ENNReal.ofReal_smul, le_inv_smul_iff_of_pos hε0, ENNReal.le_ofReal_iff_toReal_le]
-        · simpa using maximal_ineq_ennReal hsub hnonneg ε n hY_cont
+        · simpa using maximal_ineq_ennreal hsub hnonneg ε n hY_cont
         · finiteness
         · exact setIntegral_nonneg (measurableSet_le measurable_const hmY) fun ω _ ↦ hnonneg n ω
       _ ≤ ⨅ ε > (0 : ℝ≥0), ENNReal.ofReal (ε⁻¹ • ∫ ω, Y n ω ∂P) := by
@@ -475,7 +475,7 @@ theorem maximal_ineq_nonneg (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ Y) 
     change _ ≤ _ ↔ _ ≤ _
     rw [← ENNReal.ofReal_coe_nnreal, ENNReal.ofReal_le_iff_le_toReal htop, this]
   rw [measureReal_congr this, setIntegral_congr_set this]
-  exact maximal_ineq_ennReal hsub hnonneg ε n hY_cont
+  exact maximal_ineq_ennreal hsub hnonneg ε n hY_cont
 
 -- Remove the nonnegative constraint on `ε`.
 theorem maximal_ineq (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ Y) (ε : ℝ) (n : ι)
