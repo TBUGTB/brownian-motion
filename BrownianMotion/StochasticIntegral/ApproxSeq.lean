@@ -67,6 +67,8 @@ instance _root_.Nat.approximable {𝓕 : Filtration ℕ mΩ} : Approximable 𝓕
 
 section NNRealApprox
 
+/-- The approximation sequence for a stopping time `τ` taking values in `ℝ≥0` defined by
+`nnrealApproxSeq τ n ω = ⌈(τ ω) * 2^n⌉ / 2^n`. -/
 noncomputable def nnrealApproxSeq (τ : Ω → WithTop ℝ≥0) (n : ℕ) (ω : Ω) :
     WithTop ℝ≥0 :=
   WithTop.map (fun x : ℝ≥0 ↦ ⌈x * (2 : ℝ≥0) ^ n⌉₊ / (2 : ℝ≥0) ^ n) (τ ω)
