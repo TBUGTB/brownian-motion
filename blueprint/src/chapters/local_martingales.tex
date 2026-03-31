@@ -592,24 +592,16 @@ This proves that $X$ is of class DL.
 \end{proof}
 
 
-\begin{lemma}\label{lem:HasStronglyMeasurableSup_of_isCadlag}
-  \uses{def:HasStronglyMeasurableSup, def:isCadlag}
+\begin{lemma}\label{lem:ProgMeasurable.hasStronglyMeasurableSup}
+  \uses{def:ProgMeasurable}
   \leanok
-  \lean{ProbabilityTheory.HasStronglyMeasurableSupProcess.of_stronglyMeasurable_isCadlag}
-  A process that is cadlag and jointly strongly measurable has a supremum that is jointly strongly measurable.
+  \lean{MeasureTheory.ProgMeasurable.hasStronglyMeasurableSupProcess}
+  If the filtration satisfies the usual conditions, a progressively measurable process has a supremum that is jointly strongly measurable.
 \end{lemma}
 
-\begin{proof}
- Let $Y_t(\omega) = \|X_t(\omega)\|$. Since $X$ is jointly strongly measurable and the norm function is continuous, the process $Y$ is jointly strongly measurable.
+\begin{proof}\leanok
+  \uses{lem:isStoppingTime_leastGT}
 
-  Since the time domain $T$ is second-countable (e.g., $\mathbb{R}_{\ge 0}$), there exists a countable dense subset $D \subset T$ (e.g., $\mathbb{Q} \cap T$).
-  Because the paths of $X$ are càdlàg, they are right-continuous. For any right-continuous function, the supremum over a compact interval $[0, t]$ is equal to the supremum over the dense subset within that interval union the endpoint $t$.
-
-  Thus, we have the identity:
-  \[ \sup_{s \le t} Y_s(\omega) = \max \left( Y_t(\omega), \sup_{q \in D, q \le t} Y_q(\omega) \right). \]
-  We can rewrite the supremum over the dense set using indicator functions to separate the variables:
-  \[ \sup_{q \in D, q \le t} Y_q(\omega) = \sup_{q \in D} \left( Y_q(\omega) \cdot \mathbb{I}_{q \le t} \right). \]
-  The term $Y_q(\omega)$ is measurable (constant in time), and the indicator $\mathbb{I}_{q \le t}$ is jointly measurable. Since $D$ is countable, the supremum determines a measurable function. As the maximum of two measurable functions is measurable, the result follows.
 \end{proof}
 
 \begin{lemma}\label{lem:HasLocallyIntegrableSup.locally_classDL}
@@ -717,7 +709,7 @@ If $X$ is a càdlàg process of class DL, then it has locally integrable supremu
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:isLocalizingSequence_leastGE, lem:sup_stoppedProcess_le, lem:HasStronglyMeasurableSup_of_isCadlag}
+  \uses{lem:isLocalizingSequence_leastGE, lem:sup_stoppedProcess_le,lem:ProgMeasurable.hasStronglyMeasurableSup}
 Set $\tau_n := \inf \{t | X_t \ge n\}$. This is a localizing sequence by Lemma~\ref{lem:isLocalizingSequence_leastGE}. For every $t \in T$, we have by Lemma~\ref{lem:sup_stoppedProcess_le} that $(X^{\tau_n})^*_t \le n + \mathbb{I}_{\tau_n \le t} \|X_{\tau_n}\| = n + \mathbb{I}_{\tau_n \le t} \|X_{\tau_n \land t}\|$. Because X is of class DL, $X_{\tau_n \land t}$ is integrable, so $(X^{\tau_n})^*_t$ is integrable too, so $(X^{\tau_n} \mathbb{I}_{\tau_n > 0})^*_t$ is integrable. Thus $X$ has locally integrable supremum.
 \end{proof}
 
