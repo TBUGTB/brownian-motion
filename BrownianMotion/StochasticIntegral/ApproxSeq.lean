@@ -130,7 +130,7 @@ private lemma nnrealApproxSeq_antitone (τ : Ω → WithTop ℝ≥0) :
     simp only [WithTop.map_coe, WithTop.coe_le_coe]
     have h2n : (0 : ℝ≥0) < (2 : ℝ≥0) ^ n := pow_pos (by norm_num) n
     have h2m : (0 : ℝ≥0) < (2 : ℝ≥0) ^ m := pow_pos (by norm_num) m
-    rw [div_le_div_iff₀ h2n h2m]
+    erw [div_le_div_iff₀ h2n h2m]
     have key : (⌈x * 2 ^ n⌉₊ : ℕ) ≤ ⌈x * 2 ^ m⌉₊ * 2 ^ (n - m) := by
       rw [Nat.ceil_le]
       calc x * (2 : ℝ≥0) ^ n = x * (2 : ℝ≥0) ^ m * (2 : ℝ≥0) ^ (n - m) := by
