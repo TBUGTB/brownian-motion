@@ -347,10 +347,9 @@ theorem measurable_iSup_of_rightContinuous {β : Type*} {f : ι → Ω → β}
     simp only [mem_nhdsGT_iff_exists_mem_Ioc_Ioo_subset hj, Set.mem_Ioc] at this
     obtain ⟨u, hu⟩ := this
     have hu2 := hni.2 u
-    -- Replace with the output of `simp?` results in an error
-    simp [CovBy] at hu2
-    obtain ⟨v, hv⟩ := hu2 hu.1.1
-    have : (Set.Ioo i u).Nonempty := Set.nonempty_of_mem hv
+    simp only [CovBy, not_lt, not_and, not_forall, not_le] at hu2
+    obtain ⟨v, hiv, hvu⟩ := hu2 hu.1.1
+    have : (Set.Ioo i u).Nonempty := Set.nonempty_of_mem ⟨hiv, hvu⟩
     have hS : Dense S := hT_dense.mono (by grind)
     obtain ⟨k, hk⟩ := hS.exists_mem_open isOpen_Ioo this
     exact Set.mem_biUnion hk.1 (hu.2 hk.2)
@@ -386,10 +385,9 @@ theorem maximal_ineq_ennreal (hsub : Submartingale Y 𝓕 P) (hnonneg : 0 ≤ Y)
         simp only [mem_nhdsGT_iff_exists_mem_Ioc_Ioo_subset hj, Set.mem_Ioc] at this
         obtain ⟨u, hu⟩ := this
         have hu2 := hni.2 u
-        -- Replace with the output of `simp?` results in an error
-        simp? [CovBy] at hu2
-        obtain ⟨v, h, hv⟩ := hu2 hu.1.1
-        have : (Set.Ioo i u).Nonempty := Set.nonempty_of_mem hv
+        simp only [CovBy, not_lt, Subtype.forall, Set.mem_Iic, not_and, not_forall, not_le] at hu2
+        obtain ⟨v, h, hiv, hvu⟩ := hu2 hu.1.1
+        have : (Set.Ioo i u).Nonempty := Set.nonempty_of_mem ⟨hiv, hvu⟩
         have hS : Dense S := hT_dense.mono (by grind)
         obtain ⟨k, hk⟩ := hS.exists_mem_open isOpen_Ioo this
         exact ⟨⟨k, hk.1⟩, hu.2 hk.2⟩

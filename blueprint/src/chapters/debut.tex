@@ -1169,3 +1169,27 @@ If $X : ι \to Ω \to ℝ$ is a right-continuous and adapted process with respec
   \uses{lem:isStoppingTime_leastGE, lem:Adapted.progMeasurable_of_rightContinuous}
 This follows from Lemma~\ref{lem:isStoppingTime_leastGE} since $X$ is progressively measurable by Lemma~\ref{lem:Adapted.progMeasurable_of_rightContinuous}.
 \end{proof}
+
+
+\begin{definition}\label{def:leastGT}
+  \leanok
+  \lean{MeasureTheory.leastGT}
+For a process $X : T \to Ω \to E$ and a real number $a$, define the random time
+\begin{align*}
+  \tau_{X > a} = \inf\{t \in T \mid X_t > a\} \: ,
+\end{align*}
+in which the infimum is infinite if the set is empty.
+\end{definition}
+
+
+\begin{lemma}\label{lem:isStoppingTime_leastGT}
+  \uses{def:IsStoppingTime, def:leastGT}
+  \leanok
+  \lean{MeasureTheory.isStoppingTime_leastGT}
+If $X : T \to Ω \to E$ is a progressively measurable process with respect to a filtration satisfying the usual conditions, then for any $a \in E$, the random time $\tau_{X > a}$ is a stopping time.
+\end{lemma}
+
+\begin{proof}\leanok
+  \uses{thm:hitting_is_stopping_time}
+This is a direct application of Theorem~\ref{thm:hitting_is_stopping_time} with the set $B = (a, +\infty)$.
+\end{proof}

@@ -353,17 +353,54 @@ private lemma stoppedValue_stoppedProcess_dominated_le (X : ι → Ω → E) (h�
     exact σ.prop.2 ω
   · simp only [norm_zero]; exact norm_nonneg _
 
-lemma HasStronglyMeasurableSupProcess.of_stronglyMeasurable_isCadlag
-    (hX1 : StronglyMeasurable (uncurry X)) (hX2 : ∀ ω : Ω, IsCadlag (X · ω)) :
-    HasStronglyMeasurableSupProcess (mΩ := mΩ) X := by
-  sorry
+lemma _root_.Function.RightContinuous.norm {ι E : Type*} [TopologicalSpace ι] [PartialOrder ι]
+    [SeminormedAddCommGroup E] {X : ι → E} (hX : RightContinuous X) :
+    RightContinuous (fun t ↦ ‖X t‖) := by
+  intro t
+  have hXt := hX t
+  fun_prop
 
-lemma _root_.MeasureTheory.ProgMeasurable.hasStronglyMeasurableSupProcess_of_isCadlag
-    [IsCountablyGenerated (atTop : Filter ι)]
-    (hX_prog : ProgMeasurable 𝓕 X) (hX_cadlag : ∀ ω : Ω, IsCadlag (X · ω)) :
+lemma _root_.MeasureTheory.ProgMeasurable.norm {ι Ω E : Type*} {mΩ : MeasurableSpace Ω}
+    [Preorder ι] [MeasurableSpace ι] [SeminormedAddCommGroup E]
+    {𝓕 : Filtration ι mΩ} {X : ι → Ω → E} (hX : ProgMeasurable 𝓕 X) :
+    ProgMeasurable 𝓕 (fun t ω ↦ ‖X t ω‖) := fun i ↦  (hX i).norm
+
+/-- If the filtration satisfies the usual conditions, every progressively measurable process
+has a strongly measurable sup process. -/
+lemma _root_.MeasureTheory.ProgMeasurable.hasStronglyMeasurableSupProcess {ι : Type*}
+    [MeasurableSpace ι] [ConditionallyCompleteLinearOrder ι]
+    [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι] [PolishSpace ι] [BorelSpace ι]
+    {X : ι → Ω → E} {P : Measure Ω} [IsFiniteMeasure P]
+    {𝓕 : Filtration ι mΩ} (h𝓕 : 𝓕.HasUsualConditions P) (hX_prog : ProgMeasurable 𝓕 X) :
     HasStronglyMeasurableSupProcess (mΩ := mΩ) X := by
-  refine HasStronglyMeasurableSupProcess.of_stronglyMeasurable_isCadlag ?_ hX_cadlag
-  exact ProgMeasurable.stronglyMeasurable_uncurry_of_isCountablyGenerated_atTop hX_prog
+  refine Measurable.stronglyMeasurable ?_ -- todo: change the def to use measurable
+  refine measurable_of_Ioi fun a ↦ ?_
+  by_cases ha_top : a = ⊤
+  · simp [ha_top]
+  let τ a := leastGT (fun t ω ↦ ‖X t ω‖) a
+  have hτ a : IsStoppingTime 𝓕 (τ a) := isStoppingTime_leastGT h𝓕 hX_prog.norm _
+  have : ((fun tω : ι × Ω ↦ ⨆ s ≤ tω.1, ‖X s tω.2‖ₑ) ⁻¹' Set.Ioi a)
+      = {tω | τ a.toReal tω.2 < tω.1} ∪ {tω | a < ‖X tω.1 tω.2‖ₑ} := by
+    calc ((fun tω : ι × Ω ↦ ⨆ s ≤ tω.1, ‖X s tω.2‖ₑ) ⁻¹' Set.Ioi a)
+    _ = {tω | ∃ s ≤ tω.1, a < ‖X s tω.2‖ₑ} := by ext ⟨t, ω⟩; simp [lt_iSup_iff]
+    _ = {tω | ∃ s < tω.1, a < ‖X s tω.2‖ₑ} ∪ {tω | a < ‖X tω.1 tω.2‖ₑ} := by
+      ext ⟨t, ω⟩
+      simp
+      grind
+    _ = {tω | τ a.toReal tω.2 < tω.1} ∪ {tω | a < ‖X tω.1 tω.2‖ₑ} := by
+      ext ⟨t, ω⟩
+      simp only [Set.mem_union, Set.mem_setOf_eq, τ]
+      rw [leastGT_lt_iff]
+      simp_rw [← toReal_enorm, ENNReal.toReal_lt_toReal ha_top enorm_ne_top]
+  rw [this]
+  refine (measurableSet_lt ?_ (by fun_prop)).union ?_
+  · exact (hτ a.toReal).measurable'.comp measurable_snd
+  · refine (measurableSet_Ioi (a := a)).preimage ?_
+    suffices Measurable (fun tω : ι × Ω ↦ ‖X tω.1 tω.2‖) by
+      simp_rw [← ofReal_norm]
+      fun_prop
+    refine StronglyMeasurable.measurable ?_
+    exact ProgMeasurable.stronglyMeasurable_uncurry_of_isCountablyGenerated_atTop hX_prog.norm
 
 lemma isStable_hasStronglyMeasurableSupProcess [SecondCountableTopology ι] :
     IsStable 𝓕 (HasStronglyMeasurableSupProcess (E := E) (mΩ := mΩ) ·) := by
@@ -673,14 +710,14 @@ lemma ClassDL.hasLocallyIntegrableSup {ι : Type*} [Nonempty ι]
   have hτ : IsLocalizingSequence 𝓕 τ P := isLocalizingSequence_leastGE 𝓕 hY1 hY2 h𝓕
   refine ⟨τ, hτ, fun n ↦ ?_⟩
   have hX4 := fun (t : ι) (ω : Ω) ↦ sup_stoppedProcess_leastGE_le (X := X) t n (by simp) ω
-  have hX6 :=  hX2.hasStronglyMeasurableSupProcess_of_isCadlag hX1
+  have hX6 :=  hX2.hasStronglyMeasurableSupProcess h𝓕
   let Xs : ι → Ω → E := (stoppedProcess (fun i ↦ {ω | ⊥ < τ n ω}.indicator (X i)) (τ n))
   have hX1s : ∀ ω,  IsCadlag fun t ↦ Xs t ω := isStable_isCadlag X (hX1) (τ n) (hτ.isStoppingTime n)
   let rhs := fun (t : ι) (ω : Ω) ↦
     ↑n + {ω | hittingAfter (fun t ω ↦ ‖X t ω‖) (Set.Ici ↑n) ⊥ ω ≤ ↑t}.indicator
     (fun ω ↦ ‖stoppedValue X (hittingAfter (fun t ω ↦ ‖X t ω‖) (Set.Ici ↑n) ⊥) ω‖) ω
   constructor
-  · refine ProgMeasurable.hasStronglyMeasurableSupProcess_of_isCadlag (𝓕 := 𝓕) ?_ hX1s
+  · refine ProgMeasurable.hasStronglyMeasurableSupProcess h𝓕 ?_
     exact isStable_progMeasurable (ι := ι) (E := E) X hX2 (τ n) (hτ.isStoppingTime n)
   · intro t
     let dom := fun ω ↦ ↑n + ‖stoppedValue X (τ n ⊓ fun _ ↦ t) ω‖
