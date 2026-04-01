@@ -340,6 +340,10 @@ ProbabilityTheory.HasLocallyIntegrableSup
 ProbabilityTheory.ClassD
 ProbabilityTheory.ClassDL
 ProbabilityTheory.ClassD.classDL
+ProbabilityTheory.ClassD.uniformIntegrable'
+ProbabilityTheory.classDL_iff_norm
+ProbabilityTheory.classD_of_uniformIntegrable_bounded_stoppingTime
+ProbabilityTheory.classD_iff_norm
 MeasureTheory.Submartingale.classDL
 MeasureTheory.Submartingale.classD_iff_uniformIntegrable
 MeasureTheory.Martingale.classDL
