@@ -749,7 +749,8 @@ The hitting time is then the debut of the set $E = \{(s,\omega) : \mathbf{1}_B(X
 \begin{definition}\label{def:leastGE}
   \mathlibok
   \lean{MeasureTheory.leastGE}
-For a process $X : T \to Ω \to E$ and a real number $a$, define the random time
+Let $T$ be a conditionally complete linear order with a bottom element and let $R$ be a preorder.
+For a process $X : T \to Ω \to R$ and $a \in R$, define the random time
 \begin{align*}
   \tau_{X \ge a} = \inf\{t \in T \mid X_t \ge a\} \: ,
 \end{align*}
@@ -761,7 +762,9 @@ in which the infimum is infinite if the set is empty.
   \uses{def:IsStoppingTime, def:leastGE}
   \leanok
   \lean{MeasureTheory.isStoppingTime_leastGE}
-If $X : T \to Ω \to E$ is a progressively measurable process with respect to a filtration satisfying the usual conditions, then for any $a \in E$, the random time $\tau_{X \ge a}$ is a stopping time.
+Let $T$ be a conditionally complete linear order with a bottom element, which is a Polish space for its order topology, on which we put the Borel $\sigma$-algebra.
+Let $R$ be a preorder with a metrizable topology for which sets of the form $\{x \in R \mid x \ge a\}$ are closed, with its Borel $\sigma$-algebra.
+If $X : T \to Ω \to R$ is a progressively measurable process with respect to a filtration satisfying the usual conditions, then for any $a \in R$, the random time $\tau_{X \ge a}$ is a stopping time.
 \end{lemma}
 
 \begin{proof}\leanok
@@ -784,7 +787,8 @@ This follows from Lemma~\ref{lem:isStoppingTime_leastGE} since $X$ is progressiv
 \begin{definition}\label{def:leastGT}
   \leanok
   \lean{MeasureTheory.leastGT}
-For a process $X : T \to Ω \to E$ and a real number $a$, define the random time
+Let $T$ be a conditionally complete linear order with a bottom element and let $R$ be a preorder.
+For a process $X : T \to Ω \to R$ and $a \in R$, define the random time
 \begin{align*}
   \tau_{X > a} = \inf\{t \in T \mid X_t > a\} \: ,
 \end{align*}
@@ -796,10 +800,25 @@ in which the infimum is infinite if the set is empty.
   \uses{def:IsStoppingTime, def:leastGT}
   \leanok
   \lean{MeasureTheory.isStoppingTime_leastGT}
-If $X : T \to Ω \to E$ is a progressively measurable process with respect to a filtration satisfying the usual conditions, then for any $a \in E$, the random time $\tau_{X > a}$ is a stopping time.
+Let $T$ be a conditionally complete linear order with a bottom element, which is a Polish space for its order topology, on which we put the Borel $\sigma$-algebra.
+Let $R$ be a preorder with a metrizable topology for which sets of the form $\{x \in R \mid x \ge a\}$ are closed, with its Borel $\sigma$-algebra.
+If $X : T \to Ω \to R$ is a progressively measurable process with respect to a filtration satisfying the usual conditions, then for any $a \in R$, the random time $\tau_{X > a}$ is a stopping time.
 \end{lemma}
 
 \begin{proof}\leanok
   \uses{thm:hitting_is_stopping_time}
 This is a direct application of Theorem~\ref{thm:hitting_is_stopping_time} with the set $B = (a, +\infty)$.
+\end{proof}
+
+
+\begin{lemma}\label{lem:leastGT_lt_iff}
+  \uses{def:leastGT}
+  \leanok
+  \lean{MeasureTheory.leastGT_lt_iff}
+For $t \in T$, $\tau_{X > a} < t$ if and only if there exists $s < t$ such that $X_s > a$.
+\end{lemma}
+
+\begin{proof}\leanok
+  \uses{def:leastGT}
+
 \end{proof}
