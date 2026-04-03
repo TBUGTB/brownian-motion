@@ -18,38 +18,38 @@ The product of two pavings $S$ and $T$ is the set of sets of the form $s \times 
 \end{definition}
 
 
-\begin{definition}\label{def:memFiniteUnion}
+\begin{definition}\label{def:supClosure}
   \leanok
-  \lean{MeasureTheory.memFiniteUnion}
+  \lean{supClosure}
 For a paving $S$, we denote by $S^{\cup f}$ the set of finite unions of sets in $S$.
 \end{definition}
 
 
-\begin{definition}\label{def:memFiniteInter}
+\begin{definition}\label{def:infClosure}
   \leanok
-  \lean{MeasureTheory.memFiniteInter}
+  \lean{infClosure}
 For a paving $S$, we denote by $S^{\cap f}$ the set of finite intersections of sets in $S$.
 \end{definition}
 
 
-\begin{definition}\label{def:memSigma}
+\begin{definition}\label{def:countableSupClosure}
   \leanok
-  \lean{MeasureTheory.memSigma}
+  \lean{countableSupClosure}
 We denote by $S_\sigma$ the set of countable unions of sets in $S$.
 \end{definition}
 
 
-\begin{definition}\label{def:memDelta}
+\begin{definition}\label{def:countableInfClosure}
   \leanok
-  \lean{MeasureTheory.memDelta}
+  \lean{countableInfClosure}
 We denote by $S_\delta$ the set of countable intersections of sets in $S$.
 \end{definition}
 
 
-\begin{lemma}\label{lem:memDelta_iff_of_inter}
-  \uses{def:memDelta}
+\begin{lemma}\label{lem:InfClosed.mem_countableInfClosure_iff}
+  \uses{def:countableInfClosure}
   \leanok
-  \lean{MeasureTheory.memDelta_iff_of_infClosed}
+  \lean{InfClosed.mem_countableInfClosure_iff}
 If a paving $S$ is closed under pairwise intersection, then a set $s$ is in $S_\delta$ if and only if there exists a monotone decreasing family of sets $(A_n)_{n\in\mathbb{N}}$ in $S$ such that $s = \bigcap_{n\in\mathbb{N}} A_n$.
 \end{lemma}
 
@@ -59,15 +59,15 @@ If $s \in S_\delta$ there exists a family $(B_n)$ that satisfies the condition b
 \end{proof}
 
 
-\begin{lemma}\label{lem:memSigma_iff_of_union}
-  \uses{def:memSigma}
+\begin{lemma}\label{lem:SupClosed.mem_countableSupClosure_iff}
+  \uses{def:countableSupClosure}
   \leanok
-  \lean{MeasureTheory.memSigma_iff_of_supClosed}
+  \lean{SupClosed.mem_countableSupClosure_iff}
 If a paving $S$ is closed under pairwise union, then a set $s$ is in $S_\sigma$ if and only if there exists a monotone increasing family of sets $(A_n)_{n\in\mathbb{N}}$ in $S$ such that $s = \bigcup_{n\in\mathbb{N}} A_n$.
 \end{lemma}
 
 \begin{proof}\leanok
-Similar to the proof of Lemma~\ref{lem:memDelta_iff_of_inter}.
+Similar to the proof of Lemma~\ref{lem:InfClosed.mem_countableInfClosure_iff}.
 \end{proof}
 
 
@@ -163,10 +163,10 @@ The product of two compact systems $S \times T$ is a compact system.
 \end{proof}
 
 
-\begin{lemma}\label{lem:IsCompactSystem.memFiniteUnion}
-  \uses{def:IsCompactSystem, def:memFiniteUnion}
+\begin{lemma}\label{lem:IsCompactSystem.supClosure}
+  \uses{def:IsCompactSystem, def:supClosure}
   \leanok
-  \lean{IsCompactSystem.memFiniteUnion}
+  \lean{IsCompactSystem.supClosure}
 If $S$ is a compact system, then $S^{\cup f}$ is a compact system.
 \end{lemma}
 
@@ -175,8 +175,8 @@ If $S$ is a compact system, then $S^{\cup f}$ is a compact system.
 \end{proof}
 
 
-\begin{lemma}\label{lem:IsCompactSystem.memDelta}
-  \uses{def:IsCompactSystem, def:memDelta}
+\begin{lemma}\label{lem:IsCompactSystem.countableInfClosure}
+  \uses{def:IsCompactSystem, def:countableInfClosure}
 If $S$ is a compact system, then $S_\delta$ is a compact system.
 \end{lemma}
 
@@ -185,23 +185,23 @@ If $S$ is a compact system, then $S_\delta$ is a compact system.
 \end{proof}
 
 
-\begin{lemma}\label{lem:IsCompactSystem.memFiniteInter}
-  \uses{def:IsCompactSystem, def:memFiniteInter}
+\begin{lemma}\label{lem:IsCompactSystem.infClosure}
+  \uses{def:IsCompactSystem, def:infClosure}
   \leanok
-  \lean{IsCompactSystem.memFiniteInter}
+  \lean{IsCompactSystem.infClosure}
 If $S$ is a compact system, then $S^{\cap f}$ is a compact system.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:IsCompactSystem.mono, lem:IsCompactSystem.memDelta}
-$S_\delta$ is a compact system by Lemma~\ref{lem:IsCompactSystem.memDelta}, and $S^{\cap f} \subseteq S_\delta$, so we can apply Lemma~\ref{lem:IsCompactSystem.mono}.
+  \uses{lem:IsCompactSystem.mono, lem:IsCompactSystem.countableInfClosure}
+$S_\delta$ is a compact system by Lemma~\ref{lem:IsCompactSystem.countableInfClosure}, and $S^{\cap f} \subseteq S_\delta$, so we can apply Lemma~\ref{lem:IsCompactSystem.mono}.
 \end{proof}
 
 
-\begin{theorem}\label{thm:fst_iInter_of_memFiniteUnion_memProd_of_antitone}
-  \uses{def:IsCompactSystem, def:memFiniteUnion, def:memProd}
+\begin{theorem}\label{thm:fst_iInter_of_supClosure_memProd_of_antitone}
+  \uses{def:IsCompactSystem, def:supClosure, def:memProd}
   \leanok
-  \lean{MeasureTheory.fst_iInter_of_memFiniteUnion_memProd_of_antitone}
+  \lean{MeasureTheory.fst_iInter_of_supClosure_memProd_of_antitone}
 Let $S$ be a paving of $\mathcal{X}$ and $T$ be a compact system of $\mathcal{K}$.
 Let $(B_n)_{n \in \mathbb{N}}$ be a monotone decreasing sequence of sets in $(S \times T)^{\cup f}$.
 Let $\pi_{\mathcal{X}} : \mathcal{X} \times \mathcal{K} \to \mathcal{X}$ be the projection on $\mathcal{X}$.
@@ -212,7 +212,7 @@ Then
 \end{theorem}
 
 \begin{proof}\leanok
-  \uses{lem:IsCompactSystem.memFiniteUnion}
+  \uses{lem:IsCompactSystem.supClosure}
 
 \end{proof}
 
@@ -222,7 +222,7 @@ Then
 \subsection{Analytic sets}
 
 \begin{definition}[Analytic set]\label{def:IsPavingAnalytic}
-  \uses{def:IsCompactSystem, def:memSigma, def:memDelta, def:memProd}
+  \uses{def:IsCompactSystem, def:countableSupClosure, def:countableInfClosure, def:memProd}
   \leanok
   \lean{MeasureTheory.IsPavingAnalytic, MeasureTheory.IsPavingAnalyticFor}
 Let $F$ be a paving of a type $\mathcal{X}$.
@@ -501,7 +501,7 @@ Then the function $I_{\mathcal{X}}(u) = I(\pi_{\mathcal{X}}(u))$ is a capacity f
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{thm:fst_iInter_of_memFiniteUnion_memProd_of_antitone}
+  \uses{thm:fst_iInter_of_supClosure_memProd_of_antitone}
 
 \end{proof}
 
@@ -540,7 +540,7 @@ For $I$ an $F$-capacity, every set in $F$ is $I$-capacitable.
 
 
 \begin{lemma}\label{lem:isCapacitable_memDelta_memSigma}
-  \uses{def:IsCapacitable, def:Capacity, def:memDelta, def:memSigma}
+  \uses{def:IsCapacitable, def:Capacity, def:countableInfClosure, def:countableSupClosure}
   \leanok
   \lean{MeasureTheory.isCapacitable_memDelta_memSigma}
 Suppose that $F$ contains the empty set and is closed under pairwise intersections and unions, and let $I$ be an $F$-capacity.
@@ -548,13 +548,13 @@ Then every set of $F_{\sigma \delta}$ is $I$-capacitable.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:memSigma_iff_of_union}
+  \uses{lem:SupClosed.mem_countableSupClosure_iff}
 
 \end{proof}
 
 
 \begin{lemma}\label{lem:memDelta_fst}
-  \uses{def:memDelta, def:memProd, def:IsCompactSystem}
+  \uses{def:countableInfClosure, def:memProd, def:IsCompactSystem}
   \leanok
   \lean{MeasureTheory.memDelta_fst}
 Suppose that $F$ contains the empty set and is closed under pairwise intersections and unions, and let $I$ be an $F$-capacity.
@@ -564,7 +564,7 @@ Then $\pi_{\mathcal{X}}(s) \in F_\delta$.
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{thm:fst_iInter_of_memFiniteUnion_memProd_of_antitone, lem:memDelta_iff_of_inter}
+  \uses{thm:fst_iInter_of_supClosure_memProd_of_antitone, lem:InfClosed.mem_countableInfClosure_iff}
 
 \end{proof}
 
@@ -595,7 +595,7 @@ Then every $F$-analytic set is $I$-capacitable.
 \end{theorem}
 
 \begin{proof}\leanok
-  \uses{lem:isCapacitable_memDelta_memSigma, lem:IsCompactSystem.memFiniteInter, lem:IsCapacitable.fst}
+  \uses{lem:isCapacitable_memDelta_memSigma, lem:IsCompactSystem.infClosure, lem:IsCapacitable.fst}
 
 \end{proof}
 
