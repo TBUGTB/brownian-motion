@@ -45,21 +45,17 @@ The definition uses `ι = ℕ` and the empty case (`⊥ ∈ s`).
 See `CountableSupClosed.iSup_mem` for a supremum over any countable type. -/
 structure CountableSupClosed [CompleteLattice α] (s : Set α) : Prop where
   iSup_nat_mem : ∀ ⦃A : ℕ → α⦄ (_hA : ∀ n, A n ∈ s), ⨆ n, A n ∈ s
-  bot_mem : ⊥ ∈ s
 
-lemma CountableSupClosed.iSup_mem [hι : Countable ι]
+lemma CountableSupClosed.iSup_mem [hι : Countable ι] [Nonempty ι]
     (hs : CountableSupClosed s) {A : ι → α} (hA : ∀ n, A n ∈ s) :
     (⨆ n, A n) ∈ s := by
-  rcases isEmpty_or_nonempty ι with hι_empty | hι_nonempty
-  · rw [iSup_of_empty]
-    exact hs.bot_mem
-  · obtain ⟨g, hg⟩ := countable_iff_exists_surjective.mp hι
-    have : ⨆ i, A i = ⨆ n, A (g n) := by rw [Function.Surjective.iSup_comp hg]
-    rw [this]
-    exact hs.iSup_nat_mem (fun n ↦ hA (g n))
+  obtain ⟨g, hg⟩ := countable_iff_exists_surjective.mp hι
+  have : ⨆ i, A i = ⨆ n, A (g n) := by rw [Function.Surjective.iSup_comp hg]
+  rw [this]
+  exact hs.iSup_nat_mem (fun n ↦ hA (g n))
 
 lemma CountableSupClosed.sSup_mem (hs : CountableSupClosed s)
-    (A : Set α) [Countable A] (hA : ∀ a ∈ A, a ∈ s) :
+    (A : Set α) [Countable A] [Nonempty A] (hA : ∀ a ∈ A, a ∈ s) :
     sSup A ∈ s := by
   rw [sSup_eq_iSup']
   exact hs.iSup_mem fun a ↦ hA a a.2
@@ -74,21 +70,17 @@ lemma CountableSupClosed.supClosed (hs : CountableSupClosed s) : SupClosed s := 
   iSup_nat_mem A hA := by
     simp only [mem_singleton_iff] at hA
     simp [hA]
-  bot_mem := by simp
 
 @[simp] lemma countableSupClosed_univ : CountableSupClosed (univ : Set α) where
   iSup_nat_mem A hA := by simp
-  bot_mem := by simp
 
 lemma CountableSupClosed.inter (hs : CountableSupClosed s) (ht : CountableSupClosed t) :
     CountableSupClosed (s ∩ t) where
   iSup_nat_mem _ hA := ⟨hs.iSup_nat_mem (fun n ↦ (hA n).1), ht.iSup_nat_mem (fun n ↦ (hA n).2)⟩
-  bot_mem := ⟨hs.bot_mem, ht.bot_mem⟩
 
 lemma countableSupClosed_sInter (hS : ∀ s ∈ S, CountableSupClosed s) :
     CountableSupClosed (⋂₀ S) where
   iSup_nat_mem _ hA := fun _s hs ↦ (hS _ hs).iSup_mem fun n ↦ hA n _ hs
-  bot_mem := by have h s hs := (hS s hs).2; simpa
 
 lemma countableSupClosed_iInter {f : ι → Set α} (hf : ∀ i, CountableSupClosed (f i)) :
     CountableSupClosed (⋂ i, f i) :=
@@ -101,7 +93,6 @@ lemma CountableSupClosed.prod {t : Set β} (hs : CountableSupClosed s) (ht : Cou
     CountableSupClosed (s ×ˢ t) where
   iSup_nat_mem _ hA := ⟨by rw [Prod.fst_iSup]; exact hs.iSup_nat_mem (fun n ↦ (hA n).1),
     by rw [Prod.snd_iSup]; exact ht.iSup_nat_mem (fun n ↦ (hA n).2)⟩
-  bot_mem := ⟨hs.bot_mem, ht.bot_mem⟩
 
 end Set
 
@@ -128,21 +119,17 @@ The definition uses `ι = ℕ` and the empty case (`⊤ ∈ s`).
 See `CountableInfClosed.iInf_mem` for an infimum over any countable type. -/
 structure CountableInfClosed (s : Set α) : Prop where
   iInf_nat_mem : ∀ ⦃A : ℕ → α⦄, (∀ n, A n ∈ s) → ⨅ n, A n ∈ s
-  top_mem : ⊤ ∈ s
 
-lemma CountableInfClosed.iInf_mem [hι : Countable ι]
+lemma CountableInfClosed.iInf_mem [hι : Countable ι] [Nonempty ι]
     (hs : CountableInfClosed s) {A : ι → α} (hA : ∀ n, A n ∈ s) :
     (⨅ n, A n) ∈ s := by
-  rcases isEmpty_or_nonempty ι with hι_empty | hι_nonempty
-  · rw [iInf_of_empty]
-    exact hs.top_mem
   obtain ⟨g, hg⟩ := countable_iff_exists_surjective.mp hι
   have : ⨅ i, A i = ⨅ n, A (g n) := by rw [Function.Surjective.iInf_comp hg]
   rw [this]
   exact hs.iInf_nat_mem (fun n ↦ hA (g n))
 
 lemma CountableInfClosed.sInf_mem (hs : CountableInfClosed s)
-    (A : Set α) [Countable A] (hA : ∀ a ∈ A, a ∈ s) :
+    (A : Set α) [Countable A] [Nonempty A] (hA : ∀ a ∈ A, a ∈ s) :
     sInf A ∈ s := by
   rw [sInf_eq_iInf']
   exact hs.iInf_mem fun a ↦ hA a a.2
@@ -157,21 +144,17 @@ lemma CountableInfClosed.infClosed (hs : CountableInfClosed s) : InfClosed s := 
   iInf_nat_mem _ hA := by
     simp only [mem_singleton_iff] at hA
     simp [hA]
-  top_mem := by simp
 
 @[simp] lemma countableInfClosed_univ : CountableInfClosed (univ : Set α) where
   iInf_nat_mem _ hA := by simp
-  top_mem := by simp
 
 lemma CountableInfClosed.inter (hs : CountableInfClosed s) (ht : CountableInfClosed t) :
     CountableInfClosed (s ∩ t) where
   iInf_nat_mem _ hA := ⟨hs.iInf_mem (fun n ↦ (hA n).1), ht.iInf_mem (fun n ↦ (hA n).2)⟩
-  top_mem := ⟨hs.top_mem, ht.top_mem⟩
 
 lemma countableInfClosed_sInter (hS : ∀ s ∈ S, CountableInfClosed s) :
     CountableInfClosed (⋂₀ S) where
   iInf_nat_mem _ hA := fun _s hs ↦ (hS _ hs).iInf_mem fun n ↦ hA n _ hs
-  top_mem := by have h s hs := (hS s hs).2; simpa
 
 lemma countableInfClosed_iInter {f : ι → Set α} (hf : ∀ i, CountableInfClosed (f i)) :
     CountableInfClosed (⋂ i, f i) :=
@@ -181,7 +164,6 @@ lemma CountableInfClosed.prod {t : Set β} (hs : CountableInfClosed s) (ht : Cou
     CountableInfClosed (s ×ˢ t) where
   iInf_nat_mem _ hA := ⟨by rw [Prod.fst_iInf]; exact hs.iInf_mem (fun n ↦ (hA n).1),
     by rw [Prod.snd_iInf]; exact ht.iInf_mem (fun n ↦ (hA n).2)⟩
-  top_mem := ⟨hs.top_mem, ht.top_mem⟩
 
 end Set
 
@@ -202,55 +184,57 @@ open OrderDual
 
 @[simp] lemma countableSupClosed_preimage_toDual {s : Set αᵒᵈ} :
     CountableSupClosed (toDual ⁻¹' s) ↔ CountableInfClosed s :=
-  ⟨fun h ↦ ⟨h.iSup_nat_mem, h.bot_mem⟩, fun h ↦ ⟨h.iInf_nat_mem, h.top_mem⟩⟩
+  ⟨fun h ↦ ⟨h.iSup_nat_mem⟩, fun h ↦ ⟨h.iInf_nat_mem⟩⟩
 
 @[simp] lemma countableInfClosed_preimage_toDual {s : Set αᵒᵈ} :
     CountableInfClosed (toDual ⁻¹' s) ↔ CountableSupClosed s :=
-  ⟨fun h ↦ ⟨h.iInf_nat_mem, h.top_mem⟩, fun h ↦ ⟨h.iSup_nat_mem, h.bot_mem⟩⟩
+  ⟨fun h ↦ ⟨h.iInf_nat_mem⟩, fun h ↦ ⟨h.iSup_nat_mem⟩⟩
 
 @[simp] lemma countableSupClosed_preimage_ofDual {s : Set α} :
     CountableSupClosed (ofDual ⁻¹' s) ↔ CountableInfClosed s :=
-  ⟨fun h ↦ ⟨h.iSup_nat_mem, h.bot_mem⟩, fun h ↦ ⟨h.iInf_nat_mem, h.top_mem⟩⟩
+  ⟨fun h ↦ ⟨h.iSup_nat_mem⟩, fun h ↦ ⟨h.iInf_nat_mem⟩⟩
 
 @[simp] lemma countableInfClosed_preimage_ofDual {s : Set α} :
     CountableInfClosed (ofDual ⁻¹' s) ↔ CountableSupClosed s :=
-  ⟨fun h ↦ ⟨h.iInf_nat_mem, h.top_mem⟩, fun h ↦ ⟨h.iSup_nat_mem, h.bot_mem⟩⟩
+  ⟨fun h ↦ ⟨h.iInf_nat_mem⟩, fun h ↦ ⟨h.iSup_nat_mem⟩⟩
 
 alias ⟨_, CountableInfClosed.dual⟩ := countableSupClosed_preimage_ofDual
 alias ⟨_, CountableSupClosed.dual⟩ := countableInfClosed_preimage_ofDual
 
 /-! ## Closure -/
 
-/-- Every set in a join-semilattice generates a set closed under join. -/
+/-- Every set in a join-semilattice generates a set closed under countable join. -/
 @[simps! isClosed]
 def countableSupClosure : ClosureOperator (Set α) := .ofPred
-  (fun s ↦ {a | ∃ (t : ℕ → α), (∀ n, t n ∈ s ∨ t n = ⊥) ∧ ⨆ n, t n = a})
+  (fun s ↦ {a | ∃ (t : ℕ → α), (∀ n, t n ∈ s) ∧ ⨆ n, t n = a})
   CountableSupClosed
-  (fun s a ha ↦ ⟨fun _ ↦ a, by simp only [forall_const]; exact .inl ha, by rw [ciSup_const]⟩)
+  (fun s a ha ↦ ⟨fun _ ↦ a, by simpa, by rw [ciSup_const]⟩)
   (by
     intro x
     constructor
-    · intro A hA
-      simp only [Set.mem_setOf_eq] at hA
-      choose B hB hB_eq using hA
-      simp only [Set.mem_setOf_eq]
-      let t n := B (Nat.unpair n).1 (Nat.unpair n).2
-      refine ⟨t, fun _ ↦ hB _ _, ?_⟩
-      simp [t, iSup_unpair, ← hB_eq]
-    · simp only [Set.mem_setOf_eq, iSup_eq_bot]
-      refine ⟨fun _ ↦ ⊥, by simp, by simp⟩)
+    intro A hA
+    simp only [Set.mem_setOf_eq] at hA
+    choose B hB hB_eq using hA
+    simp only [Set.mem_setOf_eq]
+    let t n := B (Nat.unpair n).1 (Nat.unpair n).2
+    refine ⟨t, fun _ ↦ hB _ _, ?_⟩
+    simp [t, iSup_unpair, ← hB_eq])
   (by
     rintro s₁ s₂ hs h₂ _ ⟨t, ht, rfl⟩
-    refine h₂.iSup_mem fun n ↦ ?_
-    cases ht n with
-    | inl ht => exact hs ht
-    | inr ht => rw [ht]; exact h₂.bot_mem)
+    exact h₂.iSup_mem fun n ↦ hs (ht n))
+
+lemma mem_countableSupClosure_iff :
+    a ∈ countableSupClosure s ↔ ∃ (t : ℕ → α), (∀ n, t n ∈ s) ∧ ⨆ n, t n = a :=
+  Iff.rfl
 
 @[simp] lemma subset_countableSupClosure {s : Set α} : s ⊆ countableSupClosure s :=
   countableSupClosure.le_closure _
 
 @[simp] lemma countableSupClosed_countableSupClosure : CountableSupClosed (countableSupClosure s) :=
   countableSupClosure.isClosed_closure _
+
+@[simp] lemma supClosed_countableSupClosure : SupClosed (countableSupClosure s) :=
+  countableSupClosed_countableSupClosure.supClosed
 
 lemma countableSupClosure_mono : Monotone (countableSupClosure : Set α → Set α) :=
   countableSupClosure.monotone
@@ -272,77 +256,65 @@ lemma countableSupClosure_idem (s : Set α) : countableSupClosure (countableSupC
     upperBounds (countableSupClosure s) = upperBounds s :=
   (upperBounds_mono_set subset_countableSupClosure).antisymm <| by
     rintro a ha _ ⟨t, ht, rfl⟩
-    refine iSup_le fun n ↦ ?_
-    cases ht n with
-    | inl ht => exact ha (ht)
-    | inr ht => rw [ht]; exact bot_le
+    exact iSup_le fun n ↦ ha (ht n)
 
 @[simp] lemma isLUB_countableSupClosure : IsLUB (countableSupClosure s) a ↔ IsLUB s a := by
   simp [IsLUB]
 
 lemma sup_mem_countableSupClosure (ha : a ∈ s) (hb : b ∈ s) : a ⊔ b ∈ countableSupClosure s :=
-  countableSupClosed_countableSupClosure.supClosed (subset_countableSupClosure ha)
-    (subset_countableSupClosure hb)
+  supClosed_countableSupClosure (subset_countableSupClosure ha) (subset_countableSupClosure hb)
 
-lemma iSup_mem_countableSupClosure [Countable ι] {A : ι → α} (hA : ∀ n, A n ∈ s) :
+lemma iSup_mem_countableSupClosure [Countable ι] [Nonempty ι] {A : ι → α} (hA : ∀ n, A n ∈ s) :
     (⨆ n, A n) ∈ countableSupClosure s :=
   countableSupClosed_countableSupClosure.iSup_mem (fun n ↦ subset_countableSupClosure (hA n))
 
 lemma finsetSup'_mem_countableSupClosure {ι : Type*} {t : Finset ι} (ht : t.Nonempty) {f : ι → α}
     (hf : ∀ i ∈ t, f i ∈ s) : t.sup' ht f ∈ countableSupClosure s :=
-  countableSupClosed_countableSupClosure.supClosed.finsetSup'_mem _
-    fun _i hi ↦ subset_countableSupClosure <| hf _ hi
+  supClosed_countableSupClosure.finsetSup'_mem _ fun _i hi ↦ subset_countableSupClosure <| hf _ hi
 
 lemma countableSupClosure_min : s ⊆ t → CountableSupClosed t → countableSupClosure s ⊆ t :=
   countableSupClosure.closure_min
 
-@[simp] lemma countableSupClosure_prod (hs : ⊥ ∈ s) (ht : ⊥ ∈ t) :
+@[simp] lemma countableSupClosure_prod (s : Set α) (t : Set β) :
     countableSupClosure (s ×ˢ t) = countableSupClosure s ×ˢ countableSupClosure t :=
   le_antisymm (countableSupClosure_min
     (Set.prod_mono subset_countableSupClosure subset_countableSupClosure) <|
     countableSupClosed_countableSupClosure.prod countableSupClosed_countableSupClosure) <| by
       rintro ⟨_, _⟩ ⟨⟨u, hu, rfl⟩, v, hv, rfl⟩
-      refine ⟨fun n ↦ (u n, v n), fun n ↦ ?_, ?_⟩
-      · simp only [Set.mem_prod]
-        refine .inl ⟨?_, ?_⟩
-        · cases hu n with
-          | inl hu => exact hu
-          | inr hu => rwa [hu]
-        · cases hv n with
-          | inl hv => exact hv
-          | inr hv => rwa [hv]
-      · rw [Prod.iSup_mk]
+      exact ⟨fun n ↦ (u n, v n), fun n ↦ ⟨hu n, hv n⟩, by rw [Prod.iSup_mk]⟩
 
 /-- Every set in a join-semilattice generates a set closed under join. -/
 @[simps! isClosed]
 def countableInfClosure : ClosureOperator (Set α) := ClosureOperator.ofPred
-  (fun s ↦ {a | ∃ (t : ℕ → α), (∀ n, t n ∈ s ∨ t n = ⊤) ∧ ⨅ n, t n = a})
+  (fun s ↦ {a | ∃ (t : ℕ → α), (∀ n, t n ∈ s) ∧ ⨅ n, t n = a})
   CountableInfClosed
-  (fun s a ha ↦ ⟨fun _ ↦ a, by simp only [forall_const]; exact .inl ha, by rw [ciInf_const]⟩)
+  (fun s a ha ↦ ⟨fun _ ↦ a, by simpa, by rw [ciInf_const]⟩)
   (by
     intro x
     constructor
-    · intro A hA
-      simp only [Set.mem_setOf_eq] at hA
-      choose B hB hB_eq using hA
-      simp only [Set.mem_setOf_eq]
-      let t n := B (Nat.unpair n).1 (Nat.unpair n).2
-      refine ⟨t, fun _ ↦ hB _ _, ?_⟩
-      simp [t, iInf_unpair, ← hB_eq]
-    · simp only [Set.mem_setOf_eq, iInf_eq_top]
-      refine ⟨fun _ ↦ ⊤, by simp, by simp⟩)
+    intro A hA
+    simp only [Set.mem_setOf_eq] at hA
+    choose B hB hB_eq using hA
+    simp only [Set.mem_setOf_eq]
+    let t n := B (Nat.unpair n).1 (Nat.unpair n).2
+    refine ⟨t, fun _ ↦ hB _ _, ?_⟩
+    simp [t, iInf_unpair, ← hB_eq])
   (by
     rintro s₁ s₂ hs h₂ _ ⟨t, ht, rfl⟩
-    refine h₂.iInf_mem fun n ↦ ?_
-    cases ht n with
-    | inl ht => exact hs ht
-    | inr ht => rw [ht]; exact h₂.top_mem)
+    exact h₂.iInf_mem fun n ↦ hs (ht n))
+
+lemma mem_countableInfClosure_iff :
+    a ∈ countableInfClosure s ↔ ∃ (t : ℕ → α), (∀ n, t n ∈ s) ∧ ⨅ n, t n = a :=
+  Iff.rfl
 
 @[simp] lemma subset_countableInfClosure {s : Set α} : s ⊆ countableInfClosure s :=
   countableInfClosure.le_closure _
 
 @[simp] lemma countableInfClosed_countableInfClosure : CountableInfClosed (countableInfClosure s) :=
   countableInfClosure.isClosed_closure _
+
+@[simp] lemma infClosed_countableInfClosure : InfClosed (countableInfClosure s) :=
+  countableInfClosed_countableInfClosure.infClosed
 
 lemma countableInfClosure_mono : Monotone (countableInfClosure : Set α → Set α) :=
   countableInfClosure.monotone
@@ -364,46 +336,32 @@ lemma countableInfClosure_idem (s : Set α) :
     lowerBounds (countableInfClosure s) = lowerBounds s :=
   (lowerBounds_mono_set subset_countableInfClosure).antisymm <| by
     rintro a ha _ ⟨t, ht, rfl⟩
-    refine le_iInf fun n ↦ ?_
-    cases ht n with
-    | inl ht => exact ha (ht)
-    | inr ht => rw [ht]; exact le_top
+    exact le_iInf fun n ↦ ha (ht n)
 
 @[simp] lemma isGLB_countableInfClosure : IsGLB (countableInfClosure s) a ↔ IsGLB s a := by
   simp [IsGLB]
 
 lemma inf_mem_countableInfClosure (ha : a ∈ s) (hb : b ∈ s) : a ⊓ b ∈ countableInfClosure s :=
-  countableInfClosed_countableInfClosure.infClosed (subset_countableInfClosure ha)
-    (subset_countableInfClosure hb)
+  infClosed_countableInfClosure (subset_countableInfClosure ha) (subset_countableInfClosure hb)
 
-lemma iInf_mem_countableInfClosure [Countable ι] {A : ι → α} (hA : ∀ n, A n ∈ s) :
+lemma iInf_mem_countableInfClosure [Countable ι] [Nonempty ι] {A : ι → α} (hA : ∀ n, A n ∈ s) :
     (⨅ n, A n) ∈ countableInfClosure s :=
   countableInfClosed_countableInfClosure.iInf_mem (fun n ↦ subset_countableInfClosure (hA n))
 
 lemma finsetInf'_mem_countableInfClosure {ι : Type*} {t : Finset ι} (ht : t.Nonempty) {f : ι → α}
     (hf : ∀ i ∈ t, f i ∈ s) : t.inf' ht f ∈ countableInfClosure s :=
-  countableInfClosed_countableInfClosure.infClosed.finsetInf'_mem _
-    fun _i hi ↦ subset_countableInfClosure <| hf _ hi
+  infClosed_countableInfClosure.finsetInf'_mem _ fun _i hi ↦ subset_countableInfClosure <| hf _ hi
 
 lemma countableInfClosure_min : s ⊆ t → CountableInfClosed t → countableInfClosure s ⊆ t :=
   countableInfClosure.closure_min
 
-@[simp] lemma countableInfClosure_prod (hs : ⊤ ∈ s) (ht : ⊤ ∈ t) :
+@[simp] lemma countableInfClosure_prod (s : Set α) (t : Set β) :
     countableInfClosure (s ×ˢ t) = countableInfClosure s ×ˢ countableInfClosure t :=
   le_antisymm (countableInfClosure_min
     (Set.prod_mono subset_countableInfClosure subset_countableInfClosure) <|
     countableInfClosed_countableInfClosure.prod countableInfClosed_countableInfClosure) <| by
       rintro ⟨_, _⟩ ⟨⟨u, hu, rfl⟩, v, hv, rfl⟩
-      refine ⟨fun n ↦ (u n, v n), fun n ↦ ?_, ?_⟩
-      · simp only [Set.mem_prod]
-        refine .inl ⟨?_, ?_⟩
-        · cases hu n with
-          | inl hu => exact hu
-          | inr hu => rwa [hu]
-        · cases hv n with
-          | inl hv => exact hv
-          | inr hv => rwa [hv]
-      · rw [Prod.iInf_mk]
+      exact ⟨fun n ↦ (u n, v n), fun n ↦ ⟨hu n, hv n⟩, by rw [Prod.iInf_mk]⟩
 
 end CompleteLattice
 
@@ -415,12 +373,7 @@ protected lemma SupClosed.countableInfClosure [Order.Coframe α] (hs : SupClosed
   rw [iInf_sup_iInf]
   refine ⟨fun n ↦ t (Nat.unpair n).1 ⊔ u (Nat.unpair n).2, fun n ↦ ?_, ?_⟩
   · simp only
-    cases ht (Nat.unpair n).1 with
-    | inr ht => simp [ht]
-    | inl ht =>
-      cases hu (Nat.unpair n).2 with
-      | inr hu => simp [hu]
-      | inl hu => left; exact hs ht hu
+    exact hs (ht (Nat.unpair n).1) (hu (Nat.unpair n).2)
   · rw [iInf_unpair (f := (fun n m ↦ t n ⊔ u m)), iInf_prod']
 
 protected lemma InfClosed.countableSupClosure [Order.Frame α] (hs : InfClosed s) :
@@ -429,12 +382,7 @@ protected lemma InfClosed.countableSupClosure [Order.Frame α] (hs : InfClosed s
   rw [iSup_inf_iSup]
   refine ⟨fun n ↦ t (Nat.unpair n).1 ⊓ u (Nat.unpair n).2, fun n ↦ ?_, ?_⟩
   · simp only
-    cases ht (Nat.unpair n).1 with
-    | inr ht => simp [ht]
-    | inl ht =>
-      cases hu (Nat.unpair n).2 with
-      | inr hu => simp [hu]
-      | inl hu => left; exact hs ht hu
+    exact hs (ht (Nat.unpair n).1) (hu (Nat.unpair n).2)
   · rw [iSup_unpair (f := (fun n m ↦ t n ⊓ u m)), iSup_prod']
 
 end Frame
