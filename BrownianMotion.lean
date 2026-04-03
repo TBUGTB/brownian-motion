@@ -25,6 +25,7 @@ import BrownianMotion.Auxiliary.WithTop
 import BrownianMotion.Choquet.AnalyticSet
 import BrownianMotion.Choquet.Capacity
 import BrownianMotion.Choquet.CompactSystem
+import BrownianMotion.Choquet.CountableClosed
 import BrownianMotion.Continuity.Chaining
 import BrownianMotion.Continuity.CoveringNumber
 import BrownianMotion.Continuity.HasBoundedInternalCoveringNumber
