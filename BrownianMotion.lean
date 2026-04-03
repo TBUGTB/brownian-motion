@@ -31,7 +31,6 @@ import BrownianMotion.Continuity.HasBoundedInternalCoveringNumber
 import BrownianMotion.Continuity.IsKolmogorovProcess
 import BrownianMotion.Continuity.KolmogorovChentsov
 import BrownianMotion.Continuity.KolmogorovChentsovInequality
-import BrownianMotion.Debut.Approximation
 import BrownianMotion.Debut.Basic
 import BrownianMotion.Gaussian.BrownianMotion
 import BrownianMotion.Gaussian.CovMatrix

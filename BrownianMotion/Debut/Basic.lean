@@ -453,6 +453,24 @@ lemma isStoppingTime_leastGE [MeasurableSpace ι] [ConditionallyCompleteLinearOr
     IsStoppingTime 𝓕 (leastGE X r) :=
   isStoppingTime_hittingAfter' h𝓕 hX measurableSet_Ici _
 
+/-- `leastGT f r` is the stopping time corresponding to the first time `f ≥ r`. -/
+noncomputable def leastGT {ι Ω β : Type*} [Preorder ι] [OrderBot ι] [InfSet ι] [Preorder β]
+    (f : ι → Ω → β) (r : β) : Ω → WithTop ι :=
+  hittingAfter f (Set.Ioi r) ⊥
+
+lemma leastGT_lt_iff {ι β : Type*} [ConditionallyCompleteLinearOrder ι] [OrderBot ι] [Preorder β]
+    (X : ι → Ω → β) (a : β) (t : ι) (ω : Ω) :
+    leastGT X a ω < t ↔ ∃ s < t, a < X s ω := by simp [leastGT, hittingAfter_lt_iff']
+
+lemma isStoppingTime_leastGT [MeasurableSpace ι] [ConditionallyCompleteLinearOrder ι]
+    [OrderBot ι] [TopologicalSpace ι] [OrderTopology ι] [PolishSpace ι] [BorelSpace ι]
+    {β : Type*} [LinearOrder β] [TopologicalSpace β] [ClosedIicTopology β]
+    [MeasurableSpace β] [TopologicalSpace.PseudoMetrizableSpace β] [BorelSpace β]
+    {P : Measure Ω} [IsFiniteMeasure P] {𝓕 : Filtration ι mΩ} (h𝓕 : 𝓕.HasUsualConditions P)
+    {X : ι → Ω → β} (hX : ProgMeasurable 𝓕 X) (r : β) :
+    IsStoppingTime 𝓕 (leastGT X r) :=
+  isStoppingTime_hittingAfter' h𝓕 hX measurableSet_Ioi _
+
 end HittingTime
 
 end MeasureTheory
