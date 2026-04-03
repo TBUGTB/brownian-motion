@@ -83,11 +83,11 @@ def Capacity.comp_fst (hp_empty : ∅ ∈ p) (hp_union : SupClosed p)
     simp_rw [hf_eq, Set.image_iUnion]
     have hS : ∀ i ∈ S, p (Prod.fst '' u i) := by
       intro i hi
-      obtain ⟨A, B, hA, hB, h_eq⟩ := hu_prod i hi
+      obtain ⟨A, hA, B, hB, h_eq⟩ := hu_prod i hi
       rcases Set.eq_empty_or_nonempty B with hB | hB
       · simp only [hB, Set.prod_empty] at h_eq
-        simpa [h_eq]
-      · rwa [h_eq, Set.fst_image_prod _ hB]
+        simpa [← h_eq]
+      · rwa [← h_eq, Set.fst_image_prod _ hB]
     clear hf_eq
     induction S using Finset.induction with
     | empty => simpa
@@ -157,11 +157,11 @@ lemma memDelta_fst {s : Set (𝓧 × 𝓚)}
   | insert a s has h =>
     rw [Finset.set_biUnion_insert]
     refine hp_union ?_ (h ?_)
-    · obtain ⟨u, v, hu, hv, h_eq⟩ := hB a (Finset.mem_insert_self a s)
+    · obtain ⟨u, hu, v, hv, h_eq⟩ := hB a (Finset.mem_insert_self a s)
       rcases Set.eq_empty_or_nonempty v with hv | hv
       · simp only [hv, Set.prod_empty] at h_eq
-        simpa [h_eq]
-      · simpa [h_eq, Set.fst_image_prod _ hv]
+        simpa [← h_eq]
+      · simpa [← h_eq, Set.fst_image_prod _ hv]
     · exact fun i hi ↦ hB i (Finset.mem_insert_of_mem hi)
 
 lemma IsCapacitable.fst (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
@@ -183,7 +183,7 @@ theorem IsPavingAnalyticFor.isCapacitable (hp_empty : ∅ ∈ p) (hp_inter : Inf
   have hq' : IsCompactSystem (memFiniteInter q) := hq.memFiniteInter
   refine IsCapacitable.fst hp_empty hp_inter hp_union m hq'_empty hq'_inter hq' ?_
   refine isCapacitable_memDelta_memSigma _ ?_ ?_ ?_ ?_
-  · exact memFiniteUnion_of_mem ⟨∅, ∅, hp_empty, hq'_empty, by simp⟩
+  · exact memFiniteUnion_of_mem ⟨∅, hp_empty, ∅, hq'_empty, by simp⟩
   · exact InfClosed.memFiniteUnion (hp_inter.memProd hq'_inter)
   · exact fun s hs t ht ↦ memFiniteUnion.union hs ht
   · obtain ⟨B, hB, rfl⟩ := hA

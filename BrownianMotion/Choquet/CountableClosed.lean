@@ -5,486 +5,436 @@ Authors: Rémy Degenne
 -/
 
 import Mathlib.Data.Countable.Defs
+import Mathlib.Data.Nat.Pairing
 import Mathlib.Order.SupClosed
 
 /-!
-# Sets closed under join/meet
+# Sets closed under countable join/meet
 
-This file defines predicates for sets closed under `⊔` and shows that each set in a join-semilattice
-generates a join-closed set and that a semilattice where every directed set has a least upper bound
-is automatically complete. All dually for `⊓`.
+This file defines predicates for sets closed under countable `⊔` and dually for countable `⊓`.
 
 ## Main declarations
 
-* `SupClosed`: Predicate for a set to be closed under join (`a ∈ s` and `b ∈ s` imply `a ⊔ b ∈ s`).
-* `InfClosed`: Predicate for a set to be closed under meet (`a ∈ s` and `b ∈ s` imply `a ⊓ b ∈ s`).
-* `IsSublattice`: Predicate for a set to be closed under meet and join.
-* `supClosure`: Sup-closure. Smallest sup-closed set containing a given set.
-* `infClosure`: Inf-closure. Smallest inf-closed set containing a given set.
-* `latticeClosure`: Smallest sublattice containing a given set.
-* `SemilatticeSup.toCompleteSemilatticeSup`: A join-semilattice where every sup-closed set has a
-  least upper bound is automatically complete.
-* `SemilatticeInf.toCompleteSemilatticeInf`: A meet-semilattice where every inf-closed set has a
-  greatest lower bound is automatically complete.
+* `CountableSupClosed`: Predicate for a set to be closed under countable join.
+* `CountableInfClosed`: Predicate for a set to be closed under countable meet.
+* `countableSupClosure`: countable Sup-closure. Smallest countable sup-closed set containing
+  a given set.
+* `countableInfClosure`: countable Inf-closure. Smallest countable inf-closed set containing
+  a given set.
+
+## Implementation notes
+
+The list of properties in this file is copied and adapted from the file about `SupClosed`.
+We should keep these files in sync.
+
 -/
 
-variable {ι : Sort*} {F α β : Type*}
+variable {ι : Sort*} {α β : Type*} {S : Set (Set α)} {s t : Set α} {a b : α}
 
-section SemilatticeSup
+section CompleteLattice
+
+variable [CompleteLattice α] [CompleteLattice β]
 
 section Set
-variable {ι : Sort*} {S : Set (Set α)} {f : ι → Set α} {s t : Set α} {a : α}
 open Set
 
-/-- A set `s` is *countably sup-closed* if `⨆ n, A n ∈ s` for all `A : ℕ → α` with `A n ∈ s`. -/
-def CountableSupClosed [SupSet α] (s : Set α) : Prop := ∀ ⦃A : ℕ → α⦄, (∀ n, A n ∈ s) → ⨆ n, A n ∈ s
+/-- A set `s` is *countably sup-closed* if `⨆ n, A n ∈ s` for all `A : ι → α` with `ι` countable
+and `A n ∈ s` for all `n`.
 
-lemma CountableSupClosed.iSup_mem_of_nonempty {ι : Type*} [hι : Countable ι] [Nonempty ι] [SupSet α]
-    (hs : CountableSupClosed s) (A : ι → α) (hA : ∀ n, A n ∈ s) :
+The definition uses `ι = ℕ` and the empty case (`⊥ ∈ s`).
+See `CountableSupClosed.iSup_mem` for a supremum over any countable type. -/
+structure CountableSupClosed [CompleteLattice α] (s : Set α) : Prop where
+  iSup_nat_mem : ∀ ⦃A : ℕ → α⦄ (_hA : ∀ n, A n ∈ s), ⨆ n, A n ∈ s
+  bot_mem : ⊥ ∈ s
+
+lemma CountableSupClosed.iSup_mem [hι : Countable ι]
+    (hs : CountableSupClosed s) {A : ι → α} (hA : ∀ n, A n ∈ s) :
     (⨆ n, A n) ∈ s := by
-  obtain ⟨g, hg⟩ := countable_iff_exists_surjective.mp hι
-  have : ⨆ i, A i = ⨆ n, A (g n) := by rw [Function.Surjective.iSup_comp hg]
-  rw [this]
-  exact hs (fun n ↦ hA (g n))
+  rcases isEmpty_or_nonempty ι with hι_empty | hι_nonempty
+  · rw [iSup_of_empty]
+    exact hs.bot_mem
+  · obtain ⟨g, hg⟩ := countable_iff_exists_surjective.mp hι
+    have : ⨆ i, A i = ⨆ n, A (g n) := by rw [Function.Surjective.iSup_comp hg]
+    rw [this]
+    exact hs.iSup_nat_mem (fun n ↦ hA (g n))
 
-lemma CountableSupClosed.iSup_mem {ι : Type*} [hι : Countable ι] [CompleteLattice α]
-    (hs : CountableSupClosed s) (h_bot : ⊥ ∈ s) (A : ι → α) (hA : ∀ n, A n ∈ s) :
-    (⨆ n, A n) ∈ s := by
-  cases isEmpty_or_nonempty ι
-  · rwa [iSup_of_empty]
-  · exact hs.iSup_mem_of_nonempty A hA
-
-lemma CountableSupClosed.sSup_mem_of_nonempty [SupSet α] (hs : CountableSupClosed s)
-    (A : Set α) [Countable A] [Nonempty A] (hA : ∀ a ∈ A, a ∈ s) :
+lemma CountableSupClosed.sSup_mem (hs : CountableSupClosed s)
+    (A : Set α) [Countable A] (hA : ∀ a ∈ A, a ∈ s) :
     sSup A ∈ s := by
   rw [sSup_eq_iSup']
-  exact hs.iSup_mem_of_nonempty (fun (a : A) ↦ a) fun a ↦ hA a a.2
+  exact hs.iSup_mem fun a ↦ hA a a.2
 
-lemma CountableSupClosed.sSup_mem [CompleteLattice α] (hs : CountableSupClosed s)
-    (h_bot : ⊥ ∈ s) (A : Set α) [Countable A] (hA : ∀ a ∈ A, a ∈ s) :
-    sSup A ∈ s := by
-  rcases eq_empty_or_nonempty A with rfl | hA_nonempty
-  · simpa
-  · have : Nonempty A := Set.nonempty_coe_sort.mpr hA_nonempty
-    exact hs.sSup_mem_of_nonempty A hA
-
-lemma CountableSupClosed.supClosed [ConditionallyCompleteLattice α] (hs : CountableSupClosed s) :
-    SupClosed s := by
+lemma CountableSupClosed.supClosed (hs : CountableSupClosed s) : SupClosed s := by
   intro a ha b hb
   have : a ⊔ b = sSup {a, b} := by simp
   rw [this]
-  exact hs.sSup_mem_of_nonempty (A := {a, b}) (fun u ↦ by grind)
+  exact hs.sSup_mem (A := {a, b}) (fun u ↦ by grind)
 
-@[simp] lemma countableSupClosed_empty [SupSet α] : CountableSupClosed (∅ : Set α) := by
-  simp [CountableSupClosed]
+@[simp] lemma countableSupClosed_singleton_bot : CountableSupClosed ({⊥} : Set α) where
+  iSup_nat_mem A hA := by
+    simp only [mem_singleton_iff] at hA
+    simp [hA]
+  bot_mem := by simp
 
-@[simp] lemma countableSupClosed_singleton [ConditionallyCompletePartialOrderSup α] :
-    CountableSupClosed ({a} : Set α) := by
-  simp only [CountableSupClosed, mem_singleton_iff]
-  intro A hA
-  simp [hA]
+@[simp] lemma countableSupClosed_univ : CountableSupClosed (univ : Set α) where
+  iSup_nat_mem A hA := by simp
+  bot_mem := by simp
 
-@[simp] lemma countableSupClosed_univ [SupSet α] : CountableSupClosed (univ : Set α) := by
-  simp [CountableSupClosed]
+lemma CountableSupClosed.inter (hs : CountableSupClosed s) (ht : CountableSupClosed t) :
+    CountableSupClosed (s ∩ t) where
+  iSup_nat_mem _ hA := ⟨hs.iSup_nat_mem (fun n ↦ (hA n).1), ht.iSup_nat_mem (fun n ↦ (hA n).2)⟩
+  bot_mem := ⟨hs.bot_mem, ht.bot_mem⟩
 
-lemma CountableSupClosed.inter [SupSet α] (hs : CountableSupClosed s) (ht : CountableSupClosed t) :
-    CountableSupClosed (s ∩ t) :=
-  fun _A hA ↦ ⟨hs (fun n ↦ (hA n).1), ht (fun n ↦ (hA n).2)⟩
+lemma countableSupClosed_sInter (hS : ∀ s ∈ S, CountableSupClosed s) :
+    CountableSupClosed (⋂₀ S) where
+  iSup_nat_mem _ hA := fun _s hs ↦ (hS _ hs).iSup_mem fun n ↦ hA n _ hs
+  bot_mem := by have h s hs := (hS s hs).2; simpa
 
-lemma countableSupClosed_sInter [SupSet α] (hS : ∀ s ∈ S, CountableSupClosed s) :
-    CountableSupClosed (⋂₀ S) :=
-  fun _A hA _s hs ↦ hS _ hs fun n ↦ hA n _ hs
-
-lemma countableSupClosed_iInter [SupSet α] (hf : ∀ i, CountableSupClosed (f i)) :
+lemma countableSupClosed_iInter {f : ι → Set α} (hf : ∀ i, CountableSupClosed (f i)) :
     CountableSupClosed (⋂ i, f i) :=
   countableSupClosed_sInter <| forall_mem_range.2 hf
 
-lemma CountableSupClosed.directedOn [ConditionallyCompleteLattice α] (hs : CountableSupClosed s) :
-    DirectedOn (· ≤ ·) s :=
+lemma CountableSupClosed.directedOn (hs : CountableSupClosed s) : DirectedOn (· ≤ ·) s :=
   hs.supClosed.directedOn
 
-lemma CountableSupClosed.prod [SupSet α] [SupSet β] {t : Set β}
-    (hs : CountableSupClosed s) (ht : CountableSupClosed t) :
-    CountableSupClosed (s ×ˢ t) :=
-  fun _a ha ↦ ⟨by rw [Prod.fst_iSup]; exact hs (fun n ↦ (ha n).1),
-    by rw [Prod.snd_iSup]; exact ht (fun n ↦ (ha n).2)⟩
+lemma CountableSupClosed.prod {t : Set β} (hs : CountableSupClosed s) (ht : CountableSupClosed t) :
+    CountableSupClosed (s ×ˢ t) where
+  iSup_nat_mem _ hA := ⟨by rw [Prod.fst_iSup]; exact hs.iSup_nat_mem (fun n ↦ (hA n).1),
+    by rw [Prod.snd_iSup]; exact ht.iSup_nat_mem (fun n ↦ (hA n).2)⟩
+  bot_mem := ⟨hs.bot_mem, ht.bot_mem⟩
 
 end Set
 
 section Finset
-variable {ι : Type*} {f : ι → α} {s : Set α} {t : Finset ι} {a : α}
-open Finset
+variable {ι : Type*} {f : ι → α} {t : Finset ι}
 
-lemma CountableSupClosed.finsetSup'_mem [ConditionallyCompleteLattice α]
-    (hs : CountableSupClosed s) (ht : t.Nonempty) :
+lemma CountableSupClosed.finsetSup'_mem (hs : CountableSupClosed s) (ht : t.Nonempty) :
     (∀ i ∈ t, f i ∈ s) → t.sup' ht f ∈ s :=
   hs.supClosed.finsetSup'_mem ht
 
-lemma CountableSupClosed.finsetSup_mem [ConditionallyCompleteLattice α] [OrderBot α]
-    (hs : CountableSupClosed s) (ht : t.Nonempty) :
+lemma CountableSupClosed.finsetSup_mem (hs : CountableSupClosed s) (ht : t.Nonempty) :
     (∀ i ∈ t, f i ∈ s) → t.sup f ∈ s :=
-  sup'_eq_sup ht f ▸ hs.finsetSup'_mem ht
+  Finset.sup'_eq_sup ht f ▸ hs.finsetSup'_mem ht
 
 end Finset
-end SemilatticeSup
-
-section SemilatticeInf
 
 section Set
-variable {ι : Sort*} {S : Set (Set α)} {f : ι → Set α} {s t : Set α} {a : α}
 open Set
 
-/-- A set `s` is *countably inf-closed* if `⨅ n, A n ∈ s` for all `A : ℕ → α` with `A n ∈ s`. -/
-def CountableInfClosed [InfSet α] (s : Set α) : Prop := ∀ ⦃A : ℕ → α⦄, (∀ n, A n ∈ s) → ⨅ n, A n ∈ s
+/-- A set `s` is *countably inf-closed* if `⨅ n, A n ∈ s` for all `A : ι → α` with `ι` countable
+and `A n ∈ s` for all `n`.
 
-lemma CountableInfClosed.iInf_mem_of_nonempty {ι : Type*} [hι : Countable ι] [Nonempty ι] [InfSet α]
-    (hs : CountableInfClosed s) (A : ι → α) (hA : ∀ n, A n ∈ s) :
+The definition uses `ι = ℕ` and the empty case (`⊤ ∈ s`).
+See `CountableInfClosed.iInf_mem` for an infimum over any countable type. -/
+structure CountableInfClosed (s : Set α) : Prop where
+  iInf_nat_mem : ∀ ⦃A : ℕ → α⦄, (∀ n, A n ∈ s) → ⨅ n, A n ∈ s
+  top_mem : ⊤ ∈ s
+
+lemma CountableInfClosed.iInf_mem [hι : Countable ι]
+    (hs : CountableInfClosed s) {A : ι → α} (hA : ∀ n, A n ∈ s) :
     (⨅ n, A n) ∈ s := by
+  rcases isEmpty_or_nonempty ι with hι_empty | hι_nonempty
+  · rw [iInf_of_empty]
+    exact hs.top_mem
   obtain ⟨g, hg⟩ := countable_iff_exists_surjective.mp hι
   have : ⨅ i, A i = ⨅ n, A (g n) := by rw [Function.Surjective.iInf_comp hg]
   rw [this]
-  exact hs (fun n ↦ hA (g n))
+  exact hs.iInf_nat_mem (fun n ↦ hA (g n))
 
-lemma CountableInfClosed.iInf_mem {ι : Type*} [hι : Countable ι] [CompleteLattice α]
-    (hs : CountableInfClosed s) (h_top : ⊤ ∈ s) (A : ι → α) (hA : ∀ n, A n ∈ s) :
-    (⨅ n, A n) ∈ s := by
-  cases isEmpty_or_nonempty ι
-  · rwa [iInf_of_empty]
-  · exact hs.iInf_mem_of_nonempty A hA
-
-lemma CountableInfClosed.sInf_mem_of_nonempty [InfSet α] (hs : CountableInfClosed s)
-    (A : Set α) [Countable A] [Nonempty A] (hA : ∀ a ∈ A, a ∈ s) :
+lemma CountableInfClosed.sInf_mem (hs : CountableInfClosed s)
+    (A : Set α) [Countable A] (hA : ∀ a ∈ A, a ∈ s) :
     sInf A ∈ s := by
   rw [sInf_eq_iInf']
-  exact hs.iInf_mem_of_nonempty (fun (a : A) ↦ a) fun a ↦ hA a a.2
+  exact hs.iInf_mem fun a ↦ hA a a.2
 
-lemma CountableInfClosed.sInf_mem [CompleteLattice α] (hs : CountableInfClosed s)
-    (h_top : ⊤ ∈ s) (A : Set α) [Countable A] (hA : ∀ a ∈ A, a ∈ s) :
-    sInf A ∈ s := by
-  rcases eq_empty_or_nonempty A with rfl | hA_nonempty
-  · simpa
-  · have : Nonempty A := Set.nonempty_coe_sort.mpr hA_nonempty
-    exact hs.sInf_mem_of_nonempty A hA
-
-lemma CountableInfClosed.infClosed [ConditionallyCompleteLattice α] (hs : CountableInfClosed s) :
-    InfClosed s := by
+lemma CountableInfClosed.infClosed (hs : CountableInfClosed s) : InfClosed s := by
   intro a ha b hb
   have : a ⊓ b = sInf {a, b} := by simp
   rw [this]
-  exact hs.sInf_mem_of_nonempty (A := {a, b}) (fun u ↦ by grind)
+  exact hs.sInf_mem _ (fun u ↦ by grind)
 
-@[simp] lemma countableInfClosed_empty [InfSet α] : CountableInfClosed (∅ : Set α) := by
-  simp [CountableInfClosed]
+@[simp] lemma countableInfClosed_singleton_top : CountableInfClosed ({⊤} : Set α) where
+  iInf_nat_mem _ hA := by
+    simp only [mem_singleton_iff] at hA
+    simp [hA]
+  top_mem := by simp
 
-@[simp] lemma countableInfClosed_singleton [ConditionallyCompletePartialOrderInf α] :
-    CountableInfClosed ({a} : Set α) := by
-  simp only [CountableInfClosed, mem_singleton_iff]
-  intro A hA
-  simp [hA]
+@[simp] lemma countableInfClosed_univ : CountableInfClosed (univ : Set α) where
+  iInf_nat_mem _ hA := by simp
+  top_mem := by simp
 
-@[simp] lemma countableInfClosed_univ [InfSet α] : CountableInfClosed (univ : Set α) := by
-  simp [CountableInfClosed]
+lemma CountableInfClosed.inter (hs : CountableInfClosed s) (ht : CountableInfClosed t) :
+    CountableInfClosed (s ∩ t) where
+  iInf_nat_mem _ hA := ⟨hs.iInf_mem (fun n ↦ (hA n).1), ht.iInf_mem (fun n ↦ (hA n).2)⟩
+  top_mem := ⟨hs.top_mem, ht.top_mem⟩
 
-lemma CountableInfClosed.inter [InfSet α] (hs : CountableInfClosed s) (ht : CountableInfClosed t) :
-    CountableInfClosed (s ∩ t) :=
-  fun _A hA ↦ ⟨hs (fun n ↦ (hA n).1), ht (fun n ↦ (hA n).2)⟩
+lemma countableInfClosed_sInter (hS : ∀ s ∈ S, CountableInfClosed s) :
+    CountableInfClosed (⋂₀ S) where
+  iInf_nat_mem _ hA := fun _s hs ↦ (hS _ hs).iInf_mem fun n ↦ hA n _ hs
+  top_mem := by have h s hs := (hS s hs).2; simpa
 
-lemma countableInfClosed_sInter [InfSet α] (hS : ∀ s ∈ S, CountableInfClosed s) :
-    CountableInfClosed (⋂₀ S) :=
-  fun _A hA _s hs ↦ hS _ hs fun n ↦ hA n _ hs
-
-lemma countableInfClosed_iInter [InfSet α] (hf : ∀ i, CountableInfClosed (f i)) :
+lemma countableInfClosed_iInter {f : ι → Set α} (hf : ∀ i, CountableInfClosed (f i)) :
     CountableInfClosed (⋂ i, f i) :=
   countableInfClosed_sInter <| forall_mem_range.2 hf
 
-lemma CountableInfClosed.prod [InfSet α] [InfSet β] {t : Set β}
-    (hs : CountableInfClosed s) (ht : CountableInfClosed t) :
-    CountableInfClosed (s ×ˢ t) :=
-  fun _a ha ↦ ⟨by rw [Prod.fst_iInf]; exact hs (fun n ↦ (ha n).1),
-    by rw [Prod.snd_iInf]; exact ht (fun n ↦ (ha n).2)⟩
+lemma CountableInfClosed.prod {t : Set β} (hs : CountableInfClosed s) (ht : CountableInfClosed t) :
+    CountableInfClosed (s ×ˢ t) where
+  iInf_nat_mem _ hA := ⟨by rw [Prod.fst_iInf]; exact hs.iInf_mem (fun n ↦ (hA n).1),
+    by rw [Prod.snd_iInf]; exact ht.iInf_mem (fun n ↦ (hA n).2)⟩
+  top_mem := ⟨hs.top_mem, ht.top_mem⟩
 
 end Set
 
 section Finset
-variable {ι : Type*} {f : ι → α} {s : Set α} {t : Finset ι} {a : α}
-open Finset
+variable {ι : Type*} {f : ι → α} {t : Finset ι}
 
-lemma CountableInfClosed.finsetInf'_mem [ConditionallyCompleteLattice α]
-    (hs : CountableInfClosed s) (ht : t.Nonempty) :
+lemma CountableInfClosed.finsetInf'_mem (hs : CountableInfClosed s) (ht : t.Nonempty) :
     (∀ i ∈ t, f i ∈ s) → t.inf' ht f ∈ s :=
   hs.infClosed.finsetInf'_mem ht
 
-lemma CountableInfClosed.finsetInf_mem [ConditionallyCompleteLattice α] [OrderTop α]
-    (hs : CountableInfClosed s) (ht : t.Nonempty) :
+lemma CountableInfClosed.finsetInf_mem (hs : CountableInfClosed s) (ht : t.Nonempty) :
     (∀ i ∈ t, f i ∈ s) → t.inf f ∈ s :=
-  inf'_eq_inf ht f ▸ hs.finsetInf'_mem ht
+  Finset.inf'_eq_inf ht f ▸ hs.finsetInf'_mem ht
 
 end Finset
-end SemilatticeInf
 
-
-open Finset OrderDual
-
-section Lattice
-variable {ι : Sort*} [ConditionallyCompleteLattice α] [ConditionallyCompleteLattice β]
-  {S : Set (Set α)} {f : ι → Set α} {s t : Set α} {a : α}
-
-open Set
+open OrderDual
 
 @[simp] lemma countableSupClosed_preimage_toDual {s : Set αᵒᵈ} :
-    CountableSupClosed (toDual ⁻¹' s) ↔ CountableInfClosed s := Iff.rfl
+    CountableSupClosed (toDual ⁻¹' s) ↔ CountableInfClosed s :=
+  ⟨fun h ↦ ⟨h.iSup_nat_mem, h.bot_mem⟩, fun h ↦ ⟨h.iInf_nat_mem, h.top_mem⟩⟩
 
 @[simp] lemma countableInfClosed_preimage_toDual {s : Set αᵒᵈ} :
-    CountableInfClosed (toDual ⁻¹' s) ↔ CountableSupClosed s := Iff.rfl
+    CountableInfClosed (toDual ⁻¹' s) ↔ CountableSupClosed s :=
+  ⟨fun h ↦ ⟨h.iInf_nat_mem, h.top_mem⟩, fun h ↦ ⟨h.iSup_nat_mem, h.bot_mem⟩⟩
 
 @[simp] lemma countableSupClosed_preimage_ofDual {s : Set α} :
-    CountableSupClosed (ofDual ⁻¹' s) ↔ CountableInfClosed s := Iff.rfl
+    CountableSupClosed (ofDual ⁻¹' s) ↔ CountableInfClosed s :=
+  ⟨fun h ↦ ⟨h.iSup_nat_mem, h.bot_mem⟩, fun h ↦ ⟨h.iInf_nat_mem, h.top_mem⟩⟩
 
 @[simp] lemma countableInfClosed_preimage_ofDual {s : Set α} :
-    CountableInfClosed (ofDual ⁻¹' s) ↔ CountableSupClosed s := Iff.rfl
+    CountableInfClosed (ofDual ⁻¹' s) ↔ CountableSupClosed s :=
+  ⟨fun h ↦ ⟨h.iInf_nat_mem, h.top_mem⟩, fun h ↦ ⟨h.iSup_nat_mem, h.bot_mem⟩⟩
 
 alias ⟨_, CountableInfClosed.dual⟩ := countableSupClosed_preimage_ofDual
 alias ⟨_, CountableSupClosed.dual⟩ := countableInfClosed_preimage_ofDual
 
-end Lattice
-
 /-! ## Closure -/
 
-section SemilatticeSup
-variable {s t : Set α} {a b : α}
-
 /-- Every set in a join-semilattice generates a set closed under join. -/
 @[simps! isClosed]
-def countableSupClosure [ConditionallyCompletePartialOrderSup α] :
-    ClosureOperator (Set α) := .ofPred
-  (fun s ↦ {a | ∃ (t : ℕ → α), (∀ n, t n ∈ s) ∧ ⨆ n, t n = a})
+def countableSupClosure : ClosureOperator (Set α) := .ofPred
+  (fun s ↦ {a | ∃ (t : ℕ → α), (∀ n, t n ∈ s ∨ t n = ⊥) ∧ ⨆ n, t n = a})
   CountableSupClosed
-  (fun s a ha ↦ ⟨fun _ ↦ a, by simpa, by rw [ciSup_const]⟩)
+  (fun s a ha ↦ ⟨fun _ ↦ a, by simp only [forall_const]; exact .inl ha, by rw [ciSup_const]⟩)
   (by
-    classical
-    intro x A hA
-    -- todo: extract lemma
-    simp only [Set.mem_setOf_eq] at hA
-    choose B hB hB_eq using hA
+    intro x
+    constructor
+    · intro A hA
+      simp only [Set.mem_setOf_eq] at hA
+      choose B hB hB_eq using hA
+      simp only [Set.mem_setOf_eq]
+      let t n := B (Nat.unpair n).1 (Nat.unpair n).2
+      refine ⟨t, fun _ ↦ hB _ _, ?_⟩
+      simp [t, iSup_unpair, ← hB_eq]
+    · simp only [Set.mem_setOf_eq, iSup_eq_bot]
+      refine ⟨fun _ ↦ ⊥, by simp, by simp⟩)
+  (by
+    rintro s₁ s₂ hs h₂ _ ⟨t, ht, rfl⟩
+    refine h₂.iSup_mem fun n ↦ ?_
+    cases ht n with
+    | inl ht => exact hs ht
+    | inr ht => rw [ht]; exact h₂.bot_mem)
 
-    rintro s _ ⟨t, ht, hts, rfl⟩ _ ⟨u, hu, hus, rfl⟩
-    refine ⟨_, ht.mono subset_union_left, ?_, sup'_union ht hu _⟩
-    rw [coe_union]
-    exact Set.union_subset hts hus)
-  (by rintro s₁ s₂ hs h₂ _ ⟨t, ht, hts, rfl⟩; exact h₂.finsetSup'_mem ht fun i hi ↦ hs <| hts hi)
+@[simp] lemma subset_countableSupClosure {s : Set α} : s ⊆ countableSupClosure s :=
+  countableSupClosure.le_closure _
 
-@[simp] lemma subset_supClosure {s : Set α} : s ⊆ supClosure s := supClosure.le_closure _
+@[simp] lemma countableSupClosed_countableSupClosure : CountableSupClosed (countableSupClosure s) :=
+  countableSupClosure.isClosed_closure _
 
-@[simp] lemma supClosed_supClosure : SupClosed (supClosure s) := supClosure.isClosed_closure _
+lemma countableSupClosure_mono : Monotone (countableSupClosure : Set α → Set α) :=
+  countableSupClosure.monotone
 
-lemma supClosure_mono : Monotone (supClosure : Set α → Set α) := supClosure.monotone
+@[simp] lemma countableSupClosure_eq_self : countableSupClosure s = s ↔ CountableSupClosed s :=
+  countableSupClosure.isClosed_iff.symm
 
-@[simp] lemma supClosure_eq_self : supClosure s = s ↔ SupClosed s := supClosure.isClosed_iff.symm
+alias ⟨_, CountableSupClosed.countableSupClosure_eq⟩ := countableSupClosure_eq_self
 
-alias ⟨_, SupClosed.supClosure_eq⟩ := supClosure_eq_self
+lemma countableSupClosure_idem (s : Set α) : countableSupClosure (countableSupClosure s) =
+    countableSupClosure s :=
+  countableSupClosure.idempotent _
 
-lemma supClosure_idem (s : Set α) : supClosure (supClosure s) = supClosure s :=
-  supClosure.idempotent _
+@[simp] lemma countableSupClosure_singleton_bot : countableSupClosure {(⊥ : α)} = {⊥} := by simp
+@[simp] lemma countableSupClosure_univ : countableSupClosure (Set.univ : Set α) = Set.univ := by
+  simp
 
-@[simp] lemma supClosure_empty : supClosure (∅ : Set α) = ∅ := by simp
-@[simp] lemma supClosure_singleton : supClosure {a} = {a} := by simp
-@[simp] lemma supClosure_univ : supClosure (Set.univ : Set α) = Set.univ := by simp
+@[simp] lemma upperBounds_countableSupClosure (s : Set α) :
+    upperBounds (countableSupClosure s) = upperBounds s :=
+  (upperBounds_mono_set subset_countableSupClosure).antisymm <| by
+    rintro a ha _ ⟨t, ht, rfl⟩
+    refine iSup_le fun n ↦ ?_
+    cases ht n with
+    | inl ht => exact ha (ht)
+    | inr ht => rw [ht]; exact bot_le
 
-@[simp] lemma upperBounds_supClosure (s : Set α) : upperBounds (supClosure s) = upperBounds s :=
-  (upperBounds_mono_set subset_supClosure).antisymm <| by
-    rintro a ha _ ⟨t, ht, hts, rfl⟩
-    exact sup'_le _ _ fun b hb ↦ ha <| hts hb
+@[simp] lemma isLUB_countableSupClosure : IsLUB (countableSupClosure s) a ↔ IsLUB s a := by
+  simp [IsLUB]
 
-@[simp] lemma isLUB_supClosure : IsLUB (supClosure s) a ↔ IsLUB s a := by simp [IsLUB]
+lemma sup_mem_countableSupClosure (ha : a ∈ s) (hb : b ∈ s) : a ⊔ b ∈ countableSupClosure s :=
+  countableSupClosed_countableSupClosure.supClosed (subset_countableSupClosure ha)
+    (subset_countableSupClosure hb)
 
-lemma sup_mem_supClosure (ha : a ∈ s) (hb : b ∈ s) : a ⊔ b ∈ supClosure s :=
-  supClosed_supClosure (subset_supClosure ha) (subset_supClosure hb)
+lemma iSup_mem_countableSupClosure [Countable ι] {A : ι → α} (hA : ∀ n, A n ∈ s) :
+    (⨆ n, A n) ∈ countableSupClosure s :=
+  countableSupClosed_countableSupClosure.iSup_mem (fun n ↦ subset_countableSupClosure (hA n))
 
-lemma finsetSup'_mem_supClosure {ι : Type*} {t : Finset ι} (ht : t.Nonempty) {f : ι → α}
-    (hf : ∀ i ∈ t, f i ∈ s) : t.sup' ht f ∈ supClosure s :=
-  supClosed_supClosure.finsetSup'_mem _ fun _i hi ↦ subset_supClosure <| hf _ hi
+lemma finsetSup'_mem_countableSupClosure {ι : Type*} {t : Finset ι} (ht : t.Nonempty) {f : ι → α}
+    (hf : ∀ i ∈ t, f i ∈ s) : t.sup' ht f ∈ countableSupClosure s :=
+  countableSupClosed_countableSupClosure.supClosed.finsetSup'_mem _
+    fun _i hi ↦ subset_countableSupClosure <| hf _ hi
 
-lemma supClosure_min : s ⊆ t → SupClosed t → supClosure s ⊆ t := supClosure.closure_min
+lemma countableSupClosure_min : s ⊆ t → CountableSupClosed t → countableSupClosure s ⊆ t :=
+  countableSupClosure.closure_min
 
-/-- The semilattice generated by a finite set is finite. -/
-protected lemma Set.Finite.supClosure (hs : s.Finite) : (supClosure s).Finite := by
-  lift s to Finset α using hs
-  classical
-  refine ({t ∈ s.powerset | t.Nonempty}.attach.image
-    fun t ↦ t.1.sup' (mem_filter.1 t.2).2 id).finite_toSet.subset ?_
-  rintro _ ⟨t, ht, hts, rfl⟩
-  simp only [id_eq, coe_image, mem_image, mem_coe, mem_attach, true_and, Subtype.exists,
-    Finset.mem_powerset, mem_filter]
-  exact ⟨t, ⟨hts, ht⟩, rfl⟩
-
-@[simp] lemma supClosure_prod (s : Set α) (t : Set β) :
-    supClosure (s ×ˢ t) = supClosure s ×ˢ supClosure t :=
-  le_antisymm (supClosure_min (Set.prod_mono subset_supClosure subset_supClosure) <|
-    supClosed_supClosure.prod supClosed_supClosure) <| by
-      rintro ⟨_, _⟩ ⟨⟨u, hu, hus, rfl⟩, v, hv, hvt, rfl⟩
-      refine ⟨u ×ˢ v, hu.product hv, ?_, ?_⟩
-      · simpa only [coe_product] using Set.prod_mono hus hvt
-      · simp [prodMk_sup'_sup']
-
-end SemilatticeSup
-
-section SemilatticeInf
-variable [SemilatticeInf α] [SemilatticeInf β] {s t : Set α} {a b : α}
+@[simp] lemma countableSupClosure_prod (hs : ⊥ ∈ s) (ht : ⊥ ∈ t) :
+    countableSupClosure (s ×ˢ t) = countableSupClosure s ×ˢ countableSupClosure t :=
+  le_antisymm (countableSupClosure_min
+    (Set.prod_mono subset_countableSupClosure subset_countableSupClosure) <|
+    countableSupClosed_countableSupClosure.prod countableSupClosed_countableSupClosure) <| by
+      rintro ⟨_, _⟩ ⟨⟨u, hu, rfl⟩, v, hv, rfl⟩
+      refine ⟨fun n ↦ (u n, v n), fun n ↦ ?_, ?_⟩
+      · simp only [Set.mem_prod]
+        refine .inl ⟨?_, ?_⟩
+        · cases hu n with
+          | inl hu => exact hu
+          | inr hu => rwa [hu]
+        · cases hv n with
+          | inl hv => exact hv
+          | inr hv => rwa [hv]
+      · rw [Prod.iSup_mk]
 
 /-- Every set in a join-semilattice generates a set closed under join. -/
 @[simps! isClosed]
-def infClosure : ClosureOperator (Set α) := ClosureOperator.ofPred
-  (fun s ↦ {a | ∃ (t : Finset α) (ht : t.Nonempty), ↑t ⊆ s ∧ t.inf' ht id = a})
-  InfClosed
-  (fun s a ha ↦ ⟨{a}, singleton_nonempty _, by simpa⟩)
+def countableInfClosure : ClosureOperator (Set α) := ClosureOperator.ofPred
+  (fun s ↦ {a | ∃ (t : ℕ → α), (∀ n, t n ∈ s ∨ t n = ⊤) ∧ ⨅ n, t n = a})
+  CountableInfClosed
+  (fun s a ha ↦ ⟨fun _ ↦ a, by simp only [forall_const]; exact .inl ha, by rw [ciInf_const]⟩)
   (by
-    classical
-    rintro s _ ⟨t, ht, hts, rfl⟩ _ ⟨u, hu, hus, rfl⟩
-    refine ⟨_, ht.mono subset_union_left, ?_, inf'_union ht hu _⟩
-    rw [coe_union]
-    exact Set.union_subset hts hus)
-  (by rintro s₁ s₂ hs h₂ _ ⟨t, ht, hts, rfl⟩; exact h₂.finsetInf'_mem ht fun i hi ↦ hs <| hts hi)
+    intro x
+    constructor
+    · intro A hA
+      simp only [Set.mem_setOf_eq] at hA
+      choose B hB hB_eq using hA
+      simp only [Set.mem_setOf_eq]
+      let t n := B (Nat.unpair n).1 (Nat.unpair n).2
+      refine ⟨t, fun _ ↦ hB _ _, ?_⟩
+      simp [t, iInf_unpair, ← hB_eq]
+    · simp only [Set.mem_setOf_eq, iInf_eq_top]
+      refine ⟨fun _ ↦ ⊤, by simp, by simp⟩)
+  (by
+    rintro s₁ s₂ hs h₂ _ ⟨t, ht, rfl⟩
+    refine h₂.iInf_mem fun n ↦ ?_
+    cases ht n with
+    | inl ht => exact hs ht
+    | inr ht => rw [ht]; exact h₂.top_mem)
 
-@[simp] lemma subset_infClosure {s : Set α} : s ⊆ infClosure s := infClosure.le_closure _
+@[simp] lemma subset_countableInfClosure {s : Set α} : s ⊆ countableInfClosure s :=
+  countableInfClosure.le_closure _
 
-@[simp] lemma infClosed_infClosure : InfClosed (infClosure s) := infClosure.isClosed_closure _
+@[simp] lemma countableInfClosed_countableInfClosure : CountableInfClosed (countableInfClosure s) :=
+  countableInfClosure.isClosed_closure _
 
-lemma infClosure_mono : Monotone (infClosure : Set α → Set α) := infClosure.monotone
+lemma countableInfClosure_mono : Monotone (countableInfClosure : Set α → Set α) :=
+  countableInfClosure.monotone
 
-@[simp] lemma infClosure_eq_self : infClosure s = s ↔ InfClosed s := infClosure.isClosed_iff.symm
+@[simp] lemma countableInfClosure_eq_self : countableInfClosure s = s ↔ CountableInfClosed s :=
+  countableInfClosure.isClosed_iff.symm
 
-alias ⟨_, InfClosed.infClosure_eq⟩ := infClosure_eq_self
+alias ⟨_, CountableInfClosed.countableInfClosure_eq⟩ := countableInfClosure_eq_self
 
-lemma infClosure_idem (s : Set α) : infClosure (infClosure s) = infClosure s :=
-  infClosure.idempotent _
+lemma countableInfClosure_idem (s : Set α) :
+    countableInfClosure (countableInfClosure s) = countableInfClosure s :=
+  countableInfClosure.idempotent _
 
-@[simp] lemma infClosure_empty : infClosure (∅ : Set α) = ∅ := by simp
-@[simp] lemma infClosure_singleton : infClosure {a} = {a} := by simp
-@[simp] lemma infClosure_univ : infClosure (Set.univ : Set α) = Set.univ := by simp
+@[simp] lemma countableInfClosure_singleton_top : countableInfClosure {(⊤ : α)} = {⊤} := by simp
+@[simp] lemma countableInfClosure_univ : countableInfClosure (Set.univ : Set α) = Set.univ := by
+  simp
 
-@[simp] lemma lowerBounds_infClosure (s : Set α) : lowerBounds (infClosure s) = lowerBounds s :=
-  (lowerBounds_mono_set subset_infClosure).antisymm <| by
-    rintro a ha _ ⟨t, ht, hts, rfl⟩
-    exact le_inf' _ _ fun b hb ↦ ha <| hts hb
+@[simp] lemma lowerBounds_countableInfClosure (s : Set α) :
+    lowerBounds (countableInfClosure s) = lowerBounds s :=
+  (lowerBounds_mono_set subset_countableInfClosure).antisymm <| by
+    rintro a ha _ ⟨t, ht, rfl⟩
+    refine le_iInf fun n ↦ ?_
+    cases ht n with
+    | inl ht => exact ha (ht)
+    | inr ht => rw [ht]; exact le_top
 
-@[simp] lemma isGLB_infClosure : IsGLB (infClosure s) a ↔ IsGLB s a := by simp [IsGLB]
+@[simp] lemma isGLB_countableInfClosure : IsGLB (countableInfClosure s) a ↔ IsGLB s a := by
+  simp [IsGLB]
 
-lemma inf_mem_infClosure (ha : a ∈ s) (hb : b ∈ s) : a ⊓ b ∈ infClosure s :=
-  infClosed_infClosure (subset_infClosure ha) (subset_infClosure hb)
+lemma inf_mem_countableInfClosure (ha : a ∈ s) (hb : b ∈ s) : a ⊓ b ∈ countableInfClosure s :=
+  countableInfClosed_countableInfClosure.infClosed (subset_countableInfClosure ha)
+    (subset_countableInfClosure hb)
 
-lemma finsetInf'_mem_infClosure {ι : Type*} {t : Finset ι} (ht : t.Nonempty) {f : ι → α}
-    (hf : ∀ i ∈ t, f i ∈ s) : t.inf' ht f ∈ infClosure s :=
-  infClosed_infClosure.finsetInf'_mem _ fun _i hi ↦ subset_infClosure <| hf _ hi
+lemma iInf_mem_countableInfClosure [Countable ι] {A : ι → α} (hA : ∀ n, A n ∈ s) :
+    (⨅ n, A n) ∈ countableInfClosure s :=
+  countableInfClosed_countableInfClosure.iInf_mem (fun n ↦ subset_countableInfClosure (hA n))
 
-lemma infClosure_min : s ⊆ t → InfClosed t → infClosure s ⊆ t := infClosure.closure_min
+lemma finsetInf'_mem_countableInfClosure {ι : Type*} {t : Finset ι} (ht : t.Nonempty) {f : ι → α}
+    (hf : ∀ i ∈ t, f i ∈ s) : t.inf' ht f ∈ countableInfClosure s :=
+  countableInfClosed_countableInfClosure.infClosed.finsetInf'_mem _
+    fun _i hi ↦ subset_countableInfClosure <| hf _ hi
 
-/-- The semilattice generated by a finite set is finite. -/
-protected lemma Set.Finite.infClosure (hs : s.Finite) : (infClosure s).Finite := by
-  lift s to Finset α using hs
-  classical
-  refine ({t ∈ s.powerset | t.Nonempty}.attach.image
-    fun t ↦ t.1.inf' (mem_filter.1 t.2).2 id).finite_toSet.subset ?_
-  rintro _ ⟨t, ht, hts, rfl⟩
-  simp only [id_eq, coe_image, mem_image, mem_coe, mem_attach, true_and, Subtype.exists,
-    Finset.mem_powerset, mem_filter]
-  exact ⟨t, ⟨hts, ht⟩, rfl⟩
+lemma countableInfClosure_min : s ⊆ t → CountableInfClosed t → countableInfClosure s ⊆ t :=
+  countableInfClosure.closure_min
 
-@[simp] lemma infClosure_prod (s : Set α) (t : Set β) :
-    infClosure (s ×ˢ t) = infClosure s ×ˢ infClosure t :=
-  le_antisymm (infClosure_min (Set.prod_mono subset_infClosure subset_infClosure) <|
-    infClosed_infClosure.prod infClosed_infClosure) <| by
-      rintro ⟨_, _⟩ ⟨⟨u, hu, hus, rfl⟩, v, hv, hvt, rfl⟩
-      refine ⟨u ×ˢ v, hu.product hv, ?_, ?_⟩
-      · simpa only [coe_product] using Set.prod_mono hus hvt
-      · simp [prodMk_inf'_inf']
+@[simp] lemma countableInfClosure_prod (hs : ⊤ ∈ s) (ht : ⊤ ∈ t) :
+    countableInfClosure (s ×ˢ t) = countableInfClosure s ×ˢ countableInfClosure t :=
+  le_antisymm (countableInfClosure_min
+    (Set.prod_mono subset_countableInfClosure subset_countableInfClosure) <|
+    countableInfClosed_countableInfClosure.prod countableInfClosed_countableInfClosure) <| by
+      rintro ⟨_, _⟩ ⟨⟨u, hu, rfl⟩, v, hv, rfl⟩
+      refine ⟨fun n ↦ (u n, v n), fun n ↦ ?_, ?_⟩
+      · simp only [Set.mem_prod]
+        refine .inl ⟨?_, ?_⟩
+        · cases hu n with
+          | inl hu => exact hu
+          | inr hu => rwa [hu]
+        · cases hv n with
+          | inl hv => exact hv
+          | inr hv => rwa [hv]
+      · rw [Prod.iInf_mk]
 
-end SemilatticeInf
+end CompleteLattice
 
-section DistribLattice
-variable [DistribLattice α] [DistribLattice β] {s : Set α}
+section Frame
 
-protected lemma SupClosed.infClosure (hs : SupClosed s) : SupClosed (infClosure s) := by
+protected lemma SupClosed.countableInfClosure [Order.Coframe α] (hs : SupClosed s) :
+    SupClosed (countableInfClosure s) := by
   rintro _ ⟨t, ht, hts, rfl⟩ _ ⟨u, hu, hus, rfl⟩
-  rw [inf'_sup_inf']
-  exact finsetInf'_mem_infClosure _
-    fun i hi ↦ hs (hts (mem_product.1 hi).1) (hus (mem_product.1 hi).2)
+  rw [iInf_sup_iInf]
+  refine ⟨fun n ↦ t (Nat.unpair n).1 ⊔ u (Nat.unpair n).2, fun n ↦ ?_, ?_⟩
+  · simp only
+    cases ht (Nat.unpair n).1 with
+    | inr ht => simp [ht]
+    | inl ht =>
+      cases hu (Nat.unpair n).2 with
+      | inr hu => simp [hu]
+      | inl hu => left; exact hs ht hu
+  · rw [iInf_unpair (f := (fun n m ↦ t n ⊔ u m)), iInf_prod']
 
-protected lemma InfClosed.supClosure (hs : InfClosed s) : InfClosed (supClosure s) := by
+protected lemma InfClosed.countableSupClosure [Order.Frame α] (hs : InfClosed s) :
+    InfClosed (countableSupClosure s) := by
   rintro _ ⟨t, ht, hts, rfl⟩ _ ⟨u, hu, hus, rfl⟩
-  rw [sup'_inf_sup']
-  exact finsetSup'_mem_supClosure _
-    fun i hi ↦ hs (hts (mem_product.1 hi).1) (hus (mem_product.1 hi).2)
+  rw [iSup_inf_iSup]
+  refine ⟨fun n ↦ t (Nat.unpair n).1 ⊓ u (Nat.unpair n).2, fun n ↦ ?_, ?_⟩
+  · simp only
+    cases ht (Nat.unpair n).1 with
+    | inr ht => simp [ht]
+    | inl ht =>
+      cases hu (Nat.unpair n).2 with
+      | inr hu => simp [hu]
+      | inl hu => left; exact hs ht hu
+  · rw [iSup_unpair (f := (fun n m ↦ t n ⊓ u m)), iSup_prod']
 
-@[simp] lemma supClosure_infClosure (s : Set α) : supClosure (infClosure s) = latticeClosure s :=
-  le_antisymm (supClosure_min (infClosure_min subset_latticeClosure isSublattice_latticeClosure.2)
-    isSublattice_latticeClosure.1) <| latticeClosure_min (subset_infClosure.trans subset_supClosure)
-      ⟨supClosed_supClosure, infClosed_infClosure.supClosure⟩
-
-@[simp] lemma infClosure_supClosure (s : Set α) : infClosure (supClosure s) = latticeClosure s :=
-  le_antisymm (infClosure_min (supClosure_min subset_latticeClosure isSublattice_latticeClosure.1)
-    isSublattice_latticeClosure.2) <| latticeClosure_min (subset_supClosure.trans subset_infClosure)
-      ⟨supClosed_supClosure.infClosure, infClosed_infClosure⟩
-
-end DistribLattice
-
-section ConditionallyCompleteLattice
-variable [ConditionallyCompleteLattice α] {f : ι → α} {s t : Set α}
-
-lemma SupClosed.iSup_mem_of_nonempty [Finite ι] [Nonempty ι] (hs : SupClosed s)
-    (hf : ∀ i, f i ∈ s) : ⨆ i, f i ∈ s := by
-  cases nonempty_fintype (PLift ι)
-  rw [← iSup_plift_down, ← Finset.sup'_univ_eq_ciSup]
-  exact hs.finsetSup'_mem Finset.univ_nonempty fun _ _ ↦ hf _
-
-lemma InfClosed.iInf_mem_of_nonempty [Finite ι] [Nonempty ι] (hs : InfClosed s)
-    (hf : ∀ i, f i ∈ s) : ⨅ i, f i ∈ s := hs.dual.iSup_mem_of_nonempty hf
-
-lemma SupClosed.sSup_mem_of_nonempty (hs : SupClosed s) (ht : t.Finite) (ht' : t.Nonempty)
-    (hts : t ⊆ s) : sSup t ∈ s := by
-  have := ht.to_subtype
-  have := ht'.to_subtype
-  rw [sSup_eq_iSup']
-  exact hs.iSup_mem_of_nonempty (by simpa)
-
-lemma InfClosed.sInf_mem_of_nonempty (hs : InfClosed s) (ht : t.Finite) (ht' : t.Nonempty)
-    (hts : t ⊆ s) : sInf t ∈ s := hs.dual.sSup_mem_of_nonempty ht ht' hts
-
-end ConditionallyCompleteLattice
-
-variable [CompleteLattice α] {f : ι → α} {s t : Set α}
-
-lemma SupClosed.biSup_mem_of_nonempty {ι : Type*} {t : Set ι} {f : ι → α} (hs : SupClosed s)
-    (ht : t.Finite) (ht' : t.Nonempty) (hf : ∀ i ∈ t, f i ∈ s) : ⨆ i ∈ t, f i ∈ s := by
-  rw [← sSup_image]
-  exact hs.sSup_mem_of_nonempty (ht.image _) (by simpa) (by simpa)
-
-lemma InfClosed.biInf_mem_of_nonempty {ι : Type*} {t : Set ι} {f : ι → α} (hs : InfClosed s)
-    (ht : t.Finite) (ht' : t.Nonempty) (hf : ∀ i ∈ t, f i ∈ s) : ⨅ i ∈ t, f i ∈ s :=
-  hs.dual.biSup_mem_of_nonempty ht ht' hf
-
-lemma SupClosed.iSup_mem [Finite ι] (hs : SupClosed s) (hbot : ⊥ ∈ s) (hf : ∀ i, f i ∈ s) :
-    ⨆ i, f i ∈ s := by
-  cases isEmpty_or_nonempty ι
-  · simpa [iSup_of_empty]
-  · exact hs.iSup_mem_of_nonempty hf
-
-lemma InfClosed.iInf_mem [Finite ι] (hs : InfClosed s) (htop : ⊤ ∈ s) (hf : ∀ i, f i ∈ s) :
-    ⨅ i, f i ∈ s := hs.dual.iSup_mem htop hf
-
-lemma SupClosed.sSup_mem (hs : SupClosed s) (ht : t.Finite) (hbot : ⊥ ∈ s) (hts : t ⊆ s) :
-    sSup t ∈ s := by
-  have := ht.to_subtype
-  rw [sSup_eq_iSup']
-  exact hs.iSup_mem hbot (by simpa)
-
-lemma InfClosed.sInf_mem (hs : InfClosed s) (ht : t.Finite) (htop : ⊤ ∈ s) (hts : t ⊆ s) :
-    sInf t ∈ s := hs.dual.sSup_mem ht htop hts
-
-lemma SupClosed.biSup_mem {ι : Type*} {t : Set ι} {f : ι → α} (hs : SupClosed s)
-    (ht : t.Finite) (hbot : ⊥ ∈ s) (hf : ∀ i ∈ t, f i ∈ s) : ⨆ i ∈ t, f i ∈ s := by
-  rw [← sSup_image]
-  exact hs.sSup_mem (ht.image _) hbot (by simpa)
-
-lemma InfClosed.biInf_mem {ι : Type*} {t : Set ι} {f : ι → α} (hs : InfClosed s)
-    (ht : t.Finite) (htop : ⊤ ∈ s) (hf : ∀ i ∈ t, f i ∈ s) : ⨅ i ∈ t, f i ∈ s :=
-  hs.dual.biSup_mem ht htop hf
+end Frame

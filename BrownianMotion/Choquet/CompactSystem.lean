@@ -3,6 +3,7 @@ Copyright (c) 2026 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne
 -/
+import BrownianMotion.Choquet.CountableClosed
 import Mathlib.Data.Set.Dissipate
 import KolmogorovExtension4.CompactSystem
 
@@ -87,18 +88,20 @@ lemma isCompactSystem_Icc : IsCompactSystem {t | ∃ a b : ℝ, Set.Icc a b = t}
 
 namespace MeasureTheory
 
+-- todo: delete this
 /-- Product of two sets of sets. -/
-def memProd (p : Set (Set 𝓧)) (q : Set (Set 𝓚)) : Set (Set (𝓧 × 𝓚)) :=
-  {s | ∃ A B, A ∈ p ∧ B ∈ q ∧ s = A ×ˢ B}
+def memProd (p : Set (Set 𝓧)) (q : Set (Set 𝓚)) : Set (Set (𝓧 × 𝓚)) := Set.image2 (· ×ˢ ·) p q
+  --{s | ∃ A B, A ∈ p ∧ B ∈ q ∧ s = A ×ˢ B}
 
 lemma memProd_prod {A : Set 𝓧} {B : Set 𝓚} (hp : A ∈ p) (hq : B ∈ q) : (A ×ˢ B) ∈ memProd p q :=
-  ⟨A, B, hp, hq, rfl⟩
+  ⟨A, hp, B, hq, rfl⟩
 
 lemma memProd.mono {p' : Set (Set 𝓧)} (hp : ∀ s, s ∈ p → s ∈ p') {q' : Set (Set 𝓚)}
     (hq : ∀ s, s ∈ q → s ∈ q') {s : Set (𝓧 × 𝓚)} (hs : s ∈ memProd p q) :
     s ∈ memProd p' q' := by
-  obtain ⟨A, B, hpA, hqB, rfl⟩ := hs
-  exact ⟨A, B, hp _ hpA, hq _ hqB, rfl⟩
+  simp only [memProd, Set.mem_image2] at hs
+  obtain ⟨A, hpA, B, hqB, rfl⟩ := hs
+  exact ⟨A, hp _ hpA, B, hq _ hqB, rfl⟩
 
 /-- The set is a countable union of sets that satisfy the property. -/
 def memSigma (p : Set (Set 𝓧)) : Set (Set 𝓧) :=
@@ -174,10 +177,10 @@ lemma memFiniteUnion.biUnion_finset {s : Finset ℕ} {A : ℕ → Set 𝓧}
 lemma _root_.InfClosed.memProd (hp_inter : InfClosed p) (hq_inter : InfClosed q) :
     InfClosed (memProd p q) := by
   intro A hA B hB
-  obtain ⟨u, v, hu, hv, h_eq⟩ := hA
-  obtain ⟨s, t, hs, ht, h_eq'⟩ := hB
-  simp only [h_eq, h_eq']
-  refine ⟨u ∩ s, v ∩ t, hp_inter hu hs, hq_inter hv ht, ?_⟩
+  obtain ⟨u, hu, v, hv, h_eq⟩ := hA
+  obtain ⟨s, hs, t, ht, h_eq'⟩ := hB
+  simp only [← h_eq, ← h_eq']
+  refine ⟨u ∩ s, hp_inter hu hs, v ∩ t, hq_inter hv ht, ?_⟩
   simp
   grind
 
@@ -199,48 +202,48 @@ lemma _root_.InfClosed.memFiniteUnion (hp_inter : InfClosed p) :
 
 lemma memProdSigmaDelta_iff {s : Set (𝓧 × 𝓚)} :
     s ∈ memProdSigmaDelta p q ↔
-      ∃ (A : ℕ → ℕ → Set 𝓧) (K : ℕ → ℕ → Set 𝓚) (_ : ∀ n m, A n m ∈ p) (_ : ∀ n m, K n m ∈ q),
+      ∃ (A : ℕ → ℕ → Set 𝓧) (_ : ∀ n m, A n m ∈ p) (K : ℕ → ℕ → Set 𝓚) (_ : ∀ n m, K n m ∈ q),
         s = ⋂ n, ⋃ m, A n m ×ˢ K n m := by
   unfold memProdSigmaDelta memDelta memSigma memProd
-  simp only [exists_and_left, exists_prop]
+  simp only [Set.mem_image2, Set.mem_setOf_eq, exists_prop]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · choose A hA hs using h
     choose B hB hB' using hA
     choose C hC hC' using hB
     choose D hD hD' using hC'
-    refine ⟨C, D, hD, hC, ?_⟩
+    refine ⟨C, hC, D, hD, ?_⟩
     rw [hs]
     simp_rw [hB', hD']
-  · obtain ⟨A, K, hK, hA, rfl⟩ := h
+  · obtain ⟨A, hA, K, hK, rfl⟩ := h
     refine ⟨fun n ↦ ⋃ m, A n m ×ˢ K n m, fun n ↦ ⟨fun m ↦ A n m ×ˢ K n m, fun m ↦ ?_, rfl⟩, rfl⟩
     exact ⟨A n m, hA n m, ⟨K n m, hK n m, rfl⟩⟩
 
 lemma memSigma_memProd_iff {s : Set (𝓧 × 𝓚)} :
     s ∈ memSigma (memProd p q) ↔
-      ∃ (A : ℕ → Set 𝓧) (K : ℕ → Set 𝓚) (_ : ∀ n, A n ∈ p) (_ : ∀ n, K n ∈ q),
+      ∃ (A : ℕ → Set 𝓧) (_ : ∀ n, A n ∈ p) (K : ℕ → Set 𝓚) (_ : ∀ n, K n ∈ q),
         s = ⋃ n, A n ×ˢ K n := by
   unfold memSigma memProd
-  simp only [exists_and_left, exists_prop]
+  simp only [Set.mem_image2, Set.mem_setOf_eq, exists_prop]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · choose A hA hs using h
     choose B hB C hC hA_eq using hA
-    refine ⟨B, C, hC, hB, ?_⟩
+    refine ⟨B, hB, C, hC, ?_⟩
     simp_rw [hs, hA_eq]
-  · obtain ⟨A, K, hK, hA, rfl⟩ := h
+  · obtain ⟨A, hA, K, hK, rfl⟩ := h
     exact ⟨fun n ↦ A n ×ˢ K n, fun n ↦ ⟨A n, hA n, K n, hK n, rfl⟩, rfl⟩
 
 lemma memProdSigmaDelta_of_mem {s : Set 𝓧} {t : Set 𝓚} (hs : s ∈ p) (hq : t ∈ q) :
     s ×ˢ t ∈ memProdSigmaDelta p q := by
   rw [memProdSigmaDelta_iff]
-  exact ⟨fun n m ↦ s, fun n m ↦ t, fun _ _ ↦ hs, fun _ _ ↦ hq, by
+  exact ⟨fun n m ↦ s, fun _ _ ↦ hs, fun n m ↦ t, fun _ _ ↦ hq, by
     simp [Set.iInter_const, Set.iUnion_const]⟩
 
 lemma memProdSigmaDelta.mono {p' : Set (Set 𝓧)} (hp : ∀ s, s ∈ p → s ∈ p') {q' : Set (Set 𝓚)}
     (hq : ∀ s, s ∈ q → s ∈ q') {s : Set (𝓧 × 𝓚)} (hs : s ∈ memProdSigmaDelta p q) :
     s ∈ memProdSigmaDelta p' q' := by
   simp_rw [memProdSigmaDelta_iff] at hs ⊢
-  obtain ⟨A, K, hA, hK, rfl⟩ := hs
-  refine ⟨A, K, fun n m ↦ hp _ (hA n m), fun n m ↦ hq _ (hK n m), rfl⟩
+  obtain ⟨A, hA, K, hK, rfl⟩ := hs
+  refine ⟨A, fun n m ↦ hp _ (hA n m), K, fun n m ↦ hq _ (hK n m), rfl⟩
 
 lemma memDelta_iff_of_infClosed (hp : InfClosed p) {s : Set 𝓧} :
     s ∈ memDelta p ↔ ∃ A : ℕ → Set 𝓧, (∀ n, A n ∈ p) ∧ Antitone A ∧ s = ⋂ n, A n := by
@@ -292,7 +295,7 @@ lemma fst_iInter_of_memFiniteUnion_memProd_of_antitone (hp_empty : ∅ ∈ q) (h
   refine le_antisymm (Set.image_iInter_subset _ _) ?_
   intro x hx
   choose S DC hDC hB_eq' using hB
-  choose D' C' hD' hC' hDC_eq' using hDC
+  choose D' hD' C' hC' hDC_eq' using hDC
   let D : ℕ → ℕ → Set 𝓧 := fun n m ↦ if hm : m ∈ S n then D' n m hm else ∅
   let C : ℕ → ℕ → Set 𝓚 := fun n m ↦ if hm : m ∈ S n then C' n m hm else ∅
   have hD : ∀ n m, m ∈ S n → p (D n m) := by
@@ -306,7 +309,7 @@ lemma fst_iInter_of_memFiniteUnion_memProd_of_antitone (hp_empty : ∅ ∈ q) (h
   have hDC_eq : ∀ n m, m ∈ S n → DC n m = D n m ×ˢ C n m := by
     intro n m hm
     simp only [D, C, dif_pos hm]
-    exact hDC_eq' n m hm
+    exact (hDC_eq' n m hm).symm
   have hB_eq n : B n = ⋃ m ∈ S n, D n m ×ˢ C n m := by
     rw [hB_eq']
     congr

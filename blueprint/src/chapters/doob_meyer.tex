@@ -706,8 +706,6 @@ Remark: $A^n_{2^n}$ is the predictable part of $S$ at time $T$ for the discrete 
 
 \begin{proof}
   \uses{lem:uniformIntegrable_predictablePart_aux4, lem:uniformIntegrable_predictablePart_aux5, def:classD, lem:predictablePart_add, lem:martingalePart_add, lem:Martingale.predictablePart_eq_zero}
-TODO: understand that proof and add details.
-
 WLOG $S^n_{2^n} = S_T=0$ and $S_t\leq 0$ (else consider $S_t-\mathbb{E}\left[S_T\vert\mathcal{F}_{t}\right]$).
 
 We write $\tau_n(c)$ for the hitting time $\tau^T_{A^n_{k+1}>c}$.
@@ -722,7 +720,12 @@ $$
 P(\tau_n(c)<2^n) \le -\frac{\mathbb{E}[S_0]}{c}
 $$
 which goes to $0$ uniformly in $n$ as $c$ goes to infinity.
-This implies that $\int_{(A^n_{2^n}>c)} A^n_{2^n} dP$ is uniformly bounded in $n$ due to the fact that $S$ is of class $D$. And so also the $L^1$ norm is uniformly bounded.
+
+The integrals in the upper bound on $\int_{(A^n_{2^n}>c)} A^n_{2^n} dP$ are integrals of uniformly integrable random variables (by the class D assumption) over sets whose probability goes to zero uniformly.
+Therefore, these integrals go to zero uniformly in $n$ as $c$ goes to infinity.
+
+This implies that $\int_{(A^n_{2^n}>c)} A^n_{2^n} dP$ goes to 0 uniformly in $n$ as $c \to +\infty$.
+Hence, the $L^1$ norm is uniformly bounded.
 \end{proof}
 
 
