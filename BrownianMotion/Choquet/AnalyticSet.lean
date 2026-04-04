@@ -21,18 +21,47 @@ open scoped ENNReal NNReal
 
 variable {𝓧 𝓨 𝓚 : Type*} {p : Set (Set 𝓧)} {q : Set (Set 𝓚)} {s t : Set 𝓧} {f : ℕ → Set 𝓧}
 
+theorem Set.iInter_prod {α β ι : Type*} {s : Set α} {t : ι → Set β} [hι : Nonempty ι] :
+    (⋂ i, t i) ×ˢ s = ⋂ i, t i ×ˢ s := by
+  ext x
+  simp only [Set.mem_prod, Set.mem_iInter]
+  exact ⟨fun ⟨h1, h2⟩ i ↦ ⟨h1 i, h2⟩, fun h ↦ ⟨fun i ↦ (h i).1, (h hι.some).2⟩⟩
+
+lemma isCompactSystem_singleton_empty {α : Type*} : IsCompactSystem {(∅ : Set α)} :=
+  fun C hC _ ↦ ⟨0, by simpa using hC 0⟩
+
+-- check if we need univ in q and q'
+lemma IsCompactSystem.sum {𝓚' : Type*} {q' : Set (Set 𝓚')}
+    (hq : IsCompactSystem q) (hq' : IsCompactSystem q') :
+    IsCompactSystem {t | Sum.inl ⁻¹' t ∈ q ∧ Sum.inr ⁻¹' t ∈ q'} := by
+  intro C hC hC_compact
+  simp only [Set.mem_setOf_eq] at hC
+  sorry
+
+-- check if we need to insert univ or not
+lemma IsCompactSystem.pi {𝓚 : ℕ → Type*} {q : (n : ℕ) → Set (Set (𝓚 n))}
+    (hq : ∀ n, IsCompactSystem (q n)) :
+    IsCompactSystem (Set.univ.pi '' (Set.univ.pi (fun n ↦ insert Set.univ (q n)))) := by
+  sorry
+
+lemma IsCompactSystem.sigma {𝓚 : ℕ → Type*} {q : (n : ℕ) → Set (Set (𝓚 n))}
+    (hq : ∀ n, IsCompactSystem (q n)) :
+    IsCompactSystem {t : Set (Σ n, 𝓚 n) |
+      ∃ s : Finset ℕ, t ∈ (s : Set ℕ).sigma '' (Set.univ.pi (fun n ↦ insert Set.univ (q n)))} := by
+  sorry
+
 namespace MeasureTheory
 
 /-- A set `s` is analytic for a paving (predicate) `p` and a type `𝓚` if there exists a compact
 system `q` of `𝓚` such that `s` is the projections of a set `t` that satisfies
-`memProdSigmaDelta p q`. -/
+`prodSigmaDelta p q`. -/
 def IsPavingAnalyticFor (p : Set (Set 𝓧)) (𝓚 : Type*) (s : Set 𝓧) : Prop :=
   ∃ q : Set (Set 𝓚), ∅ ∈ q ∧ IsCompactSystem q ∧
-    ∃ t : Set (𝓧 × 𝓚), t ∈ memProdSigmaDelta p q ∧ s = Prod.fst '' t
+    ∃ t : Set (𝓧 × 𝓚), t ∈ prodSigmaDelta p q ∧ s = Prod.fst '' t
 
 /-- A set `s` is analytic for a paving (predicate) `p` if there exists a type `𝓚` and a compact
 system `q` of `𝓚` such that `s` is the projections of a set `t` that satisfies
-`memProdSigmaDelta p q`. -/
+`prodSigmaDelta p q`. -/
 def IsPavingAnalytic (p : Set (Set 𝓧)) (s : Set 𝓧) : Prop :=
   ∃ 𝓚 : Type, Nonempty 𝓚 ∧ IsPavingAnalyticFor p 𝓚 s
 
@@ -40,38 +69,33 @@ lemma IsPavingAnalyticFor.isPavingAnalytic {𝓚 : Type} [Nonempty 𝓚]
     (hs : IsPavingAnalyticFor p 𝓚 s) :
     IsPavingAnalytic p s := ⟨𝓚, ‹_›, hs⟩
 
-lemma isCompactSystem_singleton_empty {α : Type*} : IsCompactSystem {(∅ : Set α)} :=
-  fun C hC _ ↦ ⟨0, by simpa using hC 0⟩
-
 lemma isPavingAnalyticFor_of_mem (𝓚 : Type*) [Nonempty 𝓚] (hs : s ∈ p) :
     IsPavingAnalyticFor p 𝓚 s := by
   classical
   refine ⟨{Set.univ, ∅}, ?_, ?_, ⟨s ×ˢ .univ, ?_, by ext; simp⟩⟩
   · simp
   · exact IsCompactSystem.insert_univ isCompactSystem_singleton_empty
-  · exact memProdSigmaDelta_of_mem hs (by simp)
+  · exact mem_prodSigmaDelta_of_mem hs (by simp)
 
 lemma isPavingAnalytic_of_mem (hs : s ∈ p) : IsPavingAnalytic p s :=
   (isPavingAnalyticFor_of_mem ℝ hs).isPavingAnalytic
 
-lemma IsPavingAnalyticFor.mono {p' : Set (Set 𝓧)} (hp : ∀ s, s ∈ p → s ∈ p')
-    (hs : IsPavingAnalyticFor p 𝓚 s) :
+lemma IsPavingAnalyticFor.mono {p' : Set (Set 𝓧)} (hp : p ⊆ p') (hs : IsPavingAnalyticFor p 𝓚 s) :
     IsPavingAnalyticFor p' 𝓚 s := by
   obtain ⟨q, hq_empty, hq_compact, t, ht_prod, rfl⟩ := hs
   refine ⟨q, hq_empty, hq_compact, ⟨t, ?_, rfl⟩⟩
-  exact memProdSigmaDelta.mono hp (fun _ ↦ id) ht_prod
+  exact prodSigmaDelta.mono hp (fun _ ↦ id) ht_prod
 
-lemma IsPavingAnalytic.mono {p' : Set (Set 𝓧)} (hp : ∀ s, s ∈ p → s ∈ p')
-    (hs : IsPavingAnalytic p s) :
+lemma IsPavingAnalytic.mono {p' : Set (Set 𝓧)} (hp : p ⊆ p') (hs : IsPavingAnalytic p s) :
     IsPavingAnalytic p' s := by
   choose 𝓚 h𝓚 hs𝓚 using hs
   exact (IsPavingAnalyticFor.mono hp hs𝓚).isPavingAnalytic
 
 -- He paragraph after 1.25
-lemma IsPavingAnalyticFor.exists_memSigma_superset (hs : IsPavingAnalyticFor p 𝓚 s) :
+lemma IsPavingAnalyticFor.exists_mem_countableSupClosure_superset (hs : IsPavingAnalyticFor p 𝓚 s) :
     ∃ t, t ∈ countableSupClosure p ∧ s ⊆ t := by
   obtain ⟨q, hq_empty, hq_compact, B, hB_prod, rfl⟩ := hs
-  rw [memProdSigmaDelta_iff] at hB_prod
+  rw [mem_prodSigmaDelta_iff] at hB_prod
   obtain ⟨A, hA, K, hK, rfl⟩ := hB_prod
   refine ⟨⋃ m, A 0 m, ?_, ?_⟩
   · exact ⟨fun m ↦ A 0 m, hA 0, rfl⟩
@@ -84,7 +108,7 @@ lemma IsPavingAnalyticFor.exists_memSigma_superset (hs : IsPavingAnalyticFor p �
 
 lemma IsPavingAnalyticFor.empty (𝓚 : Type*) (hp_empty : ∅ ∈ p) : IsPavingAnalyticFor p 𝓚 ∅ := by
   rcases isEmpty_or_nonempty 𝓚 with h_empty | h_nonempty
-  · refine ⟨Set.univ, by simp, ?_, ∅ ×ˢ ∅, memProdSigmaDelta_of_mem hp_empty (by simp), by simp⟩
+  · refine ⟨Set.univ, by simp, ?_, ∅ ×ˢ ∅, mem_prodSigmaDelta_of_mem hp_empty (by simp), by simp⟩
     simp only [IsCompactSystem]
     intro C _ _
     have h_eq_empty n : C n = ∅ := Set.eq_empty_of_isEmpty (C n)
@@ -115,29 +139,27 @@ lemma IsPavingAnalyticFor.iInter {𝓚 : ℕ → Type*} {s : ℕ → Set 𝓧}
   let C n : Set (𝓧 × ((i : ℕ) → 𝓚 i)) := {p | (p.1, p.2 n) ∈ B n}
   let q' : Set (Set (Π n, 𝓚 n)) :=
     -- modeled on squareCylinders, but with univ instead of a finset
-    Set.univ.pi '' (Set.univ.pi (fun n ↦ {x | q n x ∨ x = Set.univ}))
+    Set.univ.pi '' (Set.univ.pi (fun n ↦ insert Set.univ (q n)))
   refine ⟨q', ?_, ?_, ⋂ n, C n, ?_, ?_⟩
-  · simp only [Set.mem_image, Set.mem_pi, Set.mem_univ, Set.mem_setOf_eq, forall_const,
-    Set.univ_pi_eq_empty_iff, q']
-    exact ⟨fun _ ↦ ∅, by simp only [exists_const, and_true]; exact fun _ ↦ .inl (hq_empty _)⟩
-  · -- a product of compact systems is a compact system
-    sorry
+  · simp only [Set.mem_image, Set.mem_pi, Set.mem_univ, forall_const, Set.univ_pi_eq_empty_iff, q']
+    exact ⟨fun _ ↦ ∅, by simp only [exists_const, and_true]; exact fun _ ↦ .inr (hq_empty _)⟩
+  · exact IsCompactSystem.pi hq_compact
   · refine countableInfClosed_countableInfClosure.iInf_mem fun n ↦ ?_
-    rw [← memProdSigmaDelta]
-    simp_rw [memProdSigmaDelta_iff] at hB_prod ⊢
+    rw [← prodSigmaDelta]
+    simp_rw [mem_prodSigmaDelta_iff] at hB_prod ⊢
     choose A hA K hK hB_eq using hB_prod
     refine ⟨A n, hA n, fun i j ↦ {y | y n ∈ K n i j}, fun i j ↦ ?_, ?_⟩
-    · simp only [Set.mem_image, Set.mem_pi, Set.mem_univ, Set.mem_setOf_eq, forall_const, q']
+    · simp only [Set.mem_image, Set.mem_pi, Set.mem_univ, forall_const, q']
       rcases Set.eq_empty_or_nonempty (K n i j) with hK_empty | hK_nonempty
       · simp only [hK_empty, Set.mem_empty_iff_false, Set.setOf_false]
         exact ⟨fun _ ↦ ∅, by
-          simp only [Set.univ_pi_empty, and_true]; exact fun _ ↦ .inl (hq_empty _)⟩
+          simp only [Set.univ_pi_empty, and_true]; exact fun _ ↦ .inr (hq_empty _)⟩
       refine ⟨fun k ↦ if k = n then K k i j else Set.univ, fun k ↦ ?_, ?_⟩
-      · simp only [ite_eq_right_iff]
+      · simp only
         split_ifs with hk
         · subst hk
-          exact .inl (hK k i j)
-        · simp [hk]
+          exact .inr (hK k i j)
+        · simp
       · ext; simp
     ext
     simp [hB_eq, C]
@@ -162,14 +184,11 @@ lemma IsPavingAnalyticFor.iUnion {𝓚 : ℕ → Type*} {s : ℕ → Set 𝓧}
   let C := Prod.swap ''
     ((Equiv.sigmaProdDistrib 𝓚 𝓧).symm '' (Set.sigma Set.univ (fun n ↦ Prod.swap '' (B n))))
   let q'' := {t : Set (Σ n, 𝓚 n) |
-    ∃ s : Finset ℕ, t ∈ (s : Set ℕ).sigma '' (Set.univ.pi (fun n ↦ {x | q n x ∨ x = Set.univ}))}
+    ∃ s : Finset ℕ, t ∈ (s : Set ℕ).sigma '' (Set.univ.pi (fun n ↦ insert Set.univ (q n)))}
   refine ⟨q'', ?_, ?_, C, ?_, ?_⟩
   · simp only [Set.mem_image, Set.mem_pi, Set.mem_univ, forall_const, q'']
-    refine ⟨∅, fun _ ↦ Set.univ, ?_⟩
-    simp only [Finset.coe_empty, Set.sigma_univ, Set.preimage_empty, and_true]
-    exact fun _ ↦ .inr rfl
-  · -- sum of compact systems is a compact system
-    sorry
+    exact ⟨∅, fun _ ↦ Set.univ, by simp⟩
+  · exact IsCompactSystem.sigma hq_compact
   · choose A hA hB_eq using hB_prod
     have hC_eq : C = ⋂ k, Prod.swap '' ((Equiv.sigmaProdDistrib 𝓚 𝓧).symm ''
         (Set.sigma Set.univ (fun n ↦ Prod.swap '' (A n k)))) := by
@@ -182,7 +201,7 @@ lemma IsPavingAnalyticFor.iUnion {𝓚 : ℕ → Type*} {s : ℕ → Set 𝓧}
       simp
     rw [hC_eq]
     refine countableInfClosed_countableInfClosure.iInf_mem fun k ↦ subset_countableInfClosure ?_
-    simp_rw [memSigma_memProd_iff] at hA
+    simp_rw [mem_countableSupClosure_image2_prod_iff] at hA
     choose B hB K hK hA_eq using hA
     simp_rw [hA_eq]
     have h_eq : Prod.swap '' ((Equiv.sigmaProdDistrib 𝓚 𝓧).symm '' Set.univ.sigma
@@ -194,14 +213,11 @@ lemma IsPavingAnalyticFor.iUnion {𝓚 : ℕ → Type*} {s : ℕ → Set 𝓧}
     simp only [Set.image_swap_prod, Set.sigma_eq_biUnion, Set.mem_univ, Set.iUnion_true,
       Set.image_iUnion]
     refine countableSupClosed_countableSupClosure.iSup_mem fun j ↦ subset_countableSupClosure ?_
-    refine ⟨B j k i, hB _ _ _, Sigma.mk j '' (K j k i), ?_, ?_⟩
-    · simp only [Set.mem_image, Set.mem_pi, Set.mem_univ, Set.mem_setOf_eq, forall_const, q'']
-      refine ⟨{j}, fun j ↦ K j k i, ?_⟩
-      simp only [Finset.coe_singleton, Set.singleton_sigma, and_true]
-      exact fun m ↦ .inl (hK _ _ _)
-    · ext
-      simp
-      grind
+    refine ⟨B j k i, hB _ _ _, Sigma.mk j '' (K j k i), ?_, by ext; simp; grind⟩
+    simp only [Set.mem_image, Set.mem_pi, Set.mem_univ, Set.mem_setOf_eq, forall_const, q'']
+    refine ⟨{j}, fun j ↦ K j k i, ?_⟩
+    simp only [Finset.coe_singleton, Set.singleton_sigma, and_true]
+    exact fun m ↦ .inr (hK _ _ _)
   · simp only [hB_eq, Equiv.sigmaProdDistrib_symm_apply, C]
     ext y
     simp only [Set.mem_iUnion, Set.mem_image, Prod.exists, exists_and_right, exists_eq_right,
@@ -222,17 +238,17 @@ lemma IsPavingAnalyticFor.inter {𝓚' : Type*} {t : Set 𝓧}
   obtain ⟨q', hq'_empty, hq'_compact, B', hB'_prod, hB'_eq⟩ := ht
   let C : Set (𝓧 × (𝓚 × 𝓚')) := {p | (p.1, p.2.1) ∈ B}
   let C' : Set (𝓧 × (𝓚 × 𝓚')) := {p | (p.1, p.2.2) ∈ B'}
-  let q'' : Set (Set (𝓚 × 𝓚')) := memProd (insert Set.univ q) (insert Set.univ q')
+  let q'' : Set (Set (𝓚 × 𝓚')) := Set.image2 (· ×ˢ ·) (insert Set.univ q) (insert Set.univ q')
   refine ⟨q'', ?_, ?_, C ∩ C', ?_, ?_⟩
-  · simp [q'', memProd]
+  · simp [q'']
     grind
-  · exact IsCompactSystem.memProd hq_compact.insert_univ hq'_compact.insert_univ
+  · exact IsCompactSystem.image2_prod hq_compact.insert_univ hq'_compact.insert_univ
   · refine infClosed_countableInfClosure ?_ ?_
-    · rw [← memProdSigmaDelta]
-      simp_rw [memProdSigmaDelta_iff] at hB_prod ⊢
+    · rw [← prodSigmaDelta]
+      simp_rw [mem_prodSigmaDelta_iff] at hB_prod ⊢
       choose A hA K hK hB_eq using hB_prod
       refine ⟨A, hA, fun i j ↦ {y | y.1 ∈ K i j}, fun i j ↦ ?_, ?_⟩
-      · simp only [memProd, q'']
+      · simp only [q'']
         rcases Set.eq_empty_or_nonempty (K i j) with hK_empty | hK_nonempty
         · simp only [hK_empty, Set.mem_empty_iff_false, Set.setOf_false]
           exact ⟨∅, by simp [hq_empty]⟩
@@ -243,11 +259,11 @@ lemma IsPavingAnalyticFor.inter {𝓚' : Type*} {t : Set 𝓧}
         simp
       · ext y
         simp only [hB_eq, Set.mem_iInter, Set.mem_iUnion, Set.mem_prod, Set.mem_setOf_eq, C]
-    · rw [← memProdSigmaDelta]
-      simp_rw [memProdSigmaDelta_iff] at hB'_prod ⊢
+    · rw [← prodSigmaDelta]
+      simp_rw [mem_prodSigmaDelta_iff] at hB'_prod ⊢
       choose A hA K hK hB_eq using hB'_prod
       refine ⟨A, hA, fun i j ↦ {y | y.2 ∈ K i j}, fun i j ↦ ?_, ?_⟩
-      · simp only [memProd, q'']
+      · simp only [q'']
         rcases Set.eq_empty_or_nonempty (K i j) with hK_empty | hK_nonempty
         · simp only [hK_empty, Set.mem_empty_iff_false, Set.setOf_false]
           exact ⟨∅, by simp [hq_empty]⟩
@@ -283,8 +299,7 @@ lemma IsPavingAnalyticFor.union {𝓚' : Type*} {t : Set 𝓧}
   · simp only [Set.mem_insert_iff, Set.preimage_eq_univ_iff, Set.mem_setOf_eq,
       Set.subset_empty_iff, Set.range_eq_empty_iff, Set.preimage_empty, q'']
     exact ⟨.inr hq_empty, .inr hq'_empty⟩
-  · -- sum of compact systems is a compact system
-    sorry
+  · exact IsCompactSystem.sum hq_compact.insert_univ hq'_compact.insert_univ
   · choose A hA hB_eq using hB_prod
     choose A' hA' hB'_eq using hB'_prod
     have hC_eq : C = ⋂ k,
@@ -300,7 +315,7 @@ lemma IsPavingAnalyticFor.union {𝓚' : Type*} {t : Set 𝓧}
       _ = ⋂ i, Set.sumEquiv.symm (A i, A' i) := rfl
     rw [hC_eq]
     refine countableInfClosed_countableInfClosure.iInf_mem fun k ↦ subset_countableInfClosure ?_
-    simp_rw [memSigma_memProd_iff] at hA hA'
+    simp_rw [mem_countableSupClosure_image2_prod_iff] at hA hA'
     choose B hB K hK hA_eq using hA
     choose B' hB' K' hK' hA'_eq using hA'
     simp_rw [hA_eq, hA'_eq]
@@ -330,9 +345,7 @@ lemma IsPavingAnalyticFor.union {𝓚' : Type*} {t : Set 𝓧}
         convert hK k i
         ext
         simp
-      · ext
-        simp [Equiv.prodSumDistrib]
-        grind
+      · ext; simp [Equiv.prodSumDistrib]; grind
     · refine ⟨B' k i, hB' _ _, Sum.inr '' (K' k i), ?_, ?_⟩
       · simp only [Set.mem_insert_iff, Set.preimage_eq_univ_iff, Set.mem_setOf_eq,
           Set.preimage_inl_image_inr, q'']
@@ -340,9 +353,7 @@ lemma IsPavingAnalyticFor.union {𝓚' : Type*} {t : Set 𝓧}
         convert hK' k i
         ext
         simp
-      · ext
-        simp [Equiv.prodSumDistrib]
-        grind
+      · ext; simp [Equiv.prodSumDistrib]; grind
   · simp only [hB_eq, hB'_eq, C]
     ext
     simp [Equiv.prodSumDistrib, Equiv.sumProdDistrib, Set.sumEquiv]
@@ -354,25 +365,25 @@ lemma IsPavingAnalytic.union {t : Set 𝓧}
   choose 𝓚' h𝓚' ht𝓚' using ht
   exact (IsPavingAnalyticFor.union hs𝓚 ht𝓚').isPavingAnalytic
 
-lemma isPavingAnalyticFor_of_memDelta_of_imp {p' : Set (Set 𝓧)}
+lemma isPavingAnalyticFor_of_mem_countableInfClosure_of_imp {p' : Set (Set 𝓧)}
     (hs : s ∈ countableInfClosure p') (hqp : ∀ x, x ∈ p' → IsPavingAnalyticFor p 𝓚 x) :
     IsPavingAnalyticFor p (Π _ : ℕ, 𝓚) s := by
   obtain ⟨A, hA, rfl⟩ := hs
   exact IsPavingAnalyticFor.iInter fun n ↦ hqp _ (hA n)
 
-lemma isPavingAnalytic_of_memDelta_of_imp {p' : Set (Set 𝓧)}
+lemma isPavingAnalytic_of_mem_countableInfClosure_of_imp {p' : Set (Set 𝓧)}
     (hs : s ∈ countableInfClosure p') (hqp : ∀ x, x ∈ p' → IsPavingAnalytic p x) :
     IsPavingAnalytic p s := by
   obtain ⟨A, hA, rfl⟩ := hs
   exact IsPavingAnalytic.iInter fun n ↦ hqp _ (hA n)
 
-lemma isPavingAnalyticFor_of_memSigma_of_imp {p' : Set (Set 𝓧)}
+lemma isPavingAnalyticFor_of_mem_countableSupClosure_of_imp {p' : Set (Set 𝓧)}
     (hs : s ∈ countableSupClosure p') (hqp : ∀ x, x ∈ p' → IsPavingAnalyticFor p 𝓚 x) :
     IsPavingAnalyticFor p (Σ _ : ℕ, 𝓚) s := by
   obtain ⟨A, hA, rfl⟩ := hs
   exact IsPavingAnalyticFor.iUnion fun n ↦ hqp _ (hA n)
 
-lemma isPavingAnalytic_of_memSigma_of_imp {p' : Set (Set 𝓧)}
+lemma isPavingAnalytic_of_mem_countableSupClosure_of_imp {p' : Set (Set 𝓧)}
     (hs : s ∈ countableSupClosure p') (hqp : ∀ x, x ∈ p' → IsPavingAnalytic p x) :
     IsPavingAnalytic p s := by
   obtain ⟨A, hA, rfl⟩ := hs
@@ -381,12 +392,13 @@ lemma isPavingAnalytic_of_memSigma_of_imp {p' : Set (Set 𝓧)}
 -- He 1.28
 /-- The projection of an analytic set is analytic. -/
 lemma IsPavingAnalyticFor.fst {𝓚' : Type*} (hq_empty : ∅ ∈ q) (hq : IsCompactSystem q)
-    {s : Set (𝓧 × 𝓚)} (hs : IsPavingAnalyticFor (memProd p q) 𝓚' s) :
+    {s : Set (𝓧 × 𝓚)} (hs : IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) p q) 𝓚' s) :
     IsPavingAnalyticFor p (𝓚 × 𝓚') (Prod.fst '' s) := by
   obtain ⟨q', hq'_empty, hq', K, hK, rfl⟩ := hs
-  refine ⟨memProd q q', ?_, hq.memProd hq', Equiv.prodAssoc 𝓧 𝓚 𝓚' '' K, ?_, by ext; simp⟩
+  refine ⟨Set.image2 (· ×ˢ ·) q q', ?_, hq.image2_prod hq', Equiv.prodAssoc 𝓧 𝓚 𝓚' '' K, ?_,
+    by ext; simp⟩
   · exact ⟨∅, hq_empty, ∅, hq'_empty, by simp⟩
-  simp_rw [memProdSigmaDelta_iff] at hK ⊢
+  simp_rw [mem_prodSigmaDelta_iff] at hK ⊢
   obtain ⟨B, hB, K', hK', rfl⟩ := hK
   choose A hA K hK h_eq using hB
   refine ⟨A, hA, fun n m ↦ K n m ×ˢ K' n m, fun n m ↦ ?_, ?_⟩
@@ -401,148 +413,134 @@ lemma IsPavingAnalyticFor.fst {𝓚' : Type*} (hq_empty : ∅ ∈ q) (hq : IsCom
 /-- The projection of an analytic set is analytic. -/
 lemma IsPavingAnalytic.fst {𝓚 : Type} [Nonempty 𝓚] {q : Set (Set 𝓚)}
     (hq_empty : ∅ ∈ q) (hq : IsCompactSystem q)
-    {s : Set (𝓧 × 𝓚)} (hs : IsPavingAnalytic (memProd p q) s) :
+    {s : Set (𝓧 × 𝓚)} (hs : IsPavingAnalytic (Set.image2 (· ×ˢ ·) p q) s) :
     IsPavingAnalytic p (Prod.fst '' s) := by
   obtain ⟨𝓚', h𝓚', hs𝓚'⟩ := hs
   exact (hs𝓚'.fst hq_empty hq).isPavingAnalytic
 
 lemma IsPavingAnalyticFor.prod_left {𝓨 : Type*} {r : Set 𝓨 → Prop} {t : Set 𝓨}
     (ht : r t) (hs : IsPavingAnalyticFor p 𝓚 s) :
-    IsPavingAnalyticFor (memProd r p) 𝓚 (t ×ˢ s) := by
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) r p) 𝓚 (t ×ˢ s) := by
   obtain ⟨q, hq_empty, hq_compact, s', hs_prod, hs_eq⟩ := hs
   have h_eq' : t ×ˢ s = Prod.fst '' ((Equiv.prodAssoc _ _ _).symm '' (t ×ˢ s')) := by
-    rw [hs_eq]
-    ext
-    simp
-    grind
+    ext; simp; grind
   refine ⟨q, hq_empty, hq_compact, (Equiv.prodAssoc _ _ _).symm '' (t ×ˢ s'), ?_, h_eq'⟩
-  simp_rw [memProdSigmaDelta_iff] at hs_prod ⊢
+  simp_rw [mem_prodSigmaDelta_iff] at hs_prod ⊢
   obtain ⟨A, hA, K, hK, rfl⟩ := hs_prod
   refine ⟨fun n m ↦ t ×ˢ A n m, fun n m ↦ ?_, K, hK, ?_⟩
   · exact ⟨t, ht, A n m, hA n m, rfl⟩
   · rw [Set.prod_iInter, Set.image_iInter (Equiv.prodAssoc _ _ _).symm.bijective]
-    simp_rw [Set.prod_iUnion, Set.image_iUnion]
-    congr
-    ext
+    congr with
     simp
     grind
 
 lemma IsPavingAnalytic.prod_left {𝓨 : Type*} {r : Set 𝓨 → Prop} {t : Set 𝓨}
     (ht : r t) (hs : IsPavingAnalytic p s) :
-    IsPavingAnalytic (memProd r p) (t ×ˢ s) := by
+    IsPavingAnalytic (Set.image2 (· ×ˢ ·) r p) (t ×ˢ s) := by
   obtain ⟨𝓚, h𝓚, hs𝓚⟩ := hs
   exact (hs𝓚.prod_left ht).isPavingAnalytic
 
-
-theorem Set.iInter_prod {α β ι : Type*} {s : Set α} {t : ι → Set β} [hι : Nonempty ι] :
-    (⋂ i, t i) ×ˢ s = ⋂ i, t i ×ˢ s := by
-  ext x
-  simp only [Set.mem_prod, Set.mem_iInter]
-  exact ⟨fun ⟨h1, h2⟩ i ↦ ⟨h1 i, h2⟩, fun h ↦ ⟨fun i ↦ (h i).1, (h hι.some).2⟩⟩
-
 lemma IsPavingAnalyticFor.prod_right {𝓨 : Type*} {r : Set 𝓨 → Prop} {t : Set 𝓨}
     (hs : IsPavingAnalyticFor p 𝓚 s) (ht : r t) :
-    IsPavingAnalyticFor (memProd p r) 𝓚 (s ×ˢ t) := by
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) p r) 𝓚 (s ×ˢ t) := by
   obtain ⟨q, hq_empty, hq_compact, s', hs_prod, hs_eq⟩ := hs
   have h_eq' : s ×ˢ t = Prod.fst '' ((Equiv.prodAssoc _ _ _).symm ''
       (Prod.map id Prod.swap '' ((Equiv.prodAssoc _ _ _) '' (s' ×ˢ t)))) := by
-    rw [hs_eq]
-    ext
+    congr with
     simp
     grind
   refine ⟨q, hq_empty, hq_compact, (Equiv.prodAssoc _ _ _).symm ''
       (Prod.map id Prod.swap '' ((Equiv.prodAssoc _ _ _) '' (s' ×ˢ t))), ?_, h_eq'⟩
-  simp_rw [memProdSigmaDelta_iff] at hs_prod ⊢
+  simp_rw [mem_prodSigmaDelta_iff] at hs_prod ⊢
   obtain ⟨A, hA, K, hK, rfl⟩ := hs_prod
   refine ⟨fun n m ↦ A n m ×ˢ t, fun n m ↦ ?_, K, hK, ?_⟩
   · exact ⟨A n m, hA n m, t, ht, rfl⟩
   · rw [Set.iInter_prod, Set.image_iInter (Equiv.prodAssoc _ _ _).bijective,
       Set.image_iInter, Set.image_iInter (Equiv.prodAssoc _ _ _).symm.bijective]
-    swap
-    · exact Function.bijective_id.prodMap Prod.swap_bijective
+    swap; · exact Function.bijective_id.prodMap Prod.swap_bijective
     congr with n x
     simp
     grind
 
 lemma IsPavingAnalytic.prod_right {𝓨 : Type*} {r : Set 𝓨 → Prop} {t : Set 𝓨}
     (hs : IsPavingAnalytic p s) (ht : r t) :
-    IsPavingAnalytic (memProd p r) (s ×ˢ t) := by
+    IsPavingAnalytic (Set.image2 (· ×ˢ ·) p r) (s ×ˢ t) := by
   obtain ⟨𝓚, h𝓚, hs𝓚⟩ := hs
   exact (hs𝓚.prod_right ht).isPavingAnalytic
 
-lemma isPavingAnalyticFor_of_memProd_isPavingAnalyticFor_left {𝓨 : Type*} {r : Set 𝓨 → Prop}
-    {t : Set (𝓨 × 𝓧)} (ht : t ∈ memProd r (IsPavingAnalyticFor p 𝓚)) :
-    IsPavingAnalyticFor (memProd r p) 𝓚 t := by
+lemma isPavingAnalyticFor_of_image2_prod_isPavingAnalyticFor_left {𝓨 : Type*} {r : Set 𝓨 → Prop}
+    {t : Set (𝓨 × 𝓧)} (ht : t ∈ Set.image2 (· ×ˢ ·) r (IsPavingAnalyticFor p 𝓚)) :
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) r p) 𝓚 t := by
   obtain ⟨A, hA, s, hs, rfl⟩ := ht
   exact hs.prod_left hA
 
-lemma isPavingAnalytic_of_memProd_isPavingAnalytic_left {𝓨 : Type*} {r : Set 𝓨 → Prop}
-    {t : Set (𝓨 × 𝓧)} (ht : t ∈ memProd r (IsPavingAnalytic p)) :
-    IsPavingAnalytic (memProd r p) t := by
+lemma isPavingAnalytic_of_image2_prod_isPavingAnalytic_left {𝓨 : Type*} {r : Set 𝓨 → Prop}
+    {t : Set (𝓨 × 𝓧)} (ht : t ∈ Set.image2 (· ×ˢ ·) r (IsPavingAnalytic p)) :
+    IsPavingAnalytic (Set.image2 (· ×ˢ ·) r p) t := by
   obtain ⟨A, hA, s, hs, rfl⟩ := ht
   exact hs.prod_left hA
 
-lemma isPavingAnalyticFor_of_memProd_isPavingAnalyticFor_right {𝓨 : Type*} {r : Set 𝓨 → Prop}
-    {t : Set (𝓧 × 𝓨)} (ht : t ∈ memProd (IsPavingAnalyticFor p 𝓚) r) :
-    IsPavingAnalyticFor (memProd p r) 𝓚 t := by
+lemma isPavingAnalyticFor_of_image2_prod_isPavingAnalyticFor_right {𝓨 : Type*} {r : Set 𝓨 → Prop}
+    {t : Set (𝓧 × 𝓨)} (ht : t ∈ Set.image2 (· ×ˢ ·) (IsPavingAnalyticFor p 𝓚) r) :
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) p r) 𝓚 t := by
   obtain ⟨A, hA, s, hs, rfl⟩ := ht
   exact hA.prod_right hs
 
-lemma isPavingAnalytic_of_memProd_isPavingAnalytic_right {𝓨 : Type*} {r : Set 𝓨 → Prop}
-    {t : Set (𝓧 × 𝓨)} (ht : t ∈ memProd (IsPavingAnalytic p) r) :
-    IsPavingAnalytic (memProd p r) t := by
+lemma isPavingAnalytic_of_image2_prod_isPavingAnalytic_right {𝓨 : Type*} {r : Set 𝓨 → Prop}
+    {t : Set (𝓧 × 𝓨)} (ht : t ∈ Set.image2 (· ×ˢ ·) (IsPavingAnalytic p) r) :
+    IsPavingAnalytic (Set.image2 (· ×ˢ ·) p r) t := by
   obtain ⟨A, hA, s, hs, rfl⟩ := ht
   exact hA.prod_right hs
 
-lemma isPavingAnalyticFor_of_memSigma_memProd_isPavingAnalyticFor_left
+lemma isPavingAnalyticFor_of_mem_countableSupClosure_image2_prod_isPavingAnalyticFor_left
     {𝓨 : Type*} {r : Set 𝓨 → Prop} {t : Set (𝓨 × 𝓧)}
-    (ht : t ∈ countableSupClosure (memProd r (IsPavingAnalyticFor p 𝓚))) :
-    IsPavingAnalyticFor (memProd r p) (Σ _ : ℕ, 𝓚) t := by
-  refine isPavingAnalyticFor_of_memSigma_of_imp (p' := memProd r (IsPavingAnalyticFor p 𝓚)) ht ?_
-  intro s hs
-  exact isPavingAnalyticFor_of_memProd_isPavingAnalyticFor_left hs
+    (ht : t ∈ countableSupClosure (Set.image2 (· ×ˢ ·) r (IsPavingAnalyticFor p 𝓚))) :
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) r p) (Σ _ : ℕ, 𝓚) t := by
+  refine isPavingAnalyticFor_of_mem_countableSupClosure_of_imp
+    (p' := Set.image2 (· ×ˢ ·) r (IsPavingAnalyticFor p 𝓚)) ht fun s hs ↦ ?_
+  exact isPavingAnalyticFor_of_image2_prod_isPavingAnalyticFor_left hs
 
-lemma isPavingAnalyticFor_of_memSigma_memProd_isPavingAnalyticFor_right
+lemma isPavingAnalyticFor_of_mem_countableSupClosure_image2_prod_isPavingAnalyticFor_right
     {𝓨 : Type*} {r : Set 𝓨 → Prop} {t : Set (𝓧 × 𝓨)}
-    (ht : t ∈ countableSupClosure (memProd (IsPavingAnalyticFor p 𝓚) r)) :
-    IsPavingAnalyticFor (memProd p r) (Σ _ : ℕ, 𝓚) t := by
-  refine isPavingAnalyticFor_of_memSigma_of_imp (p' := memProd (IsPavingAnalyticFor p 𝓚) r) ht ?_
-  intro s hs
-  exact isPavingAnalyticFor_of_memProd_isPavingAnalyticFor_right hs
+    (ht : t ∈ countableSupClosure (Set.image2 (· ×ˢ ·) (IsPavingAnalyticFor p 𝓚) r)) :
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) p r) (Σ _ : ℕ, 𝓚) t := by
+  refine isPavingAnalyticFor_of_mem_countableSupClosure_of_imp
+    (p' := Set.image2 (· ×ˢ ·) (IsPavingAnalyticFor p 𝓚) r) ht fun s hs ↦ ?_
+  exact isPavingAnalyticFor_of_image2_prod_isPavingAnalyticFor_right hs
 
-lemma IsPavingAnalyticFor.prod_memSigma_left {𝓨 : Type*} {r : Set 𝓨 → Prop} {t : Set 𝓨}
-    (ht : t ∈ countableSupClosure r) (hs : IsPavingAnalyticFor p 𝓚 s) :
-    IsPavingAnalyticFor (memProd r p) (Σ _ : ℕ, 𝓚) (t ×ˢ s) := by
-  refine isPavingAnalyticFor_of_memSigma_memProd_isPavingAnalyticFor_left ?_
+lemma IsPavingAnalyticFor.prod_mem_countableSupClosure_left {𝓨 : Type*} {r : Set 𝓨 → Prop}
+    {t : Set 𝓨} (ht : t ∈ countableSupClosure r) (hs : IsPavingAnalyticFor p 𝓚 s) :
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) r p) (Σ _ : ℕ, 𝓚) (t ×ˢ s) := by
+  refine isPavingAnalyticFor_of_mem_countableSupClosure_image2_prod_isPavingAnalyticFor_left ?_
   obtain ⟨A, hA, rfl⟩ := ht
-  refine ⟨fun n ↦ A n ×ˢ s, fun n ↦ memProd_prod (hA n) hs, ?_⟩
+  refine ⟨fun n ↦ A n ×ˢ s, fun n ↦ ⟨A n, hA n, s, hs, rfl⟩, ?_⟩
   simp only [Set.iSup_eq_iUnion]
   rw [Set.iUnion_prod_const]
 
-lemma IsPavingAnalyticFor.prod_memSigma_right {𝓨 : Type*} {r : Set 𝓨 → Prop}
+lemma IsPavingAnalyticFor.prod_mem_countableSupClosure_right {𝓨 : Type*} {r : Set 𝓨 → Prop}
     {t : Set 𝓨} (hs : IsPavingAnalyticFor p 𝓚 s) (ht : t ∈ countableSupClosure r) :
-    IsPavingAnalyticFor (memProd p r) (Σ _ : ℕ, 𝓚) (s ×ˢ t) := by
-  refine isPavingAnalyticFor_of_memSigma_memProd_isPavingAnalyticFor_right ?_
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) p r) (Σ _ : ℕ, 𝓚) (s ×ˢ t) := by
+  refine isPavingAnalyticFor_of_mem_countableSupClosure_image2_prod_isPavingAnalyticFor_right ?_
   obtain ⟨A, hA, rfl⟩ := ht
-  refine ⟨fun n ↦ s ×ˢ A n, fun n ↦ memProd_prod hs (hA n), ?_⟩
+  refine ⟨fun n ↦ s ×ˢ A n, fun n ↦ ⟨s, hs, A n, hA n, rfl⟩, ?_⟩
   simp only [Set.iSup_eq_iUnion]
   rw [Set.prod_iUnion]
 
 -- He 1.27
 lemma IsPavingAnalyticFor.prod {𝓨 𝓚' : Type*} {r : Set 𝓨 → Prop} {t : Set 𝓨}
     (ht : IsPavingAnalyticFor r 𝓚' t) (hs : IsPavingAnalyticFor p 𝓚 s) :
-    IsPavingAnalyticFor (memProd r p) ((Σ _ : ℕ, 𝓚') × (Σ _ : ℕ, 𝓚)) (t ×ˢ s) := by
-  obtain ⟨t₁, ht₁, ht₁_subset⟩ := ht.exists_memSigma_superset
-  obtain ⟨s₁, hs₁, hs₁_subset⟩ := hs.exists_memSigma_superset
+    IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) r p) ((Σ _ : ℕ, 𝓚') × (Σ _ : ℕ, 𝓚)) (t ×ˢ s) := by
+  obtain ⟨t₁, ht₁, ht₁_subset⟩ := ht.exists_mem_countableSupClosure_superset
+  obtain ⟨s₁, hs₁, hs₁_subset⟩ := hs.exists_mem_countableSupClosure_superset
   have h_eq : t ×ˢ s = (t ×ˢ s₁) ∩ (t₁ ×ˢ s) := by ext; simp; grind
   rw [h_eq]
   refine IsPavingAnalyticFor.inter ?_ ?_
-  · exact ht.prod_memSigma_right hs₁
-  · exact hs.prod_memSigma_left ht₁
+  · exact ht.prod_mem_countableSupClosure_right hs₁
+  · exact hs.prod_mem_countableSupClosure_left ht₁
 
 lemma IsPavingAnalytic.prod {𝓨 : Type*} {r : Set 𝓨 → Prop} {t : Set 𝓨}
     (ht : IsPavingAnalytic r t) (hs : IsPavingAnalytic p s) :
-    IsPavingAnalytic (memProd r p) (t ×ˢ s) := by
+    IsPavingAnalytic (Set.image2 (· ×ˢ ·) r p) (t ×ˢ s) := by
   obtain ⟨𝓚', h𝓚', ht'⟩ := ht
   obtain ⟨𝓚, h𝓚, hs'⟩ := hs
   exact (IsPavingAnalyticFor.prod ht' hs').isPavingAnalytic
@@ -552,20 +550,20 @@ lemma isPavingAnalyticFor_isPavingAnalyticFor
     (hs : IsPavingAnalyticFor (IsPavingAnalyticFor p 𝓚) 𝓚 s) :
     IsPavingAnalyticFor p (𝓚 × (ℕ → (_ : ℕ) × 𝓚)) s := by
   obtain ⟨q, hq_empty, hq, t, ht, rfl⟩ := hs
-  suffices IsPavingAnalyticFor (memProd p q) (ℕ → (_ : ℕ) × 𝓚) t by
+  suffices IsPavingAnalyticFor (Set.image2 (· ×ˢ ·) p q) (ℕ → (_ : ℕ) × 𝓚) t by
     exact this.fst hq_empty hq
-  refine isPavingAnalyticFor_of_memDelta_of_imp ht fun t ht ↦ ?_
-  refine isPavingAnalyticFor_of_memSigma_of_imp ht fun t ht ↦ ?_
-  exact isPavingAnalyticFor_of_memProd_isPavingAnalyticFor_right ht
+  refine isPavingAnalyticFor_of_mem_countableInfClosure_of_imp ht fun t ht ↦ ?_
+  refine isPavingAnalyticFor_of_mem_countableSupClosure_of_imp ht fun t ht ↦ ?_
+  exact isPavingAnalyticFor_of_image2_prod_isPavingAnalyticFor_right ht
 
 lemma isPavingAnalytic_isPavingAnalytic (hs : IsPavingAnalytic (IsPavingAnalytic p) s) :
     IsPavingAnalytic p s := by
   obtain ⟨𝓚, h𝓚, hs'⟩ := hs
   obtain ⟨q, hq_empty, hq, t, ht, rfl⟩ := hs'
-  suffices IsPavingAnalytic (memProd p q) t from (this.fst hq_empty hq)
-  refine isPavingAnalytic_of_memDelta_of_imp ht fun t ht ↦ ?_
-  refine isPavingAnalytic_of_memSigma_of_imp ht fun t ht ↦ ?_
-  exact isPavingAnalytic_of_memProd_isPavingAnalytic_right ht
+  suffices IsPavingAnalytic (Set.image2 (· ×ˢ ·) p q) t from (this.fst hq_empty hq)
+  refine isPavingAnalytic_of_mem_countableInfClosure_of_imp ht fun t ht ↦ ?_
+  refine isPavingAnalytic_of_mem_countableSupClosure_of_imp ht fun t ht ↦ ?_
+  exact isPavingAnalytic_of_image2_prod_isPavingAnalytic_right ht
 
 @[simp]
 lemma isPavingAnalytic_isPavingAnalytic_iff :
@@ -577,33 +575,28 @@ lemma IsPavingAnalyticFor.inter_set (hs : IsPavingAnalyticFor p 𝓚 s) (t : Set
     IsPavingAnalyticFor {u | ∃ v, v ∈ p ∧ u = v ∩ t} 𝓚 (s ∩ t) := by
   obtain ⟨q, hq_empty, hq, A, hA, rfl⟩ := hs
   let A' := (t ×ˢ .univ) ∩ A
-  refine ⟨q, hq_empty, hq, A', ?_, ?_⟩
-  · simp_rw [memProdSigmaDelta_iff] at hA ⊢
-    obtain ⟨B, hB, K, hK, rfl⟩ := hA
-    refine ⟨fun n m ↦ B n m ∩ t, fun n m ↦ ?_, K, hK, ?_⟩
-    · exact ⟨B n m, hB n m, rfl⟩
-    · simp only [A']
-      simp_rw [Set.inter_iInter, Set.inter_iUnion]
-      congr
-      ext n : 1
-      congr
-      ext m x
-      simp
-      grind
-  · ext; simp [A']; grind
+  refine ⟨q, hq_empty, hq, A', ?_, by ext; simp; grind⟩
+  simp_rw [mem_prodSigmaDelta_iff] at hA ⊢
+  obtain ⟨B, hB, K, hK, rfl⟩ := hA
+  refine ⟨fun n m ↦ B n m ∩ t, fun n m ↦ ⟨B n m, hB n m, rfl⟩, K, hK, ?_⟩
+  simp only [A']
+  simp_rw [Set.inter_iInter, Set.inter_iUnion]
+  congr with
+  simp
+  grind
 
 -- He 1.30
 lemma exists_isPavingAnalyticFor_of_inter_set (t : Set 𝓧)
     (hs : IsPavingAnalyticFor {u | ∃ v, v ∈ p ∧ u = v ∩ t} 𝓚 s) :
     ∃ s', IsPavingAnalyticFor p 𝓚 s' ∧ s = s' ∩ t := by
   obtain ⟨q, hq_empty, hq, A, hA, rfl⟩ := hs
-  rw [memProdSigmaDelta_iff] at hA
+  rw [mem_prodSigmaDelta_iff] at hA
   obtain ⟨B, hB, K, hK, rfl⟩ := hA
   choose A' hA' hBA' using hB
   refine ⟨Prod.fst '' (⋂ n, ⋃ m, A' n m ×ˢ K n m), ?_, ?_⟩
   · refine ⟨q, hq_empty, hq, ?_⟩
     refine ⟨⋂ n, ⋃ m, A' n m ×ˢ K n m, ?_, rfl⟩
-    rw [memProdSigmaDelta_iff]
+    rw [mem_prodSigmaDelta_iff]
     exact ⟨A', hA', K, hK, rfl⟩
   · simp only [hBA']
     have h_eq n m : (A' n m ∩ t) ×ˢ K n m = (A' n m ×ˢ K n m) ∩ (t ×ˢ .univ) := by
@@ -650,24 +643,25 @@ lemma isPavingAnalytic_of_measurableSet_generateFrom (hp_empty : ∅ ∈ p)
     exact ⟨IsPavingAnalytic.iUnion fun n ↦ (hfG n).1,
       IsPavingAnalytic.iInter fun n ↦ (hfG n).2⟩
 
-lemma Iic_memSigma_Icc (u : ℝ) : Set.Iic u ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
+lemma Iic_mem_countableSupClosure_Icc (u : ℝ) :
+    Set.Iic u ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
   refine ⟨fun n ↦ Set.Icc (-(n : ℝ)) u, fun n ↦ ⟨-n, u, rfl⟩, ?_⟩
   ext x
   simp only [Set.iSup_eq_iUnion, Set.mem_iUnion, Set.mem_Icc, exists_and_right, Set.mem_Iic,
     and_iff_right_iff_imp]
-  intro hxu
   simp_rw [neg_le]
-  exact ⟨⌈-x⌉₊, Nat.le_ceil (-x)⟩
+  exact fun _ ↦ ⟨⌈-x⌉₊, Nat.le_ceil (-x)⟩
 
-lemma Ici_memSigma_Icc (u : ℝ) : Set.Ici u ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
+lemma Ici_mem_countableSupClosure_Icc (u : ℝ) :
+    Set.Ici u ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
   refine ⟨fun n ↦ Set.Icc u n, fun n ↦ ⟨u, n, rfl⟩, ?_⟩
   ext x
   simp only [Set.iSup_eq_iUnion, Set.mem_iUnion, Set.mem_Icc, exists_and_left, Set.mem_Ici,
     and_iff_left_iff_imp]
-  intro hxu
-  exact ⟨⌈x⌉₊, Nat.le_ceil x⟩
+  exact fun _ ↦ ⟨⌈x⌉₊, Nat.le_ceil x⟩
 
-lemma Iio_memSigma_Icc (u : ℝ) : Set.Iio u ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
+lemma Iio_mem_countableSupClosure_Icc (u : ℝ) :
+    Set.Iio u ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
   obtain ⟨s, hs_mono, hs_lt, hs_tendsto⟩ := exists_seq_strictMono_tendsto u
   have : Set.Iio u = ⋃ n, Set.Iic (s n) := by
     ext x
@@ -675,9 +669,11 @@ lemma Iio_memSigma_Icc (u : ℝ) : Set.Iio u ∈ countableSupClosure {t | ∃ a 
     refine ⟨fun hxu ↦ ?_, fun ⟨i, hi⟩ ↦ hi.trans_lt (hs_lt i)⟩
     exact (hs_tendsto.eventually_const_le hxu).exists
   rw [this]
-  exact countableSupClosed_countableSupClosure.iSup_mem fun n ↦ Iic_memSigma_Icc (s n)
+  exact countableSupClosed_countableSupClosure.iSup_mem
+    fun n ↦ Iic_mem_countableSupClosure_Icc (s n)
 
-lemma Ioi_memSigma_Icc (u : ℝ) : Set.Ioi u ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
+lemma Ioi_mem_countableSupClosure_Icc (u : ℝ) :
+    Set.Ioi u ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
   obtain ⟨s, hs_mono, hs_gt, hs_tendsto⟩ := exists_seq_strictAnti_tendsto u
   have : Set.Ioi u = ⋃ n, Set.Ici (s n) := by
     ext x
@@ -685,30 +681,33 @@ lemma Ioi_memSigma_Icc (u : ℝ) : Set.Ioi u ∈ countableSupClosure {t | ∃ a 
     refine ⟨fun hxu ↦ ?_, fun ⟨i, hi⟩ ↦ (hs_gt i).trans_le hi⟩
     exact (hs_tendsto.eventually_le_const hxu).exists
   rw [this]
-  exact countableSupClosed_countableSupClosure.iSup_mem fun n ↦ Ici_memSigma_Icc (s n)
+  exact countableSupClosed_countableSupClosure.iSup_mem
+    fun n ↦ Ici_mem_countableSupClosure_Icc (s n)
 
-lemma univ_memSigma_Icc :
+lemma univ_mem_countableSupClosure_Icc :
     (Set.univ : Set ℝ) ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
   have : (Set.univ : Set ℝ) = Set.Iic 0 ∪ Set.Ioi 0 := by ext; simp
   rw [this]
-  exact supClosed_countableSupClosure (Iic_memSigma_Icc 0) (Ioi_memSigma_Icc 0)
+  exact supClosed_countableSupClosure (Iic_mem_countableSupClosure_Icc 0)
+    (Ioi_mem_countableSupClosure_Icc 0)
 
 lemma aux_Icc (l u : ℝ) : (Set.Icc l u)ᶜ ∈ countableSupClosure {t | ∃ a b, Set.Icc a b = t} := by
   rcases lt_or_ge u l with hlu | hlu
   · simp only [not_le, hlu, Set.Icc_eq_empty, Set.compl_empty]
-    exact univ_memSigma_Icc
+    exact univ_mem_countableSupClosure_Icc
   · have : (Set.Icc l u)ᶜ = Set.Iio l ∪ Set.Ioi u := by ext; simp; grind
     rw [this]
-    exact supClosed_countableSupClosure (Iio_memSigma_Icc l) (Ioi_memSigma_Icc u)
+    exact supClosed_countableSupClosure (Iio_mem_countableSupClosure_Icc l)
+      (Ioi_mem_countableSupClosure_Icc u)
 
 lemma aux'_Icc [MeasurableSpace 𝓧] (s : Set (𝓧 × ℝ))
-    (hs : s ∈ memProd MeasurableSet {t | ∃ a b, Set.Icc a b = t}) :
-     sᶜ ∈ countableSupClosure (memProd MeasurableSet {t | ∃ a b, Set.Icc a b = t}) := by
+    (hs : s ∈ Set.image2 (· ×ˢ ·) MeasurableSet {t | ∃ a b, Set.Icc a b = t}) :
+     sᶜ ∈ countableSupClosure (Set.image2 (· ×ˢ ·) MeasurableSet {t | ∃ a b, Set.Icc a b = t}) := by
   obtain ⟨A, hA, K, ⟨l, u, rfl⟩, rfl⟩ := hs
   have hK' := aux_Icc l u
   rw [Set.compl_prod_eq_union]
   refine supClosed_countableSupClosure ?_ ?_
-  · obtain ⟨B, hB, h_eq⟩ := univ_memSigma_Icc
+  · obtain ⟨B, hB, h_eq⟩ := univ_mem_countableSupClosure_Icc
     rw [← h_eq, Set.iSup_eq_iUnion, Set.prod_iUnion]
     refine ⟨fun i ↦ Aᶜ ×ˢ B i, fun n ↦ ?_, rfl⟩
     exact ⟨Aᶜ, hA.compl, B n, hB n, rfl⟩
@@ -745,11 +744,10 @@ lemma _root_.MeasurableSet.isPavingAnalytic_Icc_real {s : Set ℝ} (hs : Measura
     rwa [Real.measurableSpace, borel_eq_generateFrom_Icc'] at hs
   refine isPavingAnalytic_of_measurableSet_generateFrom ?_ ?_ hs'
   · simp only [Set.mem_setOf_eq]
-    refine ⟨1, 0, by simp⟩
+    exact ⟨1, 0, by simp⟩
   · rintro - ⟨l, u, rfl⟩
-    refine isPavingAnalytic_of_memSigma_of_imp (p' := {t | ∃ a b, Set.Icc a b = t}) ?_
-      (fun K hK ↦ isPavingAnalytic_of_mem hK)
-    exact aux_Icc l u
+    exact isPavingAnalytic_of_mem_countableSupClosure_of_imp (p' := {t | ∃ a b, Set.Icc a b = t})
+      (aux_Icc l u) (fun K hK ↦ isPavingAnalytic_of_mem hK)
 
 lemma IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_Icc (s : Set ℝ) :
     IsPavingAnalytic {t | MeasurableSet t} s ↔ IsPavingAnalytic {t | ∃ a b, Set.Icc a b = t} s := by
@@ -763,59 +761,56 @@ lemma IsPavingAnalytic_measurableSet_iff_isPavingAnalytic_Icc (s : Set ℝ) :
 lemma isCountablySpanning_isCompact : IsCountablySpanning (IsCompact (X := ℝ)) := by
   refine ⟨fun n : ℕ ↦ Set.Icc (-n : ℝ) n, fun _ ↦ isCompact_Icc, ?_⟩
   ext x
-  simp only [Set.mem_iUnion, Set.mem_Icc, Set.mem_univ, iff_true]
-  simp_rw [← abs_le]
+  simp only [Set.mem_iUnion, Set.mem_Icc, Set.mem_univ, iff_true, ← abs_le]
   exact ⟨⌈|x|⌉₊, Nat.le_ceil _⟩
 
 lemma isCountablySpanning_Icc : IsCountablySpanning {t | ∃ a b : ℝ, Set.Icc a b = t} := by
   refine ⟨fun n : ℕ ↦ Set.Icc (-n : ℝ) n, fun n ↦ ⟨-n, n, rfl⟩, ?_⟩
   ext x
-  simp only [Set.mem_iUnion, Set.mem_Icc, Set.mem_univ, iff_true]
-  simp_rw [← abs_le]
+  simp only [Set.mem_iUnion, Set.mem_Icc, Set.mem_univ, iff_true, ← abs_le]
   exact ⟨⌈|x|⌉₊, Nat.le_ceil _⟩
 
 -- Icc version of He 1.32 (2)
-lemma _root_.MeasurableSet.isPavingAnalytic_memProd {s : Set (𝓧 × ℝ)} {m𝓧 : MeasurableSpace 𝓧}
+lemma _root_.MeasurableSet.isPavingAnalytic_image2_prod {s : Set (𝓧 × ℝ)} {m𝓧 : MeasurableSpace 𝓧}
     (hs : MeasurableSet s) :
-    IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s := by
-  have h_compl (t : Set (𝓧 × ℝ)) (ht : t ∈ memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) :
-      IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) tᶜ := by
-    refine isPavingAnalytic_of_memSigma_of_imp ?_ fun s hs ↦ isPavingAnalytic_of_mem hs
-    exact aux'_Icc _ ht
+    IsPavingAnalytic (Set.image2 (· ×ˢ ·) MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s := by
+  have h_compl (t : Set (𝓧 × ℝ))
+      (ht : t ∈ Set.image2 (· ×ˢ ·) MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) :
+      IsPavingAnalytic (Set.image2 (· ×ˢ ·) MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) tᶜ :=
+    isPavingAnalytic_of_mem_countableSupClosure_of_imp (aux'_Icc _ ht)
+      fun s hs ↦ isPavingAnalytic_of_mem hs
   refine isPavingAnalytic_of_measurableSet_generateFrom ?_ h_compl ?_
   · have : (∅ : Set (𝓧 × ℝ)) = ∅ ×ˢ ∅ := by simp
     rw [this]
-    exact memProd_prod MeasurableSet.empty ⟨1, 0, by simp⟩
+    exact ⟨∅, MeasurableSet.empty, ∅, ⟨1, 0, by simp⟩, rfl⟩
   · convert hs
     have h_prod_eq := generateFrom_eq_prod (α := 𝓧) (β := ℝ) (C := setOf MeasurableSet)
       (D := {t | ∃ a b : ℝ, Set.Icc a b = t}) MeasurableSpace.generateFrom_measurableSet ?_
       isCountablySpanning_measurableSet isCountablySpanning_Icc
-    swap
+    · rw [← h_prod_eq]
+      rfl
     · rw [Real.measurableSpace, borel_eq_generateFrom_Icc']
-    rw [← h_prod_eq]
-    rfl
 
 -- Icc version of He 1.32 (2)
-lemma isPavingAnalytic_memProd_measurableSet_Icc_iff {s : Set (𝓧 × ℝ)} [MeasurableSpace 𝓧] :
-    IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s ↔
+lemma isPavingAnalytic_image2_prod_measurableSet_Icc_iff {s : Set (𝓧 × ℝ)} [MeasurableSpace 𝓧] :
+    IsPavingAnalytic (Set.image2 (· ×ˢ ·) MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s ↔
       IsPavingAnalytic MeasurableSet s := by
   refine ⟨fun hs ↦ hs.mono fun s hs ↦ ?_, fun hs ↦ ?_⟩
   · obtain ⟨A, hA, K, ⟨a, b, rfl⟩, rfl⟩ := hs
     exact hA.prod measurableSet_Icc
   · exact isPavingAnalytic_isPavingAnalytic
-      (hs.mono fun _ ↦ MeasurableSet.isPavingAnalytic_memProd)
+      (hs.mono fun _ ↦ MeasurableSet.isPavingAnalytic_image2_prod)
 
 -- Icc version of He 1.32 (3)
-lemma isPavingAnalytic_fst_of_memProd_measurableSet_Icc [MeasurableSpace 𝓧] {s : Set (𝓧 × ℝ)}
-    (hs : IsPavingAnalytic (memProd MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s) :
+lemma isPavingAnalytic_fst_of_image2_prod_measurableSet_Icc [MeasurableSpace 𝓧] {s : Set (𝓧 × ℝ)}
+    (hs : IsPavingAnalytic (Set.image2 (· ×ˢ ·) MeasurableSet {t | ∃ a b : ℝ, Set.Icc a b = t}) s) :
     IsPavingAnalytic MeasurableSet (Prod.fst '' s) :=
   hs.fst (⟨1, 0, by simp⟩ : ∅ ∈ {t | ∃ a b : ℝ, Set.Icc a b = t}) isCompactSystem_Icc
 
 lemma _root_.MeasurableSet.isPavingAnalytic_fst {m𝓧 : MeasurableSpace 𝓧} {s : Set (𝓧 × ℝ)}
     (hs : MeasurableSet s) :
     IsPavingAnalytic MeasurableSet (Prod.fst '' s) :=
-  isPavingAnalytic_fst_of_memProd_measurableSet_Icc
-    (MeasurableSet.isPavingAnalytic_memProd hs)
+  isPavingAnalytic_fst_of_image2_prod_measurableSet_Icc hs.isPavingAnalytic_image2_prod
 
 /-- A set `s` of a measurable space `𝓧` is measurably analytic for a measurable space `𝓚` if it
 is the projection of a measurable set of `𝓧 × 𝓚`. -/
@@ -825,10 +820,10 @@ def IsMeasurableAnalyticFor (𝓚 : Type*) [MeasurableSpace 𝓚] [MeasurableSpa
 
 /-- A set `s` of a measurable space `𝓧` is measurably analytic if it is the projection of
 a measurable set of `𝓧 × ℝ`. -/
-def IsMeasurableAnalytic [MeasurableSpace 𝓧] (s : Set 𝓧) : Prop :=
-  IsMeasurableAnalyticFor ℝ s
+def IsMeasurableAnalytic [MeasurableSpace 𝓧] (s : Set 𝓧) : Prop := IsMeasurableAnalyticFor ℝ s
 
-/-- If a set is analytic in the measurable sense for any space `𝓚`, then it is analytic for `ℝ`. -/
+/-- If a set is measurably analytic for any standard Borel space `𝓚`,
+then it is measurably analytic for `ℝ`. -/
 lemma IsMeasurableAnalyticFor.isMeasurableAnalytic {m𝓧 : MeasurableSpace 𝓧}
     {m𝓚 : MeasurableSpace 𝓚} [StandardBorelSpace 𝓚]
     (hs : IsMeasurableAnalyticFor 𝓚 s) :

@@ -11,22 +11,22 @@ Although the definition of analytic sets in \cite{he2019semimartingale} is diffe
 
 A paving is simply a set of sets.
 
-\begin{definition}\label{def:memProd}
-  \leanok
-  \lean{MeasureTheory.memProd}
+\begin{definition}\label{def:image2_prod}
+  \mathlibok
+  % no \lean{}: it's Set.image2 of a product
 The product of two pavings $S$ and $T$ is the set of sets of the form $s \times t$ where $s \in S$ and $t \in T$. We denote that product by $S \times T$.
 \end{definition}
 
 
 \begin{definition}\label{def:supClosure}
-  \leanok
+  \mathlibok
   \lean{supClosure}
 For a paving $S$, we denote by $S^{\cup f}$ the set of finite unions of sets in $S$.
 \end{definition}
 
 
 \begin{definition}\label{def:infClosure}
-  \leanok
+  \mathlibok
   \lean{infClosure}
 For a paving $S$, we denote by $S^{\cap f}$ the set of finite intersections of sets in $S$.
 \end{definition}
@@ -71,9 +71,8 @@ Similar to the proof of Lemma~\ref{lem:InfClosed.mem_countableInfClosure_iff}.
 \end{proof}
 
 
-
 \begin{definition}\label{def:IsCompactSystem}
-  \leanok
+  \mathlibok
   \lean{IsCompactSystem}
 A set of sets $K$ is a compact system if for every countable family $(C_n)_{n \in \mathbb{N}}$ of sets in $K$ such that $\bigcap_{n \in\mathbb{N}} C_n = \emptyset$, there exists a finite subset $S$ of $\mathbb{N}$ such that $\bigcap_{n \in S} C_n = \emptyset$.
 \end{definition}
@@ -151,10 +150,10 @@ The sum of a countable family of compact systems is a compact system.
 \end{proof}
 
 
-\begin{lemma}\label{lem:IsCompactSystem.memProd}
+\begin{lemma}\label{lem:IsCompactSystem.image2_prod}
   \uses{def:IsCompactSystem}
   \leanok
-  \lean{IsCompactSystem.memProd}
+  \lean{IsCompactSystem.image2_prod}
 The product of two compact systems $S \times T$ is a compact system.
 \end{lemma}
 
@@ -198,10 +197,10 @@ $S_\delta$ is a compact system by Lemma~\ref{lem:IsCompactSystem.countableInfClo
 \end{proof}
 
 
-\begin{theorem}\label{thm:fst_iInter_of_supClosure_memProd_of_antitone}
-  \uses{def:IsCompactSystem, def:supClosure, def:memProd}
+\begin{theorem}\label{thm:fst_iInter_of_supClosure_image2_prod_of_antitone}
+  \uses{def:IsCompactSystem, def:supClosure, def:image2_prod}
   \leanok
-  \lean{MeasureTheory.fst_iInter_of_supClosure_memProd_of_antitone}
+  \lean{MeasureTheory.fst_iInter_of_supClosure_image2_prod_of_antitone}
 Let $S$ be a paving of $\mathcal{X}$ and $T$ be a compact system of $\mathcal{K}$.
 Let $(B_n)_{n \in \mathbb{N}}$ be a monotone decreasing sequence of sets in $(S \times T)^{\cup f}$.
 Let $\pi_{\mathcal{X}} : \mathcal{X} \times \mathcal{K} \to \mathcal{X}$ be the projection on $\mathcal{X}$.
@@ -222,7 +221,7 @@ Then
 \subsection{Analytic sets}
 
 \begin{definition}[Analytic set]\label{def:IsPavingAnalytic}
-  \uses{def:IsCompactSystem, def:countableSupClosure, def:countableInfClosure, def:memProd}
+  \uses{def:IsCompactSystem, def:countableSupClosure, def:countableInfClosure, def:image2_prod}
   \leanok
   \lean{MeasureTheory.IsPavingAnalytic, MeasureTheory.IsPavingAnalyticFor}
 Let $F$ be a paving of a type $\mathcal{X}$.
@@ -258,10 +257,10 @@ If $F \subseteq G$ and $s$ is $F$-analytic, then $s$ is $G$-analytic: $\mathcal{
 \end{proof}
 
 
-\begin{lemma}\label{lem:IsPavingAnalytic.exists_memSigma_superset}
+\begin{lemma}\label{lem:IsPavingAnalytic.exists_mem_countableSupClosure_superset}
   \uses{def:IsPavingAnalytic}
   \leanok
-  \lean{MeasureTheory.IsPavingAnalyticFor.exists_memSigma_superset}
+  \lean{MeasureTheory.IsPavingAnalyticFor.exists_mem_countableSupClosure_superset}
 If $s$ is $F$-analytic, then there exists a set $t$ in $F_\sigma$ such that $s \subseteq t$.
 \end{lemma}
 
@@ -305,7 +304,7 @@ If a set $s$ of $\mathcal{X} \times \mathcal{K}$ is $F \times K$-analytic, then 
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:IsCompactSystem.memProd}
+  \uses{lem:IsCompactSystem.image2_prod}
 
 \end{proof}
 
@@ -330,7 +329,7 @@ If $s$ is $F$-analytic and $t$ is $G$-analytic, then $s \times t$ is $(F \times 
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:IsPavingAnalytic.prod_left, lem:IsPavingAnalytic.exists_memSigma_superset}
+  \uses{lem:IsPavingAnalytic.prod_left, lem:IsPavingAnalytic.exists_mem_countableSupClosure_superset}
 
 \end{proof}
 
@@ -396,10 +395,10 @@ A set of $\mathbb{R}$ is $M_{\mathbb{R}}$-analytic if and only if it is $I_{\mat
 \end{proof}
 
 
-\begin{lemma}\label{lem:MeasurableSet.isPavingAnalytic_memProd}
+\begin{lemma}\label{lem:MeasurableSet.isPavingAnalytic_image2_prod}
   \uses{def:IsPavingAnalytic}
   \leanok
-  \lean{MeasurableSet.isPavingAnalytic_memProd}
+  \lean{MeasurableSet.isPavingAnalytic_image2_prod}
 Let $\mathcal{X}$ be a measurable space and $s$ be a measurable set of $\mathcal{X} \times \mathbb{R}$.
 Then $s$ is $(M_{\mathcal{X}} \times I_{\mathbb{R}})$-analytic.
 \end{lemma}
@@ -410,10 +409,10 @@ Then $s$ is $(M_{\mathcal{X}} \times I_{\mathbb{R}})$-analytic.
 \end{proof}
 
 
-\begin{lemma}\label{lem:isPavingAnalytic_fst_of_memProd_measurableSet_Icc}
+\begin{lemma}\label{lem:isPavingAnalytic_fst_of_image2_prod_measurableSet_Icc}
   \uses{def:IsPavingAnalytic}
   \leanok
-  \lean{MeasureTheory.isPavingAnalytic_fst_of_memProd_measurableSet_Icc}
+  \lean{MeasureTheory.isPavingAnalytic_fst_of_image2_prod_measurableSet_Icc}
 Let $\mathcal{X}$ be a measurable space and $s$ be a set of $\mathcal{X} \times \mathbb{R}$ which is $(M_{\mathcal{X}} \times I_{\mathbb{R}})$-analytic.
 Then the projection $\pi_{\mathcal{X}}(s)$ is $M_{\mathcal{X}}$-analytic.
 \end{lemma}
@@ -433,7 +432,7 @@ Then the projection of $s$ on $\mathcal{X}$ is $M_{\mathcal{X}}$-analytic.
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:MeasurableSet.isPavingAnalytic_memProd, lem:isPavingAnalytic_fst_of_memProd_measurableSet_Icc}
+  \uses{lem:MeasurableSet.isPavingAnalytic_image2_prod, lem:isPavingAnalytic_fst_of_image2_prod_measurableSet_Icc}
 
 \end{proof}
 
@@ -501,7 +500,7 @@ Then the function $I_{\mathcal{X}}(u) = I(\pi_{\mathcal{X}}(u))$ is a capacity f
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{thm:fst_iInter_of_supClosure_memProd_of_antitone}
+  \uses{thm:fst_iInter_of_supClosure_image2_prod_of_antitone}
 
 \end{proof}
 
@@ -539,10 +538,10 @@ For $I$ an $F$-capacity, every set in $F$ is $I$-capacitable.
 \end{proof}
 
 
-\begin{lemma}\label{lem:isCapacitable_memDelta_memSigma}
+\begin{lemma}\label{lem:isCapacitable_mem_countableInfClosure_countableSupClosure}
   \uses{def:IsCapacitable, def:Capacity, def:countableInfClosure, def:countableSupClosure}
   \leanok
-  \lean{MeasureTheory.isCapacitable_memDelta_memSigma}
+  \lean{MeasureTheory.isCapacitable_mem_countableInfClosure_countableSupClosure}
 Suppose that $F$ contains the empty set and is closed under pairwise intersections and unions, and let $I$ be an $F$-capacity.
 Then every set of $F_{\sigma \delta}$ is $I$-capacitable.
 \end{lemma}
@@ -553,10 +552,10 @@ Then every set of $F_{\sigma \delta}$ is $I$-capacitable.
 \end{proof}
 
 
-\begin{lemma}\label{lem:memDelta_fst}
-  \uses{def:countableInfClosure, def:memProd, def:IsCompactSystem}
+\begin{lemma}\label{lem:mem_countableInfClosure_fst}
+  \uses{def:countableInfClosure, def:image2_prod, def:IsCompactSystem}
   \leanok
-  \lean{MeasureTheory.memDelta_fst}
+  \lean{MeasureTheory.mem_countableInfClosure_fst}
 Suppose that $F$ contains the empty set and is closed under pairwise intersections and unions, and let $I$ be an $F$-capacity.
 Let $K$ be a compact system which is also closed under pairwise intersections.
 Let $s \in ((F \times K)^{\cup f})_\delta$.
@@ -564,7 +563,7 @@ Then $\pi_{\mathcal{X}}(s) \in F_\delta$.
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{thm:fst_iInter_of_supClosure_memProd_of_antitone, lem:InfClosed.mem_countableInfClosure_iff}
+  \uses{thm:fst_iInter_of_supClosure_image2_prod_of_antitone, lem:InfClosed.mem_countableInfClosure_iff}
 
 \end{proof}
 
@@ -580,7 +579,7 @@ If a set $s$ of $\mathcal{X} \times \mathcal{K}$ is capacitable with respect to 
 \end{lemma}
 
 \begin{proof}\leanok
-  \uses{lem:memDelta_fst}
+  \uses{lem:mem_countableInfClosure_fst}
 
 \end{proof}
 
@@ -595,7 +594,7 @@ Then every $F$-analytic set is $I$-capacitable.
 \end{theorem}
 
 \begin{proof}\leanok
-  \uses{lem:isCapacitable_memDelta_memSigma, lem:IsCompactSystem.infClosure, lem:IsCapacitable.fst}
+  \uses{lem:isCapacitable_mem_countableInfClosure_countableSupClosure, lem:IsCompactSystem.infClosure, lem:IsCapacitable.fst}
 
 \end{proof}
 

@@ -67,7 +67,7 @@ lemma Measure.capacity_apply {m𝓧 : MeasurableSpace 𝓧} (μ : Measure 𝓧) 
 /-- The capacity obtained by composition of a capacity with a projection. -/
 def Capacity.comp_fst (hp_empty : ∅ ∈ p) (hp_union : SupClosed p)
     (m : Capacity p) (hq_empty : ∅ ∈ q) (hq : IsCompactSystem q) :
-    Capacity (supClosure (memProd p q)) where
+    Capacity (supClosure (Set.image2 (· ×ˢ ·) p q)) where
   capacityOf s := m (Prod.fst '' s)
   mono' s t hst := m.mono (Set.image_mono hst)
   capacityOf_iUnion f hf := by
@@ -77,7 +77,7 @@ def Capacity.comp_fst (hp_empty : ∅ ∈ p) (hp_union : SupClosed p)
   capacityOf_iInter f hf hp := by
     let g n := Prod.fst '' f n
     have hg : Antitone g := fun n m hnm ↦ Set.image_mono (hf hnm)
-    rw [fst_iInter_of_supClosure_memProd_of_antitone hq_empty hq hf hp]
+    rw [fst_iInter_of_supClosure_image2_prod_of_antitone hq_empty hq hf hp]
     refine capacity_iInter hg fun n ↦ ?_
     simp_rw [mem_supClosure_set_iff'] at hp
     obtain ⟨S, _, u, hu_prod, hf_eq⟩ := hp n
@@ -111,7 +111,7 @@ lemma isCapacitable_of_mem (hs : s ∈ p) : IsCapacitable m s :=
   fun a ha ↦ ⟨s, subset_countableInfClosure hs, by simp, ha.le⟩
 
 -- He 1.34
-lemma isCapacitable_memDelta_memSigma (m : Capacity p)
+lemma isCapacitable_mem_countableInfClosure_countableSupClosure (m : Capacity p)
     (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
     (hs : s ∈ countableInfClosure (countableSupClosure p)) :
     IsCapacitable m s := by
@@ -141,15 +141,15 @@ lemma isCapacitable_memDelta_memSigma (m : Capacity p)
     simp only [le_iInf_iff]
     exact fun n ↦ (hB_gt n).le
 
-lemma memDelta_fst {s : Set (𝓧 × 𝓚)}
+lemma mem_countableInfClosure_fst {s : Set (𝓧 × 𝓚)}
     (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_union : SupClosed p)
     (hq_empty : ∅ ∈ q) (hq_inter : InfClosed q) (hq : IsCompactSystem q)
-    (hs : s ∈ countableInfClosure (supClosure (memProd p q))) :
+    (hs : s ∈ countableInfClosure (supClosure (Set.image2 (· ×ˢ ·) p q))) :
     (Prod.fst '' s) ∈ countableInfClosure p := by
-  rw [InfClosed.mem_countableInfClosure_iff (InfClosed.supClosure (hp_inter.memProd hq_inter))]
+  rw [InfClosed.mem_countableInfClosure_iff (InfClosed.supClosure (hp_inter.image2_prod hq_inter))]
     at hs
   obtain ⟨A, hA, hA_anti, rfl⟩ := hs
-  rw [fst_iInter_of_supClosure_memProd_of_antitone hq_empty hq hA_anti hA]
+  rw [fst_iInter_of_supClosure_image2_prod_of_antitone hq_empty hq hA_anti hA]
   refine ⟨fun n ↦ Prod.fst '' A n, fun n ↦ ?_, rfl⟩
   simp only
   simp_rw [mem_supClosure_set_iff'] at hA
@@ -182,7 +182,8 @@ lemma IsCapacitable.fst (hp_empty : ∅ ∈ p) (hp_inter : InfClosed p) (hp_unio
     IsCapacitable m (Prod.fst '' s) := by
   intro a ha
   choose t ht_mono ht_subset ht_le using hs a ha
-  exact ⟨Prod.fst '' t, memDelta_fst hp_empty hp_inter hp_union hq_empty hq_inter hq ht_mono,
+  exact ⟨Prod.fst '' t,
+    mem_countableInfClosure_fst hp_empty hp_inter hp_union hq_empty hq_inter hq ht_mono,
     Set.image_mono ht_subset, ht_le⟩
 
 /-- **Choquet's capacitability theorem**. -/
@@ -193,9 +194,9 @@ theorem IsPavingAnalyticFor.isCapacitable (hp_empty : ∅ ∈ p) (hp_inter : Inf
   have hq'_empty : ∅ ∈ infClosure q := subset_infClosure hq_empty
   have hq' : IsCompactSystem (infClosure q) := hq.infClosure
   refine IsCapacitable.fst hp_empty hp_inter hp_union m hq'_empty infClosed_infClosure hq' ?_
-  refine isCapacitable_memDelta_memSigma _ ?_ ?_ ?_ ?_
+  refine isCapacitable_mem_countableInfClosure_countableSupClosure _ ?_ ?_ ?_ ?_
   · exact subset_supClosure ⟨∅, hp_empty, ∅, hq'_empty, by simp⟩
-  · exact InfClosed.supClosure (hp_inter.memProd infClosed_infClosure)
+  · exact InfClosed.supClosure (hp_inter.image2_prod infClosed_infClosure)
   · exact fun s hs t ht ↦ supClosed_supClosure hs ht
   · obtain ⟨B, hB, rfl⟩ := hA
     refine ⟨B, fun n ↦ ?_, rfl⟩
@@ -214,7 +215,7 @@ theorem IsPavingAnalytic.isCapacitable (hp_empty : ∅ ∈ p) (hp_inter : InfClo
   obtain ⟨𝓚, h𝓚, hs𝓚⟩ := hs
   exact hs𝓚.isCapacitable hp_empty hp_inter hp_union
 
-lemma memDelta_measurableSet {m𝓧 : MeasurableSpace 𝓧} {s : Set 𝓧}
+lemma mem_countableInfClosure_measurableSet {m𝓧 : MeasurableSpace 𝓧} {s : Set 𝓧}
     (hs : s ∈ countableInfClosure MeasurableSet) :
     MeasurableSet s := by
   obtain ⟨A, hA, rfl⟩ := hs
@@ -234,7 +235,7 @@ lemma isCapacitable_measure_iff {m𝓧 : MeasurableSpace 𝓧} (μ : Measure �
       have (n : ℕ) := hs ((μ.capacity s) * (1 - (n + 1 : ℝ≥0∞)⁻¹)) (this n)
       choose f hf using this
       have hsub : ⋃ i, f i ⊆ s := Set.iUnion_subset fun i => (hf i).2.1
-      have hm := MeasurableSet.iUnion fun i => memDelta_measurableSet (hf i).1
+      have hm := MeasurableSet.iUnion fun i ↦ mem_countableInfClosure_measurableSet (hf i).1
       refine ⟨⋃ i, f i, hm, ae_eq_set.2 ⟨?_, ?_⟩⟩
       · rw [measure_diff hsub hm.nullMeasurableSet (by finiteness)]
         suffices μ (⋃ i, f i) = μ s from by simp_all
