@@ -95,7 +95,6 @@ lemma IndepFun.hasLaw_gaussianReal_of_add
     h.variance_add, hX.variance_eq, variance_id_gaussianReal, Real.toNNReal_add,
     Real.toNNReal_coe]
   any_goals simp
-  · exact variance_nonneg _ _
   · exact hX.hasGaussianLaw.memLp_two
   · convert hY.hasGaussianLaw.memLp_two.sub hX.hasGaussianLaw.memLp_two
     simp

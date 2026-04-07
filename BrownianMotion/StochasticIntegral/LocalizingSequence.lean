@@ -121,7 +121,7 @@ lemma isPreLocalizingSequence_of_isLocalizingSequence_aux'
       ∧ ∀ n, ∃ k, P {ω | σ n k ω < min (τ n ω) (T n)} ≤ (1 / 2) ^ n := by
   obtain ⟨T, -, hT⟩ := Filter.exists_seq_monotone_tendsto_atTop_atTop ι
   refine ⟨T, hT, fun n ↦ ?_⟩
-  by_contra hn; push_neg at hn
+  by_contra hn; push Not at hn
   suffices (1 / 2) ^ n ≤ P (⋂ k : ℕ, {ω | σ n k ω < min (τ n ω) (T n)}) by
     refine (by simp : ¬ (1 / 2 : ℝ≥0∞) ^ n ≤ 0) <| this.trans <| nonpos_iff_eq_zero.2 ?_
     rw [measure_eq_zero_iff_ae_notMem]

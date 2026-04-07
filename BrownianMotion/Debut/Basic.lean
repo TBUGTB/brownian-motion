@@ -122,7 +122,7 @@ lemma hittingAfter_lt_iff' {Ω β ι : Type*} [ConditionallyCompleteLinearOrder 
   · have h_top : hittingAfter u s n ω ≠ ⊤ := fun h ↦ by simp [h] at h'
     have h_top' : ∃ j, n ≤ j ∧ u j ω ∈ s := by
       rw [ne_eq, hittingAfter_eq_top_iff] at h_top
-      push_neg at h_top
+      push Not at h_top
       exact h_top
     have h_le := le_hittingAfter (u := u) (s := s) (n := n) ω
     rw [hittingAfter, if_pos h_top'] at h'

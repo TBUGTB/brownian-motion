@@ -3,14 +3,8 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne
 -/
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Data.Nat.Nth
-import Mathlib.Topology.Bases
-import Mathlib.Topology.MetricSpace.Basic
-import Mathlib.Topology.MetricSpace.Pseudo.Defs
+import Mathlib.Topology.Algebra.MulAction
 import Mathlib.Topology.MetricSpace.Bounded
-import Mathlib.Topology.Sequences
-import Mathlib.Topology.Order.Basic
 
 /-! # cadlag functions
 

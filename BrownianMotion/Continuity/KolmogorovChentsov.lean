@@ -173,8 +173,8 @@ theorem measurable_limUnder {ι X E : Type*} [MeasurableSpace X] [TopologicalSpa
     Measurable (fun x ↦ limUnder l (f · x)) := by
   let conv := {x | ∃ c, Tendsto (f · x) l (𝓝 c)}
   have mconv : MeasurableSet conv := measurableSet_exists_tendsto hf
-  have : (fun x ↦ _root_.limUnder l (f · x)) = ((↑) : conv → X).extend
-      (fun x ↦ _root_.limUnder l (f · x)) (fun _ ↦ hE.some) := by
+  have : (fun x ↦ Filter.limUnder l (f · x)) = ((↑) : conv → X).extend
+      (fun x ↦ Filter.limUnder l (f · x)) (fun _ ↦ hE.some) := by
     ext x
     by_cases hx : x ∈ conv
     · rw [Function.extend_val_apply hx]

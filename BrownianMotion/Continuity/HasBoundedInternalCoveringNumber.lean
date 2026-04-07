@@ -52,7 +52,7 @@ lemma HasBoundedCoveringNumber.subset {B : Set T}
     _ ≤ coveringNumber (0 / 2) A := mod_cast coveringNumber_subset_le hBA
     _ = coveringNumber 0 A := by simp
     _ ≤ c := h
-  push_neg at hdA
+  push Not at hdA
   calc (coveringNumber ε B : ℝ≥0∞)
   _ ≤ coveringNumber (ε / 2) A := mod_cast coveringNumber_subset_le hBA
   _ ≤ c * (ε / 2 : ℝ≥0∞)⁻¹ ^ d := by
