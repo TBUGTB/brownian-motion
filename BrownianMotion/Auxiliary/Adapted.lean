@@ -1,6 +1,10 @@
-import Mathlib.Probability.Process.Adapted
-import Mathlib.Data.Setoid.Partition
-import BrownianMotion.StochasticIntegral.Cadlag
+module
+
+public import Mathlib.Probability.Process.Adapted
+public import Mathlib.Data.Setoid.Partition
+public import BrownianMotion.StochasticIntegral.Cadlag
+
+@[expose] public section
 
 open Filter Set TopologicalSpace Function MeasureTheory
 open scoped NNReal ENNReal Topology

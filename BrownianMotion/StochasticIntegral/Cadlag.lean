@@ -3,12 +3,16 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne
 -/
-import Mathlib.Topology.Algebra.MulAction
-import Mathlib.Topology.MetricSpace.Bounded
+module
+
+public import Mathlib.Topology.Algebra.MulAction
+public import Mathlib.Topology.MetricSpace.Bounded
 
 /-! # cadlag functions
 
 -/
+
+@[expose] public section
 
 open Filter TopologicalSpace Bornology
 open scoped Topology

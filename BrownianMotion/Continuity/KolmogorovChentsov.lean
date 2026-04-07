@@ -3,12 +3,18 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne
 -/
-import BrownianMotion.Continuity.KolmogorovChentsovInequality
+module
+
+public import BrownianMotion.Auxiliary.Topology
+public import BrownianMotion.Continuity.KolmogorovChentsovInequality
+public import BrownianMotion.Gaussian.StochasticProcesses
 
 /-!
 # Kolmogorov-Chentsov theorem
 
 -/
+
+@[expose] public section
 
 open MeasureTheory Filter
 open scoped ENNReal NNReal Topology Asymptotics
@@ -393,8 +399,8 @@ lemma holderOnWith_of_mem_holderSet (hT : HasBoundedCoveringNumber U c d)
   have h_edist_lt_top : edist s t < ∞ := by
     calc edist s t ≤ Metric.ediam U := Metric.edist_le_ediam_of_mem hs ht
     _ < ∞ := hT.ediam_lt_top
-  have h_dist_top : edist s t ^ (β : ℝ) ≠ ∞
-  · simp only [ne_eq, ENNReal.rpow_eq_top_iff, NNReal.coe_pos, not_or, not_and, not_lt,
+  have h_dist_top : edist s t ^ (β : ℝ) ≠ ∞ := by
+    simp only [ne_eq, ENNReal.rpow_eq_top_iff, NNReal.coe_pos, not_or, not_and, not_lt,
       NNReal.zero_le_coe, implies_true, nonpos_iff_eq_zero, true_and]
     exact fun h_eq_top ↦ absurd h_eq_top h_edist_lt_top.ne
   by_cases h_dist_zero : edist s t = 0

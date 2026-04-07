@@ -1,4 +1,8 @@
-import Mathlib.LinearAlgebra.Dimension.Finite
+module
+
+public import Mathlib.LinearAlgebra.Dimension.Finite
+
+@[expose] public section
 
 theorem div_left_injective₀ {G₀ : Type*} [CommGroupWithZero G₀] {c : G₀} (hc : c ≠ 0) :
     Function.Injective fun x ↦ x / c := by

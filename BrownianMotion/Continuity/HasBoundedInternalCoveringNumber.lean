@@ -3,12 +3,16 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne
 -/
-import BrownianMotion.Continuity.CoveringNumber
+module
+
+public import BrownianMotion.Continuity.CoveringNumber
 
 /-!
 # HasBoundedCoveringNumber
 
 -/
+
+@[expose] public section
 
 open MeasureTheory Metric
 open scoped ENNReal NNReal

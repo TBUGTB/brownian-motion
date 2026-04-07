@@ -3,13 +3,18 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne
 -/
-import BrownianMotion.Auxiliary.Martingale
-import BrownianMotion.StochasticIntegral.Locally
-import BrownianMotion.StochasticIntegral.OptionalSampling
+module
+
+public import BrownianMotion.Auxiliary.IsStoppingTime
+public import BrownianMotion.Auxiliary.Martingale
+public import BrownianMotion.StochasticIntegral.Locally
+public import BrownianMotion.StochasticIntegral.OptionalSampling
 
 /-! # Local (sub)martingales
 
 -/
+
+@[expose] public section
 
 open MeasureTheory Filter TopologicalSpace Function
 open scoped ENNReal

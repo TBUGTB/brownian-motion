@@ -3,16 +3,17 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Kexing Ying
 -/
-import Mathlib.Probability.Process.Stopping
-import BrownianMotion.StochasticIntegral.Predictable
-import BrownianMotion.Auxiliary.WithTop
-import BrownianMotion.Auxiliary.IsStoppingTime
-import BrownianMotion.Auxiliary.StoppedProcess
-import BrownianMotion.StochasticIntegral.Cadlag
+module
+
+public import BrownianMotion.Auxiliary.WithTop
+public import BrownianMotion.StochasticIntegral.Predictable
+public import Mathlib.Probability.Process.Stopping
 
 /-! # Localizing sequences of stopping times
 
 -/
+
+@[expose] public section
 
 open MeasureTheory Filter Filtration
 open scoped ENNReal Topology

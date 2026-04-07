@@ -3,19 +3,27 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne
 -/
-import BrownianMotion.Continuity.KolmogorovChentsov
-import BrownianMotion.Gaussian.GaussianProcess
-import BrownianMotion.Gaussian.Moment
-import BrownianMotion.Gaussian.ProjectiveLimit
-import Mathlib.Probability.Independence.BoundedContinuousFunction
-import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.Probability.ConditionalExpectation
-import Mathlib.Probability.Independence.Process.HasIndepIncrements
+module
+
+public import BrownianMotion.Auxiliary.HasLaw
+public import BrownianMotion.Continuity.KolmogorovChentsov
+public import BrownianMotion.Gaussian.CovMatrix
+public import BrownianMotion.Gaussian.GaussianProcess
+public import BrownianMotion.Gaussian.Moment
+public import BrownianMotion.Gaussian.ProjectiveLimit
+public import Mathlib.Probability.ConditionalExpectation
+public import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
+public import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
+public import Mathlib.Probability.Independence.BoundedContinuousFunction
+public import Mathlib.Probability.Independence.Process.HasIndepIncrements
+public import Mathlib.Topology.ContinuousMap.SecondCountableSpace
 
 /-!
 # Brownian motion
 
 -/
+
+@[expose] public section
 
 open MeasureTheory NNReal WithLp Finset MeasurableSpace Filtration Filter
 open scoped ENNReal NNReal Topology BoundedContinuousFunction

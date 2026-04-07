@@ -1,6 +1,10 @@
-import BrownianMotion.Gaussian.Gaussian
-import Mathlib.MeasureTheory.Constructions.Cylinders
-import Mathlib.Probability.Independence.CharacteristicFunction
+module
+
+public import BrownianMotion.Gaussian.CovMatrix
+public import BrownianMotion.Gaussian.Gaussian
+public import Mathlib.Probability.Independence.CharacteristicFunction
+
+@[expose] public section
 
 open MeasureTheory ProbabilityTheory Finset WithLp Complex
 open scoped NNReal

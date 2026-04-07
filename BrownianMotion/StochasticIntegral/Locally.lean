@@ -3,11 +3,16 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne, Kexing Ying
 -/
-import BrownianMotion.StochasticIntegral.LocalizingSequence
+module
+
+public import BrownianMotion.StochasticIntegral.Cadlag
+public import BrownianMotion.StochasticIntegral.LocalizingSequence
 
 /-! # Local properties of processes
 
 -/
+
+@[expose] public section
 
 open MeasureTheory Filter Filtration
 open scoped ENNReal Topology
