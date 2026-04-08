@@ -430,6 +430,7 @@ MeasureTheory.martingale_martingalePart
 MeasureTheory.Submartingale.monotone_predictablePart
 komlos_convex
 komlos_norm
+cwmul
 komlos_L1
 komlos_ennreal
 ProbabilityTheory.IsLocalSubmartingale.doob_meyer
