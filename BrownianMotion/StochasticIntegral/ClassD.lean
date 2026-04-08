@@ -3,14 +3,17 @@ Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Rémy Degenne
 -/
-import BrownianMotion.Debut.Basic
-import BrownianMotion.StochasticIntegral.LocalMartingale
-import Mathlib.Probability.Process.HittingTime
-import Mathlib.Probability.Martingale.BorelCantelli
+module
+
+public import BrownianMotion.Auxiliary.StoppedProcess
+public import BrownianMotion.Debut.Basic
+public import BrownianMotion.StochasticIntegral.LocalMartingale
 
 /-! # Locally integrable, class D, class DL
 
 -/
+
+@[expose] public section
 
 open MeasureTheory Filter Function TopologicalSpace
 open scoped ENNReal Topology

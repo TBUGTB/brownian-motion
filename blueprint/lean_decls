@@ -173,7 +173,7 @@ MeasureTheory.Submartingale.condExp_sub_nonneg
 MeasureTheory.Submartingale.integrable_stoppedValue
 MeasureTheory.Martingale.congr
 MeasureTheory.Submartingale.congr
-MeasureTheory.conditional_jensen
+ConvexOn.map_condExp_le_univ
 MeasureTheory.norm_condExp_le
 MeasureTheory.Martingale.submartingale_convex_comp
 MeasureTheory.Martingale.submartingale_norm
