@@ -397,6 +397,7 @@ tendsto_of_no_upcrossings
 komlos_convex
 komlos_norm
 cwmul
+komlos_convex_weights
 komlos_L1
 komlos_ennreal
 MeasureTheory.predictablePart
