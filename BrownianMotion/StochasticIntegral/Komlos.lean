@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2025 Rémy Degenne. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Rémy Degenne
+Authors: Rémy Degenne, Jonas Bayer
 -/
 import Mathlib.Probability.Moments.Basic
 import Mathlib.Topology.UniformSpace.Cauchy
@@ -173,24 +173,18 @@ lemma gtilde_update (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E
   simp only [gtilde]
   rw [← cwIteratedMul_update cw hk']
 
-/-
-TODO: There needs to be a condition that all cw are nonnegative! This leads to more puzzling when
-using this lemma to show the full komlos statement.
--/
 lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ)
   (cw : ℕ → ℕ → ℕ →₀ ℝ) (hcw: ∀ k n m, 0 ≤ cw k n m) :
   ∃ (cw_new : ℕ → ℕ → ℕ →₀ ℝ),
     (∃ glim : E, Tendsto (fun n ↦ ∑ m ∈ (cwIteratedMul cw_new (k + 1) n).support,
-      cwIteratedMul cw_new (k + 1) n m • x (k+1) n) atTop (𝓝 glim))
+      cwIteratedMul cw_new (k + 1) n m • x (k+1) m) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i)
     ∧ (∀ k n m, 0 ≤ cw_new k n m) := by
 
   have gtilde_bound : ∃ M, ∀ n, ‖gtilde cw x k n‖ ≤ M := by sorry -- maybe turn this into a lemma
 
   obtain ⟨g_step, gstep_conv, gstep_lim⟩ := komlos_norm (gtilde_bound)
-  -- Change this: We want ∑ i : w.support, w i • gtilde cw x k i = g_step n
-  -- and an extra condition that the weights are 0 up to index n!
 
   have cw_step_exists : ∃ w : ℕ → ℕ →₀ ℝ,
     (∀ n m, 0 ≤ w n m) ∧ (∀ n, ∀ m ≤ n, w n m = 0)
@@ -246,7 +240,8 @@ lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
 lemma komlos_convex_weights [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
     {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
     ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
-    let g k n := ∑ m ∈ (cwIteratedMul cw k n).support, cwIteratedMul cw k n m • (gtilde cw x k n);
+    let g k n := ∑ m ∈ (cwIteratedMul cw (k + 1) n).support,
+      cwIteratedMul cw (k + 1) n m • x (k+1) m;
     ∀ k : ℕ, ∃ glim : E, Tendsto (g k) atTop (𝓝 glim) := by
   sorry
 
