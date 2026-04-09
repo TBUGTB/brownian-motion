@@ -158,6 +158,98 @@ lemma komlos_convergence [NormedAddCommGroup E] [Module ℝ E] [IsBoundedSMul �
   simp only [one_mul, gt_iff_lt]
   exact RCLike.ofReal_lt_ofReal.mp (hN n hn)
 
+noncomputable section
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [Module ℝ E]
+
+def gtilde (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) (k : ℕ) (n : ℕ) : E :=
+  ∑ m ∈ (cwIteratedMul cw k n).support, (cwIteratedMul cw k n m) • (x (k+1) m)
+  -- note that it has to be k+1, not k for x!
+
+omit [InnerProductSpace ℝ E] [CompleteSpace E] in
+lemma gtilde_update (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) {k k' : ℕ} {f : ℕ → ℕ →₀ ℝ}
+    (hk' : k' > k) :
+    gtilde cw x k = gtilde (Function.update cw k' f) x k := by
+  funext n
+  simp only [gtilde]
+  rw [← cwIteratedMul_update cw hk']
+
+/-
+TODO: There needs to be a condition that all cw are nonnegative! This leads to more puzzling when
+using this lemma to show the full komlos statement.
+-/
+lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ)
+  (cw : ℕ → ℕ → ℕ →₀ ℝ) (hcw: ∀ k n m, 0 ≤ cw k n m) :
+  ∃ (cw_new : ℕ → ℕ → ℕ →₀ ℝ),
+    (∃ glim : E, Tendsto (fun n ↦ ∑ m ∈ (cwIteratedMul cw_new (k + 1) n).support,
+      cwIteratedMul cw_new (k + 1) n m • x (k+1) n) atTop (𝓝 glim))
+    ∧ (∀ i ≤ k, cw_new i = cw i)
+    ∧ (∀ k n m, 0 ≤ cw_new k n m) := by
+
+  have gtilde_bound : ∃ M, ∀ n, ‖gtilde cw x k n‖ ≤ M := by sorry -- maybe turn this into a lemma
+
+  obtain ⟨g_step, gstep_conv, gstep_lim⟩ := komlos_norm (gtilde_bound)
+  -- Change this: We want ∑ i : w.support, w i • gtilde cw x k i = g_step n
+  -- and an extra condition that the weights are 0 up to index n!
+
+  have cw_step_exists : ∃ w : ℕ → ℕ →₀ ℝ,
+    (∀ n m, 0 ≤ w n m) ∧ (∀ n, ∀ m ≤ n, w n m = 0)
+    ∧ (∀ n, ∑ i ∈ (w n).support, w n i = 1)
+    ∧ ∀ n, ∑ i ∈ (w n).support, (w n) i • gtilde cw x k i = g_step n := by
+    have original_weights : ∀ n, ∃ w : ℕ →₀ ℝ, (∀ i, 0 ≤ w i) ∧ ∑ i ∈ w.support, w i = 1
+      ∧ ∑ i ∈ w.support, w i • gtilde cw x k (n + i) = g_step n := by
+      exact (fun n ↦ convex_weights_of_mem_convexHull_indexed (gstep_conv n))
+
+    -- Need to use choice to finish this, along the lines of:
+    -- exact ⟨fun n => Classical.choose (weights n), fun n => Classical.choose_spec (weights n)⟩
+    sorry
+
+  obtain ⟨cw_step, ⟨hnonneg, hzero, hsum, hcombo⟩⟩ := cw_step_exists
+
+  let cw_new := Function.update cw (k+1) cw_step
+
+  have g_new_expression (n : ℕ) : g_step n = ∑ m ∈ (cwIteratedMul cw_new (k + 1) n).support,
+    cwIteratedMul cw_new (k + 1) n m • x (k+1) m := by
+    rw [← hcombo n]
+
+    have aux: (cwIteratedMul cw_new (k + 1) n) = (cwmul (cw_step n) (cwIteratedMul cw k)) := by
+      rw [cwIteratedMul]
+      beta_reduce
+      unfold cw_new
+      rw [Function.update_self, cwIteratedMul_update cw (show k+1 > k by omega)]
+
+    rw [aux]
+    unfold gtilde
+    rw [cwmul_eq]
+    beta_reduce
+
+    set cwold := cwIteratedMul cw k
+    simp_rw [Finset.sum_smul, Finset.smul_sum, smul_smul]
+    rw [Finset.sum_comm]
+
+    refine Finset.sum_congr rfl ?_
+    intro i hi
+
+    have subset: (cwold i).support ⊆ (cwmul (cw_step n) cwold).support := by
+      refine support_subset_cwmul_support hi ?_ ?_
+      · sorry
+      · unfold cwold -- here we need to use hcw, probably through a further intermediate lemma
+        sorry
+
+    -- TODO: Use Finset.sum_subset or similar to finish this proof
+    sorry
+
+  have old_indices_untouched: ∀ i ≤ k, cw_new i = cw i := sorry -- trivial by construction
+
+  sorry
+
+lemma komlos_convex_weights [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+    {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
+    ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
+    let g k n := ∑ m ∈ (cwIteratedMul cw k n).support, cwIteratedMul cw k n m • (gtilde cw x k n);
+    ∀ k : ℕ, ∃ glim : E, Tendsto (g k) atTop (𝓝 glim) := by
+  sorry
+
 theorem komlos_L1 [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
     [MeasurableSpace E] [BorelSpace E] {f : ℕ → Ω → E} {P : Measure Ω}
     (hf : UniformIntegrable f 1 P) :
