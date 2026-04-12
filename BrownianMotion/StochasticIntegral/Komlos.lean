@@ -179,12 +179,21 @@ lemma gtilde_update (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E
   simp only [gtilde]
   rw [← cwIteratedMul_update cw hk']
 
+def komlos_formula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → ℕ →₀ ℝ) (k n : ℕ) : E :=
+  ∑ m ∈ (cwIteratedMul cw k n).support, cwIteratedMul cw k n m • x k m
+
+lemma komlos_formula_cong (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → ℕ →₀ ℝ} {cw2 : ℕ → ℕ → ℕ →₀ ℝ} {k : ℕ}
+  (h : ∀ k' ≤ k, cw1 k' = cw2 k') :
+  komlos_formula x cw1 k = komlos_formula x cw2 k := by
+  unfold komlos_formula
+  rw [cwIteratedMul_cong]
+  exact h
+
 lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ)
   (cw : ℕ → ℕ → ℕ →₀ ℝ) (hcw: ∀ k n m, 0 ≤ cw k n m) :
   ∃ (cw_new : ℕ → ℕ → ℕ →₀ ℝ),
-    (∃ glim : E, Tendsto (fun n ↦ ∑ m ∈ (cwIteratedMul cw_new (k + 1) n).support,
-      cwIteratedMul cw_new (k + 1) n m • x (k+1) m) atTop (𝓝 glim))
+    (∃ glim : E, Tendsto (komlos_formula x cw (k+1)) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i)
     ∧ (∀ k n m, 0 ≤ cw_new k n m) := by
 
@@ -243,13 +252,53 @@ lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
 
   sorry
 
+lemma komlos_up_to [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
+  ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
+    (∀ k' ≤ k, ∃ glim : E, Tendsto (komlos_formula x cw k') atTop (𝓝 glim))
+    ∧ (∀ k n m, 0 ≤ cw k n m) := by
+    sorry
+
+lemma komlos_at [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
+  ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
+    (∃ glim : E, Tendsto (komlos_formula x cw k) atTop (𝓝 glim))
+    ∧ (∀ k n m, 0 ≤ cw k n m) := by
+    sorry
+
 lemma komlos_convex_weights [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
     {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
-    ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
-    let g k n := ∑ m ∈ (cwIteratedMul cw (k + 1) n).support,
-      cwIteratedMul cw (k + 1) n m • x (k+1) m;
-    ∀ k : ℕ, ∃ glim : E, Tendsto (g k) atTop (𝓝 glim) := by
-  sorry
+    ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ), ∀ k : ℕ,
+    ∃ glim : E, Tendsto (komlos_formula x cw k) atTop (𝓝 glim) := by
+
+  let cwStage (k : ℕ) : ℕ → ℕ → ℕ →₀ ℝ := Classical.choose (komlos_up_to hx k)
+
+  have hcwStage (k : ℕ) : ∀ k' ≤ k,
+    ∃ glim : E, Tendsto (komlos_formula x (cwStage k) k') atTop (𝓝 glim) := by
+    unfold cwStage
+    let ⟨left, _⟩ := (Classical.choose_spec (komlos_up_to hx k))
+    apply left
+
+  have hcwStage2 (k : ℕ) :
+    ∃ glim : E, Tendsto (komlos_formula x (cwStage k) k) atTop (𝓝 glim) := by
+    exact hcwStage k k (by omega)
+
+  let cwProp (k : ℕ) : _ := Classical.choose_spec (komlos_up_to hx k)
+
+  let cw (k : ℕ) : ℕ → ℕ →₀ ℝ := cwStage k k
+
+  have agreement (k i : ℕ) (hi : i ≤ k) :
+    cw i = cwStage k i := by
+    sorry
+
+  have transfer (k : ℕ) : komlos_formula x cw k = komlos_formula x (cwStage k) k := by
+    apply komlos_formula_cong x
+    exact agreement k
+
+  use cw
+  intro k
+  simp_rw [transfer k]
+  exact hcwStage2 k
 
 theorem komlos_L1 [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
     [MeasurableSpace E] [BorelSpace E] {f : ℕ → Ω → E} {P : Measure Ω}

@@ -60,6 +60,21 @@ lemma cwIteratedMul_update (cw : ℕ → ℕ → ℕ →₀ ℝ) {k k' : ℕ} {f
   cwIteratedMul cw k = cwIteratedMul (Function.update cw k' f) k := by
   sorry
 
+lemma cwIteratedMul_cong (cw1 cw2 : ℕ → ℕ → ℕ →₀ ℝ) (k : ℕ) (h : ∀ i ≤ k, cw1 i = cw2 i) :
+  cwIteratedMul cw1 k = cwIteratedMul cw2 k := by
+  induction k with
+  | zero => rw [cwIteratedMul]
+            simp_all only [nonpos_iff_eq_zero, forall_eq]
+            rfl
+  | succ n hn =>
+    have : cwIteratedMul cw1 n = cwIteratedMul cw2 n := by
+      apply hn
+      intro i hi
+      exact h i (show i ≤ n + 1 by omega)
+    rw [cwIteratedMul, this, h]
+    · rw [cwIteratedMul]
+    · simp
+
 lemma cwmul_support_subset (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) :
     (cwmul a b).support ⊆ a.support.biUnion (fun k ↦ (b k).support) :=
   Finsupp.support_onFinset_subset
