@@ -183,11 +183,18 @@ lemma komlos_formula_cong (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → ℕ →
   rw [cwIteratedMul_cong]
   exact h
 
+lemma komlos_base [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
+  ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
+    (∃ glim : E, Tendsto (komlos_formula x cw 0) atTop (𝓝 glim))
+    ∧ (∀ k n m, 0 ≤ cw k n m) := by sorry
+
+
 lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ)
   (cw : ℕ → ℕ → ℕ →₀ ℝ) (hcw: ∀ k n m, 0 ≤ cw k n m) :
   ∃ (cw_new : ℕ → ℕ → ℕ →₀ ℝ),
-    (∃ glim : E, Tendsto (komlos_formula x cw (k+1)) atTop (𝓝 glim))
+    (∃ glim : E, Tendsto (komlos_formula x cw_new (k+1)) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i)
     ∧ (∀ k n m, 0 ≤ cw_new k n m) := by
 
@@ -246,46 +253,68 @@ lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
 
   sorry
 
-lemma komlos_up_to [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
-  ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
-    (∀ k' ≤ k, ∃ glim : E, Tendsto (komlos_formula x cw k') atTop (𝓝 glim))
-    ∧ (∀ k n m, 0 ≤ cw k n m) := by
+def komlos_stage [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (stage : ℕ) :
+  { w : ℕ → ℕ → ℕ →₀ ℝ // ∀ k n m, 0 ≤ w k n m } :=
+  match stage with
+  | 0 => by
+    use Classical.choose (komlos_base hx)
     sorry
+  | stage+1 => by
+      let ⟨pre, hpre⟩ := komlos_stage hx stage
+      let aux := komlos_step hx stage pre hpre
+      use Classical.choose (aux)
+      sorry
 
-lemma komlos_at [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+lemma komlos_stage_lim [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
-  ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
-    (∃ glim : E, Tendsto (komlos_formula x cw k) atTop (𝓝 glim))
-    ∧ (∀ k n m, 0 ≤ cw k n m) := by
-    sorry
+  (∃ glim : E, Tendsto (komlos_formula x (komlos_stage hx k) k) atTop (𝓝 glim)) := by
+  induction k with
+  | zero => sorry
+  | succ k _ =>
+    let aux := komlos_step hx k (komlos_stage hx k).val (komlos_stage hx k).prop
+    exact Classical.choose_spec aux |>.1
+
+lemma agreement_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
+  ∀ i ≤ k, (komlos_stage hx k).val i = (komlos_stage hx (k+1)).val i := by
+  intro i hi
+  let aux := komlos_step hx k (komlos_stage hx k).val (komlos_stage hx k).prop
+  let ⟨_, aux2, _⟩ := Classical.choose_spec aux
+  exact Eq.symm (aux2 i hi)
+
+lemma agreement_needed [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (i k : ℕ) (hi : i ≤ k) :
+  (komlos_stage hx i).val i = (komlos_stage hx k).val i := by
+  let n := k-i
+  suffices (komlos_stage hx i).val i = (komlos_stage hx (i+n)).val i from by
+    unfold n at this
+    rw [show i + (k - i) = k by omega] at this
+    exact this
+  induction n with
+  | zero => rfl
+  | succ n hn =>
+  rw [← add_assoc, hn]
+  apply agreement_step hx (i+n) i (by omega)
 
 lemma komlos_convex_weights [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
     {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
     ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ), ∀ k : ℕ,
     ∃ glim : E, Tendsto (komlos_formula x cw k) atTop (𝓝 glim) := by
 
-  let cwStage (k : ℕ) : ℕ → ℕ → ℕ →₀ ℝ := Classical.choose (komlos_up_to hx k)
-
-  have hcwStage (k : ℕ) : ∀ k' ≤ k,
-    ∃ glim : E, Tendsto (komlos_formula x (cwStage k) k') atTop (𝓝 glim) := by
-    unfold cwStage
-    let ⟨left, _⟩ := (Classical.choose_spec (komlos_up_to hx k))
-    apply left
-
   have hcwStage2 (k : ℕ) :
-    ∃ glim : E, Tendsto (komlos_formula x (cwStage k) k) atTop (𝓝 glim) := by
-    exact hcwStage k k (by omega)
+    ∃ glim : E, Tendsto (komlos_formula x (komlos_stage hx k).val k) atTop (𝓝 glim) := by
+    apply komlos_stage_lim
 
-  let cwProp (k : ℕ) : _ := Classical.choose_spec (komlos_up_to hx k)
-
-  let cw (k : ℕ) : ℕ → ℕ →₀ ℝ := cwStage k k
+  let cw (k : ℕ) : ℕ → ℕ →₀ ℝ := (komlos_stage hx k).val k
 
   have agreement (k i : ℕ) (hi : i ≤ k) :
-    cw i = cwStage k i := by
-    sorry
+    cw i = (komlos_stage hx k).val i := by
+    unfold cw
+    apply agreement_needed hx
+    exact hi
 
-  have transfer (k : ℕ) : komlos_formula x cw k = komlos_formula x (cwStage k) k := by
+  have transfer (k : ℕ) : komlos_formula x cw k = komlos_formula x (komlos_stage hx k).val k := by
     apply komlos_formula_cong x
     exact agreement k
 
