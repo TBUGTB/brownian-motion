@@ -84,7 +84,8 @@ lemma martingalePart_add {Y : ℕ → Ω → E} (hXint : ∀ n, Integrable (X n)
     (hYint : ∀ n, Integrable (Y n) μ) (n : ℕ) :
     martingalePart (X + Y) 𝓕 μ n =ᵐ[μ] martingalePart X 𝓕 μ n + martingalePart Y 𝓕 μ n := by
   filter_upwards [predictablePart_add (𝓕 := 𝓕) hXint hYint n] with ω hω
-  simp_all [martingalePart, sub_eq_add_neg, add_assoc, add_left_comm, add_comm]
+  simp_all [martingalePart]
+  abel
 
 variable [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
 
