@@ -33,52 +33,23 @@ lemma predictablePart_add_one (n : ℕ) :
 
 lemma predictablePart_smul (c : ℝ) (n : ℕ) :
     predictablePart (c • X) 𝓕 μ n =ᵐ[μ] c • predictablePart X 𝓕 μ n := by
-  unfold predictablePart
-  have hsum :
-      (∑ i ∈ Finset.range n, fun ω ↦ μ[(c • X) (i + 1) - (c • X) i | 𝓕 i] ω) =ᵐ[μ]
-        ∑ i ∈ Finset.range n, fun ω ↦ c • μ[X (i + 1) - X i | 𝓕 i] ω := by
-    refine (eventuallyEq_sum (s := Finset.range n)
-      (f := fun i : ℕ ↦ fun ω ↦ μ[(c • X) (i + 1) - (c • X) i | 𝓕 i] ω)
-      (g := fun i : ℕ ↦ fun ω ↦ c • μ[X (i + 1) - X i | 𝓕 i] ω)
-      (fun i _ ↦ ?_)).trans ?_
-    · simpa [Pi.smul_apply, sub_eq_add_neg, smul_add, smul_neg] using
-        (condExp_smul c (X (i + 1) - X i) (𝓕 i))
-    · exact Filter.EventuallyEq.rfl
-  filter_upwards [hsum] with ω hω
-  simpa [Finset.smul_sum] using hω
+  simp only [predictablePart, Finset.smul_sum]
+  refine eventuallyEq_sum fun i hi => ?_
+  simp [← smul_sub, condExp_smul]
 
 lemma martingalePart_smul (c : ℝ) (n : ℕ) :
     martingalePart (c • X) 𝓕 μ n =ᵐ[μ] c • martingalePart X 𝓕 μ n := by
   filter_upwards [predictablePart_smul (X := X) c n] with ω hω
-  calc
-    martingalePart (c • X) 𝓕 μ n ω = c • X n ω - predictablePart (c • X) 𝓕 μ n ω := by
-      simp [martingalePart, Pi.smul_apply]
-    _ = c • X n ω - c • predictablePart X 𝓕 μ n ω := by simpa [Pi.smul_apply] using congrArg id hω
-    _ = c • martingalePart X 𝓕 μ n ω := by
-      simp [martingalePart, sub_eq_add_neg, smul_add, smul_neg]
+  simpa [martingalePart, smul_sub]
 
 lemma predictablePart_add {Y : ℕ → Ω → E} (hXint : ∀ n, Integrable (X n) μ)
     (hYint : ∀ n, Integrable (Y n) μ) (n : ℕ) :
     predictablePart (X + Y) 𝓕 μ n =ᵐ[μ] predictablePart X 𝓕 μ n + predictablePart Y 𝓕 μ n := by
-  unfold predictablePart
-  have hsum :
-      (∑ i ∈ Finset.range n, fun ω ↦ μ[(X + Y) (i + 1) - (X + Y) i | 𝓕 i] ω) =ᵐ[μ]
-        ((∑ i ∈ Finset.range n, fun ω ↦ μ[X (i + 1) - X i | 𝓕 i] ω) +
-          ∑ i ∈ Finset.range n, fun ω ↦ μ[Y (i + 1) - Y i | 𝓕 i] ω) := by
-    refine (eventuallyEq_sum (s := Finset.range n)
-      (f := fun i : ℕ ↦ fun ω ↦ μ[(X + Y) (i + 1) - (X + Y) i | 𝓕 i] ω)
-      (g := fun i : ℕ ↦ fun ω ↦ μ[X (i + 1) - X i | 𝓕 i] ω + μ[Y (i + 1) - Y i | 𝓕 i] ω)
-      (fun i _ ↦ ?_)).trans ?_
-    · simpa [Pi.add_apply, add_assoc, add_left_comm, add_comm, sub_eq_add_neg] using
-        (condExp_add ((hXint (i + 1)).sub (hXint i)) ((hYint (i + 1)).sub (hYint i)) (𝓕 i))
-    · exact (by
-        ext ω
-        simp [Finset.sum_add_distrib] : (∑ i ∈ Finset.range n,
-          fun ω ↦ μ[X (i + 1) - X i | 𝓕 i] ω + μ[Y (i + 1) - Y i | 𝓕 i] ω) =
-            ((∑ i ∈ Finset.range n, fun ω ↦ μ[X (i + 1) - X i | 𝓕 i] ω) +
-              ∑ i ∈ Finset.range n, fun ω ↦ μ[Y (i + 1) - Y i | 𝓕 i] ω)).eventuallyEq
-  filter_upwards [hsum] with ω hω
-  simpa using hω
+  simp only [predictablePart, ← Finset.sum_add_distrib]
+  refine eventuallyEq_sum fun i hi => ?_
+  calc
+  _ =ᵐ[μ] μ[(X (i + 1) - X i) + (Y (i + 1) - Y i) | 𝓕 i] := by simp; abel_nf; rfl
+  _ =ᵐ[μ] _ := by apply condExp_add ((hXint (i + 1)).sub (hXint i)) ((hYint (i + 1)).sub (hYint i))
 
 lemma martingalePart_add {Y : ℕ → Ω → E} (hXint : ∀ n, Integrable (X n) μ)
     (hYint : ∀ n, Integrable (Y n) μ) (n : ℕ) :
@@ -87,41 +58,40 @@ lemma martingalePart_add {Y : ℕ → Ω → E} (hXint : ∀ n, Integrable (X n)
   simp_all [martingalePart]
   abel
 
+lemma Martingale.predictablePart_eq_zero (hX : Martingale X 𝓕 μ) (n : ℕ) :
+    predictablePart X 𝓕 μ n =ᵐ[μ] 0 := by
+  rw [predictablePart, ← Finset.sum_const_zero (s := Finset.range n)]
+  refine eventuallyEq_sum fun i hi => ?_
+  calc
+  _ =ᵐ[μ] μ[X (i + 1) | 𝓕 i] - μ[X i | 𝓕 i] := by
+    simp [condExp_sub (hX.integrable (i + 1)) (hX.integrable i) (𝓕 i)]
+  _ =ᵐ[μ] X i - X i := (hX.condExp_ae_eq (Nat.le_succ i)).sub (hX.condExp_ae_eq le_rfl)
+  _ =ᵐ[μ] 0 := by simp
+
+lemma Martingale.martingalePart_eq (hX : Martingale X 𝓕 μ) (n : ℕ) :
+    martingalePart X 𝓕 μ n =ᵐ[μ] X n := by
+  filter_upwards [hX.predictablePart_eq_zero n] with ω hω
+  simp [martingalePart, hω]
+
 variable [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
 
 lemma isPredictable_predictablePart : IsPredictable 𝓕 (predictablePart X 𝓕 μ) :=
   isPredictable_of_measurable_add_one (by simp [measurable_const'])
     fun n ↦ (stronglyAdapted_predictablePart n).measurable
 
-lemma IsPredictable.predictablePart_eq [SigmaFiniteFiltration μ 𝓕]
-    (hX : IsPredictable 𝓕 X) (hXint : ∀ n, Integrable (X n) μ)
-    (n : ℕ) :
+lemma IsPredictable.predictablePart_eq [SigmaFiniteFiltration μ 𝓕] (hX : IsPredictable 𝓕 X)
+    (hXint : ∀ n, Integrable (X n) μ) (n : ℕ) :
     predictablePart X 𝓕 μ n =ᵐ[μ] X n - X 0 := by
-  unfold predictablePart
-  have hsum :
-      (∑ i ∈ Finset.range n, fun ω ↦ μ[X (i + 1) - X i | 𝓕 i] ω) =ᵐ[μ]
-        ∑ i ∈ Finset.range n, fun ω ↦ (X (i + 1) - X i) ω := by
-    refine (eventuallyEq_sum (s := Finset.range n)
-      (f := fun i : ℕ ↦ fun ω ↦ μ[X (i + 1) - X i | 𝓕 i] ω)
-      (g := fun i : ℕ ↦ fun ω ↦ (X (i + 1) - X i) ω)
-      (fun i _ ↦ ?_)).trans ?_
-    · exact condExp_of_aestronglyMeasurable' (𝓕.le i)
-        (((hX.measurable_add_one i).stronglyMeasurable.aestronglyMeasurable).sub
-          (hX.adapted i).aestronglyMeasurable)
-        ((hXint (i + 1)).sub (hXint i))
-    · exact Filter.EventuallyEq.rfl
-  filter_upwards [hsum] with ω hω
-  apply eq_sub_iff_add_eq.mpr
-  have htel : X n ω = X 0 ω + ∑ i ∈ Finset.range n, (X (i + 1) - X i) ω := by
-    simpa using congrArg (fun f => f ω) (Finset.eq_sum_range_sub X n)
-  simpa [hω, add_comm, add_left_comm, add_assoc] using htel.symm
+  simp only [predictablePart, ← Finset.sum_range_sub]
+  exact eventuallyEq_sum fun i hi => (condExp_of_stronglyMeasurable (𝓕.le i)
+    ((hX.measurable_add_one i).stronglyMeasurable.sub (hX.adapted i))
+    ((hXint (i + 1)).sub (hXint i))).eventuallyEq
 
-lemma IsPredictable.martingalePart_eq [SigmaFiniteFiltration μ 𝓕]
-    (hX : IsPredictable 𝓕 X) (hXint : ∀ n, Integrable (X n) μ)
-    (n : ℕ) :
+lemma IsPredictable.martingalePart_eq [SigmaFiniteFiltration μ 𝓕] (hX : IsPredictable 𝓕 X)
+    (hXint : ∀ n, Integrable (X n) μ) (n : ℕ) :
     martingalePart X 𝓕 μ n =ᵐ[μ] X 0 := by
   filter_upwards [hX.predictablePart_eq (μ := μ) hXint n] with ω hω
-  simp_all [martingalePart]
+  simp [martingalePart, hω, sub_eq_add_neg]
 
 -- todo: feel free to replace `Preorder E` by something stonger if needed
 lemma Submartingale.monotone_predictablePart {X : ℕ → Ω → ℝ} (hX : Submartingale X 𝓕 μ) :
