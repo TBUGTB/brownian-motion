@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.Probability.Process.Adapted
+public import Mathlib.Probability.Process.Predictable
 public import Mathlib.Data.Setoid.Partition
 public import BrownianMotion.StochasticIntegral.Cadlag
 
@@ -12,6 +13,35 @@ open scoped NNReal ENNReal Topology
 namespace MeasureTheory
 
 local infixr:25 " →ₛ " => SimpleFunc
+
+def rd {ι} [LinearOrder ι] [OrderBot ι] (times : Finset ι) (j : ι) :=
+  (insert ⊥ {s ∈ times | s < j}).max' (by aesop)
+
+lemma rd_insert_gt {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {t i : ι}
+    (hbig : (∀ j ∈ s, j < t)) (h2 : t < i) : rd (insert t s) i = t := by
+  rw [rd, Finset.max'_eq_iff]
+  refine ⟨by aesop, ?_⟩
+  simpa using fun x y _ => le_of_lt (hbig x y)
+
+lemma rd_insert_le {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {t i : ι} (h2 : i ≤ t)
+    : rd (insert t s) i = rd s i := by
+  simp_rw [rd]; congr 2; grind
+
+lemma measurableSet_predictable_univ_prod {Ω ι} {m : MeasurableSpace Ω} [LinearOrder ι]
+    [OrderBot ι] {𝓕 : MeasureTheory.Filtration ι m} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s)
+    : MeasurableSet[𝓕.predictable] (univ ×ˢ s) := by
+  rw [(by simp : univ = {⊥} ∪ Set.Ioi ⊥), Set.union_prod]
+  refine MeasurableSet.union ?_ ?_
+  · exact measurableSet_predictable_singleton_bot_prod hs
+  · exact measurableSet_predictable_Ioi_prod hs
+
+lemma measurableSet_predictable_Iic_prod {Ω ι} {m : MeasurableSpace Ω} [LinearOrder ι]
+    [OrderBot ι] {𝓕 : MeasureTheory.Filtration ι m} {i} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s)
+    : MeasurableSet[𝓕.predictable] (Set.Iic i ×ˢ s) := by
+  rw [(by simp : Set.Iic i = {⊥} ∪ Set.Ioc ⊥ i), Set.union_prod]
+  refine MeasurableSet.union ?_ ?_
+  · exact measurableSet_predictable_singleton_bot_prod hs
+  · exact measurableSet_predictable_Ioc_prod ⊥ i hs
 
 variable {ι Ω β : Type*} {s : ι → Set Ω} (hs : IndexedPartition s)
 
@@ -238,5 +268,45 @@ lemma StronglyAdapted.progMeasurable_of_rightContinuous {𝓕 : Filtration ι m�
       have : (fun x => U x a) = (X · a.2) ∘ w := by
         ext; simp [U, w, IndexedPartition.piecewise_apply]
       simpa [this] using tends2.comp tends1
+
+lemma StronglyAdapted.isPredictable_rounddown {𝓕 : Filtration ι mΩ} [OrderBot ι] {times : Finset ι}
+    (h_adap : StronglyAdapted 𝓕 X) :
+      MeasureTheory.IsPredictable 𝓕 (fun i ω ↦ X (rd times i) ω) := by
+  let Y t (x : ι × Ω) := X (rd t x.1) x.2
+  let api n i := (h_adap i).approx n
+  let Z n times (x : ι × Ω) := api n (rd times x.1) x.2
+  apply stronglyMeasurable_of_tendsto (u := atTop) (f := fun n x ↦ api n (rd times x.1) x.2)
+  · intro n
+    apply (@SimpleFunc.mk _ 𝓕.predictable _ (Z n times) _ _).stronglyMeasurable
+    · intro b
+      refine times.induction_on_max ?_ ?_
+      · have : Z n ∅ ⁻¹' {b} = univ ×ˢ (api n ⊥ ⁻¹' {b}) := by aesop
+        simp_rw [Z] at this
+        rw [this]
+        refine measurableSet_predictable_univ_prod ?_
+        have := (h_adap ⊥); measurability
+      intro t times ht_max hm
+      have : Z n (insert t times) ⁻¹' {b} =
+          ((Z n times ⁻¹' {b}) ∩ (Set.Iic t ×ˢ univ)) ∪ (Set.Ioi t) ×ˢ (api n t ⁻¹' {b}) := by
+        ext ⟨i, ω⟩
+        simp_rw [Z]
+        by_cases! hi : i ≤ t
+        · simp; rw [rd_insert_le hi]; aesop
+        · simp; rw [rd_insert_gt ht_max hi]; aesop
+      rw [this]
+      apply MeasurableSet.union
+      · apply MeasurableSet.inter
+        · assumption
+        · refine measurableSet_predictable_Iic_prod (by measurability)
+      · refine measurableSet_predictable_Ioi_prod (by measurability)
+    · simp_rw [Z]
+      apply Set.Finite.subset (s := (⋃ i ∈ (range (rd times)), range (api n i)))
+      · apply Set.Finite.biUnion
+        · apply Set.Finite.subset (s := insert ⊥ times) (by aesop)
+          sorry
+        exact fun i _ ↦ by apply @(api n i).finite_range
+      exact fun _ _ ↦ by aesop
+  · rw [tendsto_pi_nhds]
+    exact fun x ↦ by apply StronglyMeasurable.tendsto_approx
 
 end MeasureTheory
