@@ -13,15 +13,15 @@ local infixr:25 " →ₛ " => SimpleFunc
 
 variable {ι : Type*} [LinearOrder ι] [OrderBot ι]
 
-def round_down (times : Finset ι) (j : ι) :=
-  (insert ⊥ {s ∈ times | s < j}).max' (by simp)
+/-- a helper function which (strictly) rounds down `i` onto the set `s` -/
+private def round_down (s : Finset ι) (i : ι) :=
+  (insert ⊥ {j ∈ s | j < i}).max' (by simp)
 
-lemma round_down_bot {s : Finset ι}
-    : round_down s ⊥ = ⊥ :=
+private lemma round_down_bot {s : Finset ι} : round_down s ⊥ = ⊥ :=
   eq_bot_iff.mpr <| Finset.max'_le _ _ _ (by simp)
 
-lemma round_down_lt_of_ne_bot {s : Finset ι} {i : ι} (hi : i ≠ ⊥)
-    : round_down s i < i := by
+private lemma round_down_lt_of_ne_bot {s : Finset ι} {i : ι} (h : i ≠ ⊥) :
+    round_down s i < i := by
   apply lt_of_le_of_ne
   · apply Finset.max'_le
     intro y hy
@@ -29,46 +29,36 @@ lemma round_down_lt_of_ne_bot {s : Finset ι} {i : ι} (hi : i ≠ ⊥)
     · simp
     · apply le_of_lt (by aesop)
   · simp_rw [round_down]
-    contrapose! hi
-    rw [Finset.max'_eq_iff] at hi
+    contrapose! h
+    rw [Finset.max'_eq_iff] at h
     aesop
 
-lemma round_down_le {s : Finset ι} {i : ι}
-    : round_down s i ≤ i := by
-  by_cases! h : i = ⊥
-  · simpa [h] using round_down_bot
-  · exact le_of_lt <| round_down_lt_of_ne_bot h
+private lemma round_down_le_of_subset {s t : Finset ι} {i : ι} (h : s ⊆ t) :
+    round_down s i ≤ round_down t i :=
+  Finset.max'_le _ _ _ <| fun _ _ ↦ by apply Finset.le_max'; aesop
 
-lemma round_down_le_of_subset {s t : Finset ι} {i : ι}
-    (h : s ⊆ t) : round_down s i ≤ round_down t i := by
-  apply Finset.max'_le
-  intro y hy
-  apply Finset.le_max'
-  aesop
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {𝓕 : Filtration ι mΩ}
 
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
-
-lemma measurableSet_predictable_univ_prod {m : MeasurableSpace Ω}
-    {𝓕 : MeasureTheory.Filtration ι m} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s)
-    : MeasurableSet[𝓕.predictable] (univ ×ˢ s) := by
+lemma measurableSet_predictable_univ_prod {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s) :
+    MeasurableSet[𝓕.predictable] (univ ×ˢ s) := by
   rw [(by simp : univ = {⊥} ∪ Set.Ioi ⊥), Set.union_prod]
   refine MeasurableSet.union ?_ ?_
   · exact measurableSet_predictable_singleton_bot_prod hs
   · exact measurableSet_predictable_Ioi_prod hs
 
-lemma measurableSet_predictable_Iic_prod {m : MeasurableSpace Ω}
-    {𝓕 : MeasureTheory.Filtration ι m} {i} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s)
-    : MeasurableSet[𝓕.predictable] (Set.Iic i ×ˢ s) := by
+lemma measurableSet_predictable_Iic_prod {i} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s) :
+    MeasurableSet[𝓕.predictable] (Set.Iic i ×ˢ s) := by
   rw [(by simp : Set.Iic i = {⊥} ∪ Set.Ioc ⊥ i), Set.union_prod]
   refine MeasurableSet.union ?_ ?_
   · exact measurableSet_predictable_singleton_bot_prod hs
   · exact measurableSet_predictable_Ioc_prod ⊥ i hs
 
 variable {β : Type*} {mβ : MeasurableSpace β} [TopologicalSpace β] [PseudoMetrizableSpace β]
-variable {X : ι → Ω → β} {𝓕 : Filtration ι mΩ}
+variable {X : ι → Ω → β}
 
-lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι} (h_adap : StronglyAdapted 𝓕 X) :
-      MeasureTheory.IsPredictable 𝓕 (fun i ω ↦ X (round_down times i) ω) := by
+private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
+    (h_adap : StronglyAdapted 𝓕 X) :
+    MeasureTheory.IsPredictable 𝓕 (fun i ω ↦ X (round_down times i) ω) := by
   let Y t (x : ι × Ω) := X (round_down t x.1) x.2
   let api n i := (h_adap i).approx n
   let Z n times (x : ι × Ω) := api n (round_down times x.1) x.2
@@ -131,7 +121,10 @@ lemma StronglyAdapted.isPredictable_of_leftContinuous (h_adap : StronglyAdapted 
   specialize h_cont ω i; simp only [uncurry_apply_pair]
   apply h_cont.tendsto.comp
   rw [tendsto_nhdsWithin_iff]
-  refine ⟨?_, Eventually.of_forall <| fun _ ↦ by simpa using round_down_le⟩
+  by_cases! hi_bot : i = ⊥
+  · subst hi_bot
+    simp_rw [round_down_bot]; simp
+  refine ⟨?_, .of_forall (fun _ ↦ le_of_lt <| round_down_lt_of_ne_bot hi_bot)⟩
   apply tendsto_atTop_isLUB
   · intro a b hab
     apply round_down_le_of_subset
