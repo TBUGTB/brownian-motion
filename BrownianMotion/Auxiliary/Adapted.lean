@@ -48,6 +48,10 @@ lemma rd_lt_of_ne_bot {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {i : �
     rw [Finset.max'_eq_iff] at hi
     aesop
 
+lemma rd_mem_le {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {t i : ι} (ht : t ∈ s) (hi : t < i) :
+    t ≤ rd s i := by
+  sorry
+
 lemma measurableSet_predictable_univ_prod {Ω ι} {m : MeasurableSpace Ω} [LinearOrder ι]
     [OrderBot ι] {𝓕 : MeasureTheory.Filtration ι m} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s)
     : MeasurableSet[𝓕.predictable] (univ ×ˢ s) := by
@@ -332,10 +336,10 @@ lemma StronglyAdapted.isPredictable_rounddown {𝓕 : Filtration ι mΩ} [OrderB
 
 example [OrderBot ι] : IsLUB (Set.Iio (⊥ : ι)) ⊥ := by simp
 
-lemma StronglyAdapted.isPredictable_of_leftContinuous {𝓕 : Filtration ι mΩ} [OrderBot ι] {times : Finset ι}
+lemma StronglyAdapted.isPredictable_of_leftContinuous {𝓕 : Filtration ι mΩ} [OrderBot ι]
+    [DenselyOrdered ι]
     (h_adap : StronglyAdapted 𝓕 X)
-    (h_cont : ∀ ω a, ContinuousWithinAt (X · ω) (Set.Iic a) a)
-    (h_LUB : ∀ i : ι, IsLUB (Set.Iio i) i) :
+    (h_cont : ∀ ω a, ContinuousWithinAt (X · ω) (Set.Iic a) a) :
       MeasureTheory.IsPredictable 𝓕 X := by
   obtain ⟨d, hd_count, hd_dense⟩ := exists_countable_dense ι
   rw [IsPredictable]
@@ -353,10 +357,18 @@ lemma StronglyAdapted.isPredictable_of_leftContinuous {𝓕 : Filtration ι mΩ}
   · by_cases! hi_bot : i = ⊥
     · simp [hi_bot, rd_bot]
     rw [isLUB_congr (t := (Set.Iio i))]
-    · apply h_LUB
+    · apply isLUB_Iio
     ext j; simp_rw [mem_upperBounds]; constructor
     · intro hj k hk
-      sorry -- strategy: find element in between
+      rw [mem_Iio] at hk
+      obtain ⟨r, hr_mem, hr_lt⟩ := hd_dense.exists_between hk
+      have := Set.subset_range_enumerate hd_count ⊥ hr_mem
+      obtain ⟨n, h_rn⟩ := mem_range.mp this
+      trans rd (times (n + 1)) i
+      · trans r
+        · apply le_of_lt (by aesop)
+        apply rd_mem_le (by aesop) (by aesop)
+      · apply hj _ (by aesop)
     · intro hj k hk
       apply hj
       rw [mem_Iio]
