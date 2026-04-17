@@ -56,6 +56,7 @@ lemma measurableSet_predictable_Iic_prod {i} {s : Set Ω} (hs : MeasurableSet[�
 variable {β : Type*} {mβ : MeasurableSpace β} [TopologicalSpace β] [PseudoMetrizableSpace β]
 variable {X : ι → Ω → β}
 
+/- a 'rounded down' function is predictable -/
 private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
     (h_adap : StronglyAdapted 𝓕 X) :
     MeasureTheory.IsPredictable 𝓕 (fun i ω ↦ X (round_down times i) ω) := by
@@ -108,6 +109,7 @@ variable [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι] [
 lemma StronglyAdapted.isPredictable_of_leftContinuous (h_adap : StronglyAdapted 𝓕 X)
     (h_cont : ∀ ω a, ContinuousWithinAt (X · ω) (Set.Iic a) a) :
     MeasureTheory.IsPredictable 𝓕 X := by
+  -- we construct a sequence of 'rounded down' functions which converge to `X`
   obtain ⟨d, hd_count, hd_dense⟩ := exists_countable_dense ι
   rw [IsPredictable]
   let times n := Finset.image (Set.enumerateCountable hd_count ⊥) (Finset.range n)
@@ -147,4 +149,5 @@ lemma StronglyAdapted.isPredictable_of_leftContinuous (h_adap : StronglyAdapted 
       rw [mem_Iio]
       obtain ⟨y, rfl⟩ := mem_range.1 hk
       apply round_down_lt_of_ne_bot hi_bot
+
 end MeasureTheory
