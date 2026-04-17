@@ -35,6 +35,24 @@ lemma rd_le {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {i : ι}
   · simp
   · apply le_of_lt (by aesop)
 
+lemma rd_le_rd_of_subset {ι} [LinearOrder ι] [OrderBot ι] {s t : Finset ι} {i : ι}
+    (h : s ⊆ t) : rd s i ≤ rd t i := by
+  apply Finset.max'_le
+  intro y hy
+  apply Finset.le_max'
+  aesop
+
+lemma rd_mem {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {i : ι} :
+    rd s i ∈ (insert ⊥ s) := by
+  have := Finset.max'_mem (insert ⊥ ({s ∈ s | s < i})) (by aesop)
+  apply Finset.mem_of_subset _ this
+  aesop
+
+lemma rd_mem_le {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {t i : ι} (ht : t ∈ s)
+    (hi : t < i) : t ≤ rd s i := by
+  apply Finset.le_max'
+  aesop
+
 lemma rd_bot {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι}
     : rd s ⊥ = ⊥ := by
   simpa [← le_bot_iff] using rd_le
@@ -47,10 +65,6 @@ lemma rd_lt_of_ne_bot {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {i : �
     contrapose! hi
     rw [Finset.max'_eq_iff] at hi
     aesop
-
-lemma rd_mem_le {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {t i : ι} (ht : t ∈ s) (hi : t < i) :
-    t ≤ rd s i := by
-  sorry
 
 lemma measurableSet_predictable_univ_prod {Ω ι} {m : MeasurableSpace Ω} [LinearOrder ι]
     [OrderBot ι] {𝓕 : MeasureTheory.Filtration ι m} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s)
@@ -328,7 +342,10 @@ lemma StronglyAdapted.isPredictable_rounddown {𝓕 : Filtration ι mΩ} [OrderB
       apply Set.Finite.subset (s := (⋃ i ∈ (range (rd times)), range (api n i)))
       · apply Set.Finite.biUnion
         · apply Set.Finite.subset (s := insert ⊥ times) (by aesop)
-          sorry -- funny set coercions
+          intro i hi
+          obtain ⟨j, rfl⟩ := mem_range.mp hi
+          rw [← Finset.coe_insert, Finset.mem_coe]
+          apply rd_mem
         exact fun i _ ↦ by apply @(api n i).finite_range
       exact fun _ _ ↦ by aesop
   · rw [tendsto_pi_nhds]
@@ -353,7 +370,10 @@ lemma StronglyAdapted.isPredictable_of_leftContinuous {𝓕 : Filtration ι mΩ}
   rw [tendsto_nhdsWithin_iff]
   refine ⟨?_, Eventually.of_forall <| fun _ ↦ by simpa using rd_le⟩
   apply tendsto_atTop_isLUB
-  · sorry -- monotonicity
+  · intro a b hab
+    apply rd_le_rd_of_subset
+    simp_rw [times]
+    exact Finset.image_subset_image (by aesop)
   · by_cases! hi_bot : i = ⊥
     · simp [hi_bot, rd_bot]
     rw [isLUB_congr (t := (Set.Iio i))]
