@@ -27,6 +27,27 @@ lemma rd_insert_le {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {t i : ι
     : rd (insert t s) i = rd s i := by
   simp_rw [rd]; congr 2; grind
 
+lemma rd_le {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {i : ι}
+    : rd s i ≤ i := by
+  apply Finset.max'_le
+  intro y hy
+  obtain rfl | hy_mem := Finset.mem_insert.mp hy
+  · simp
+  · apply le_of_lt (by aesop)
+
+lemma rd_bot {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι}
+    : rd s ⊥ = ⊥ := by
+  simpa [← le_bot_iff] using rd_le
+
+lemma rd_lt_of_ne_bot {ι} [LinearOrder ι] [OrderBot ι] {s : Finset ι} {i : ι} (hi : i ≠ ⊥)
+    : rd s i < i := by
+  apply lt_of_le_of_ne
+  · apply rd_le
+  · simp_rw [rd]
+    contrapose! hi
+    rw [Finset.max'_eq_iff] at hi
+    aesop
+
 lemma measurableSet_predictable_univ_prod {Ω ι} {m : MeasurableSpace Ω} [LinearOrder ι]
     [OrderBot ι] {𝓕 : MeasureTheory.Filtration ι m} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s)
     : MeasurableSet[𝓕.predictable] (univ ×ˢ s) := by
@@ -303,10 +324,42 @@ lemma StronglyAdapted.isPredictable_rounddown {𝓕 : Filtration ι mΩ} [OrderB
       apply Set.Finite.subset (s := (⋃ i ∈ (range (rd times)), range (api n i)))
       · apply Set.Finite.biUnion
         · apply Set.Finite.subset (s := insert ⊥ times) (by aesop)
-          sorry
+          sorry -- funny set coercions
         exact fun i _ ↦ by apply @(api n i).finite_range
       exact fun _ _ ↦ by aesop
   · rw [tendsto_pi_nhds]
     exact fun x ↦ by apply StronglyMeasurable.tendsto_approx
 
+example [OrderBot ι] : IsLUB (Set.Iio (⊥ : ι)) ⊥ := by simp
+
+lemma StronglyAdapted.isPredictable_of_leftContinuous {𝓕 : Filtration ι mΩ} [OrderBot ι] {times : Finset ι}
+    (h_adap : StronglyAdapted 𝓕 X)
+    (h_cont : ∀ ω a, ContinuousWithinAt (X · ω) (Set.Iic a) a)
+    (h_LUB : ∀ i : ι, IsLUB (Set.Iio i) i) :
+      MeasureTheory.IsPredictable 𝓕 X := by
+  obtain ⟨d, hd_count, hd_dense⟩ := exists_countable_dense ι
+  rw [IsPredictable]
+  let times n := Finset.image (Set.enumerateCountable hd_count ⊥) (Finset.range n)
+  apply stronglyMeasurable_of_tendsto (u := atTop) (f := fun n x ↦ X (rd (times n) x.1) x.2)
+  · exact fun _ ↦ StronglyAdapted.isPredictable_rounddown (by aesop)
+  rw [tendsto_pi_nhds]
+  intro ⟨i, ω⟩
+  specialize h_cont ω i; simp only [uncurry_apply_pair]
+  apply h_cont.tendsto.comp
+  rw [tendsto_nhdsWithin_iff]
+  refine ⟨?_, Eventually.of_forall <| fun _ ↦ by simpa using rd_le⟩
+  apply tendsto_atTop_isLUB
+  · sorry -- monotonicity
+  · by_cases! hi_bot : i = ⊥
+    · simp [hi_bot, rd_bot]
+    rw [isLUB_congr (t := (Set.Iio i))]
+    · apply h_LUB
+    ext j; simp_rw [mem_upperBounds]; constructor
+    · intro hj k hk
+      sorry -- strategy: find element in between
+    · intro hj k hk
+      apply hj
+      rw [mem_Iio]
+      obtain ⟨y, rfl⟩ := mem_range.1 hk
+      apply rd_lt_of_ne_bot hi_bot
 end MeasureTheory
