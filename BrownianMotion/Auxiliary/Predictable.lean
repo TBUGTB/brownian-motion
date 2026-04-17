@@ -83,13 +83,11 @@ private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
           rw [mem_preimage, this]; aesop
         · have : round_down (insert t times) i = t := by
             rw [round_down, Finset.max'_eq_iff]
-            refine ⟨by aesop, ?_⟩
-            grind -- maybe remove?
+            exact ⟨by aesop, by grind⟩
           rw [mem_preimage, this]; aesop
       rw [this]
       apply MeasurableSet.union
-      · apply MeasurableSet.inter
-        · assumption
+      · apply MeasurableSet.inter (by assumption)
         · refine measurableSet_predictable_Iic_prod (by measurability)
       · refine measurableSet_predictable_Ioi_prod (by measurability)
     · simp_rw [Z]
@@ -103,8 +101,7 @@ private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
           apply Finset.max'_mem
         exact fun i _ ↦ by apply @(api n i).finite_range
       exact fun _ _ ↦ by aesop
-  · rw [tendsto_pi_nhds]
-    exact fun x ↦ by apply StronglyMeasurable.tendsto_approx
+  · simpa [tendsto_pi_nhds] using fun _ ↦ by apply StronglyMeasurable.tendsto_approx
 
 variable [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι] [DenselyOrdered ι]
 
