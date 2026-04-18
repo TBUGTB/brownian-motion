@@ -1,7 +1,6 @@
 module
 
 public import Mathlib.Probability.Process.Adapted
-public import Mathlib.Probability.Process.Predictable
 public import Mathlib.Data.Setoid.Partition
 public import BrownianMotion.StochasticIntegral.Cadlag
 
