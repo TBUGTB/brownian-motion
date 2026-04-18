@@ -72,7 +72,7 @@ private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
         exact measurableSet_predictable_univ_prod (by measurability)
       intro t times ht_max hm
       apply MeasurableSet.congr
-          (s := ((Y_ap n times ⁻¹' {b}) ∩ (Iic t ×ˢ univ)) ∪ (Ioi t) ×ˢ (X_ap n t ⁻¹' {b}))
+        (s := ((Y_ap n times ⁻¹' {b}) ∩ (Iic t ×ˢ univ)) ∪ (Ioi t) ×ˢ (X_ap n t ⁻¹' {b}))
       · apply MeasurableSet.union
         · apply MeasurableSet.inter (by assumption)
           exact measurableSet_predictable_Iic_prod (by measurability)
@@ -86,8 +86,8 @@ private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
         · have : round_down (insert t times) i = t := by
             rw [round_down, Finset.max'_eq_iff]; grind
           rw [this]; aesop
-    · apply Finite.subset (s := (⋃ i ∈ (range (round_down times)), range (X_ap n i)))
-          _ <| fun _ _ ↦ by aesop
+    · apply Finite.subset (s := (⋃ i ∈ (range (round_down times)), range (X_ap n i))) _
+        <| fun _ _ ↦ by aesop
       apply Finite.biUnion _ <| fun i _ ↦ by apply @(X_ap n i).finite_range
       apply Finite.subset (s := insert ⊥ times) (by aesop)
       intro i hi
@@ -115,27 +115,21 @@ lemma StronglyAdapted.isPredictable_of_leftContinuous (h_adap : StronglyAdapted 
   · simp [hi_bot, round_down_bot]
   refine ⟨?_, .of_forall <| fun _ ↦ le_of_lt <| round_down_lt_of_ne_bot hi_bot⟩
   apply tendsto_atTop_isLUB
-      (fun _ _ _ ↦ round_down_le_of_subset <| Finset.image_subset_image (by aesop))
-  by_cases! hi_bot : i = ⊥
-  · simp [hi_bot, round_down_bot]
+    (fun _ _ _ ↦ round_down_le_of_subset <| Finset.image_subset_image (by aesop))
   apply (isLUB_congr _).mp (isLUB_Iio (a := i))
-  -- TODO: clean up below
-  ext j; simp_rw [mem_upperBounds]; constructor
+  ext j; simp_rw [mem_upperBounds, mem_Iio]
+  constructor
   · intro hj k hk
     apply hj
-    rw [mem_Iio]
-    obtain ⟨y, rfl⟩ := mem_range.1 hk
+    obtain ⟨y, rfl⟩ := mem_range.mp hk
     apply round_down_lt_of_ne_bot hi_bot
   · intro hj k hk
-    rw [mem_Iio] at hk
     obtain ⟨r, hr_mem, hr_lt⟩ := hd_dense.exists_between hk
-    have := subset_range_enumerate hd_count ⊥ hr_mem
-    obtain ⟨n, h_rn⟩ := mem_range.mp this
+    obtain ⟨n, h_rn⟩ := mem_range.mp <| subset_range_enumerate hd_count ⊥ hr_mem
     trans round_down (times (n + 1)) i
     · trans r
-      · apply le_of_lt (by aesop)
-      apply Finset.le_max' _ _ (by aesop)
+      · exact le_of_lt (by aesop)
+      · apply Finset.le_max' _ _ (by aesop)
     · apply hj _ (by aesop)
-
 
 end MeasureTheory
