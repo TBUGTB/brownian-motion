@@ -18,7 +18,6 @@ public import BrownianMotion.Auxiliary.MeasureTheory
 public import BrownianMotion.Auxiliary.Metric
 public import BrownianMotion.Auxiliary.NNReal
 public import BrownianMotion.Auxiliary.Nat
-public import BrownianMotion.Auxiliary.Predictable
 public import BrownianMotion.Auxiliary.Real
 public import BrownianMotion.Auxiliary.SetAlgebra
 public import BrownianMotion.Auxiliary.StoppedProcess
