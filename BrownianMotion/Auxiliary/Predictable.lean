@@ -13,7 +13,7 @@ local infixr:25 " →ₛ " => SimpleFunc
 
 variable {ι : Type*} [LinearOrder ι] [OrderBot ι]
 
-/-- a helper function which (strictly) rounds down `i` onto the set `s` -/
+/-- a helper function which (strictly) rounds down `i` onto the set `{⊥} ∪ s` -/
 private def round_down (s : Finset ι) (i : ι) :=
   (insert ⊥ {j ∈ s | j < i}).max' (by simp)
 
@@ -23,14 +23,9 @@ private lemma round_down_bot {s : Finset ι} : round_down s ⊥ = ⊥ :=
 private lemma round_down_lt_of_ne_bot {s : Finset ι} {i : ι} (h : i ≠ ⊥) :
     round_down s i < i := by
   apply lt_of_le_of_ne
-  · apply Finset.max'_le
-    intro y hy
-    obtain rfl | hy_mem := Finset.mem_insert.mp hy
-    · simp
-    · apply le_of_lt (by aesop)
-  · simp_rw [round_down]
-    contrapose! h
-    rw [Finset.max'_eq_iff] at h
+  · apply Finset.max'_le _ _ _ (fun _ _ ↦ by grind)
+  · contrapose! h
+    simp [round_down, Finset.max'_eq_iff] at h
     aesop
 
 private lemma round_down_le_of_subset {s t : Finset ι} {i : ι} (h : s ⊆ t) :
@@ -46,7 +41,7 @@ lemma measurableSet_predictable_univ_prod {s : Set Ω} (hs : MeasurableSet[𝓕 
   · exact measurableSet_predictable_singleton_bot_prod hs
   · exact measurableSet_predictable_Ioi_prod hs
 
-lemma measurableSet_predictable_Iic_prod {i} {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s) :
+lemma measurableSet_predictable_Iic_prod {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s) {i} :
     MeasurableSet[𝓕.predictable] (Set.Iic i ×ˢ s) := by
   rw [(by simp : Set.Iic i = {⊥} ∪ Set.Ioc ⊥ i), Set.union_prod]
   refine MeasurableSet.union ?_ ?_
@@ -60,49 +55,47 @@ variable {X : ι → Ω → β}
 private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
     (h_adap : StronglyAdapted 𝓕 X) :
     MeasureTheory.IsPredictable 𝓕 (fun i ω ↦ X (round_down times i) ω) := by
-  let Y t (x : ι × Ω) := X (round_down t x.1) x.2
-  let api n i := (h_adap i).approx n
-  let Z n times (x : ι × Ω) := api n (round_down times x.1) x.2
-  apply stronglyMeasurable_of_tendsto (u := atTop) (f := fun n x ↦ api n (round_down times x.1) x.2)
+  -- `X_ap i` approximates X at times `i`
+  let X_ap n i := (h_adap i).approx n
+  -- For `Y` and `Y_ap`, we keep `s` as a variable for use in the induction step
+  -- `Y` is the uncurried version of the rounded down `X`
+  let Y s (x : ι × Ω) := X (round_down s x.1) x.2
+  -- `Y_ap` approximates `Y`
+  let Y_ap n s (x : ι × Ω) := X_ap n (round_down s x.1) x.2
+  apply stronglyMeasurable_of_tendsto (u := atTop) (f := fun n x ↦ Y_ap n times x)
   · intro n
-    apply (@SimpleFunc.mk _ 𝓕.predictable _ (Z n times) _ _).stronglyMeasurable
+    apply (@SimpleFunc.mk _ 𝓕.predictable _ (Y_ap n times) _ _).stronglyMeasurable
     · intro b
+      -- induction on the largest element of `times`
       refine times.induction_on_max ?_ ?_
-      · have : Z n ∅ ⁻¹' {b} = univ ×ˢ (api n ⊥ ⁻¹' {b}) := by aesop
-        simp_rw [Z] at this
-        rw [this]
-        refine measurableSet_predictable_univ_prod ?_
-        have := (h_adap ⊥); measurability
+      · apply MeasurableSet.congr (s := univ ×ˢ (X_ap n ⊥ ⁻¹' {b})) _ (by aesop)
+        exact measurableSet_predictable_univ_prod (by measurability)
       intro t times ht_max hm
-      have : Z n (insert t times) ⁻¹' {b} =
-          ((Z n times ⁻¹' {b}) ∩ (Set.Iic t ×ˢ univ)) ∪ (Set.Ioi t) ×ˢ (api n t ⁻¹' {b}) := by
-        ext ⟨i, ω⟩
-        simp_rw [Z]
+      apply MeasurableSet.congr
+          (s := ((Y_ap n times ⁻¹' {b}) ∩ (Set.Iic t ×ˢ univ)) ∪ (Set.Ioi t) ×ˢ (X_ap n t ⁻¹' {b}))
+      · apply MeasurableSet.union
+        · apply MeasurableSet.inter (by assumption)
+          exact measurableSet_predictable_Iic_prod (by measurability)
+        · exact measurableSet_predictable_Ioi_prod (by measurability)
+      · ext ⟨i, ω⟩
+        simp_rw [Y_ap, mem_preimage]
         by_cases! hi : i ≤ t
         · have : round_down (insert t times) i = round_down times i := by
-            simp_rw [round_down]; congr 2; grind
-          rw [mem_preimage, this]; aesop
+            rw [round_down]; congr 2; grind
+          rw [this]; aesop
         · have : round_down (insert t times) i = t := by
-            rw [round_down, Finset.max'_eq_iff]
-            exact ⟨by aesop, by grind⟩
-          rw [mem_preimage, this]; aesop
-      rw [this]
-      apply MeasurableSet.union
-      · apply MeasurableSet.inter (by assumption)
-        · refine measurableSet_predictable_Iic_prod (by measurability)
-      · refine measurableSet_predictable_Ioi_prod (by measurability)
-    · simp_rw [Z]
-      apply Set.Finite.subset (s := (⋃ i ∈ (range (round_down times)), range (api n i)))
-      · apply Set.Finite.biUnion
-        · apply Set.Finite.subset (s := insert ⊥ times) (by aesop)
-          intro i hi
-          obtain ⟨j, rfl⟩ := mem_range.mp hi
-          rw [← Finset.coe_insert, Finset.mem_coe]
-          apply Finset.mem_of_subset (s₁ := insert ⊥ ({s ∈ times | s < j})) (by simp)
-          apply Finset.max'_mem
-        exact fun i _ ↦ by apply @(api n i).finite_range
-      exact fun _ _ ↦ by aesop
-  · simpa [tendsto_pi_nhds] using fun _ ↦ by apply StronglyMeasurable.tendsto_approx
+            rw [round_down, Finset.max'_eq_iff]; grind
+          rw [this]; aesop
+    · apply Set.Finite.subset (s := (⋃ i ∈ (range (round_down times)), range (X_ap n i)))
+          _ <| fun _ _ ↦ by aesop
+      apply Set.Finite.biUnion _ <| fun i _ ↦ by apply @(X_ap n i).finite_range
+      apply Set.Finite.subset (s := insert ⊥ times) (by aesop)
+      intro i hi
+      obtain ⟨j, rfl⟩ := mem_range.mp hi
+      rw [← Finset.coe_insert, Finset.mem_coe]
+      apply Finset.mem_of_subset (s₁ := insert ⊥ ({s ∈ times | s < j})) (by simp)
+      apply Finset.max'_mem
+  · simpa [Y_ap, tendsto_pi_nhds] using fun _ ↦ by apply StronglyMeasurable.tendsto_approx
 
 variable [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι] [DenselyOrdered ι]
 
