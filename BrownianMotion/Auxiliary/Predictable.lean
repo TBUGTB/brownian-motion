@@ -36,14 +36,14 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {𝓕 : Filtration ι mΩ}
 
 lemma measurableSet_predictable_univ_prod {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s) :
     MeasurableSet[𝓕.predictable] (univ ×ˢ s) := by
-  rw [(by simp : univ = {⊥} ∪ Set.Ioi ⊥), Set.union_prod]
+  rw [(by simp : univ = {⊥} ∪ Ioi ⊥), union_prod]
   refine MeasurableSet.union ?_ ?_
   · exact measurableSet_predictable_singleton_bot_prod hs
   · exact measurableSet_predictable_Ioi_prod hs
 
 lemma measurableSet_predictable_Iic_prod {s : Set Ω} (hs : MeasurableSet[𝓕 ⊥] s) {i} :
-    MeasurableSet[𝓕.predictable] (Set.Iic i ×ˢ s) := by
-  rw [(by simp : Set.Iic i = {⊥} ∪ Set.Ioc ⊥ i), Set.union_prod]
+    MeasurableSet[𝓕.predictable] (Iic i ×ˢ s) := by
+  rw [(by simp : Iic i = {⊥} ∪ Ioc ⊥ i), union_prod]
   refine MeasurableSet.union ?_ ?_
   · exact measurableSet_predictable_singleton_bot_prod hs
   · exact measurableSet_predictable_Ioc_prod ⊥ i hs
@@ -54,7 +54,7 @@ variable {X : ι → Ω → β}
 /- a 'rounded down' function is predictable -/
 private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
     (h_adap : StronglyAdapted 𝓕 X) :
-    MeasureTheory.IsPredictable 𝓕 (fun i ω ↦ X (round_down times i) ω) := by
+    IsPredictable 𝓕 (fun i ω ↦ X (round_down times i) ω) := by
   -- `X_ap i` approximates X at times `i`
   let X_ap n i := (h_adap i).approx n
   -- For `Y` and `Y_ap`, we keep `s` as a variable for use in the induction step
@@ -72,7 +72,7 @@ private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
         exact measurableSet_predictable_univ_prod (by measurability)
       intro t times ht_max hm
       apply MeasurableSet.congr
-          (s := ((Y_ap n times ⁻¹' {b}) ∩ (Set.Iic t ×ˢ univ)) ∪ (Set.Ioi t) ×ˢ (X_ap n t ⁻¹' {b}))
+          (s := ((Y_ap n times ⁻¹' {b}) ∩ (Iic t ×ˢ univ)) ∪ (Ioi t) ×ˢ (X_ap n t ⁻¹' {b}))
       · apply MeasurableSet.union
         · apply MeasurableSet.inter (by assumption)
           exact measurableSet_predictable_Iic_prod (by measurability)
@@ -86,10 +86,10 @@ private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
         · have : round_down (insert t times) i = t := by
             rw [round_down, Finset.max'_eq_iff]; grind
           rw [this]; aesop
-    · apply Set.Finite.subset (s := (⋃ i ∈ (range (round_down times)), range (X_ap n i)))
+    · apply Finite.subset (s := (⋃ i ∈ (range (round_down times)), range (X_ap n i)))
           _ <| fun _ _ ↦ by aesop
-      apply Set.Finite.biUnion _ <| fun i _ ↦ by apply @(X_ap n i).finite_range
-      apply Set.Finite.subset (s := insert ⊥ times) (by aesop)
+      apply Finite.biUnion _ <| fun i _ ↦ by apply @(X_ap n i).finite_range
+      apply Finite.subset (s := insert ⊥ times) (by aesop)
       intro i hi
       obtain ⟨j, rfl⟩ := mem_range.mp hi
       rw [← Finset.coe_insert, Finset.mem_coe]
@@ -100,47 +100,42 @@ private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
 variable [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι] [DenselyOrdered ι]
 
 lemma StronglyAdapted.isPredictable_of_leftContinuous (h_adap : StronglyAdapted 𝓕 X)
-    (h_cont : ∀ ω a, ContinuousWithinAt (X · ω) (Set.Iic a) a) :
-    MeasureTheory.IsPredictable 𝓕 X := by
-  -- we construct a sequence of 'rounded down' functions which converge to `X`
+    (h_cont : ∀ ω a, ContinuousWithinAt (X · ω) (Iio a) a) :
+    IsPredictable 𝓕 X := by
   obtain ⟨d, hd_count, hd_dense⟩ := exists_countable_dense ι
+  let times n := Finset.image (enumerateCountable hd_count ⊥) (Finset.range n)
   rw [IsPredictable]
-  let times n := Finset.image (Set.enumerateCountable hd_count ⊥) (Finset.range n)
-  apply stronglyMeasurable_of_tendsto (u := atTop) (f := fun n x ↦ X (round_down (times n) x.1) x.2)
-  · exact fun _ ↦ StronglyAdapted.isPredictable_rounddown (by aesop)
+  apply stronglyMeasurable_of_tendsto atTop (f := fun n x ↦ X (round_down (times n) x.1) x.2)
+  · exact fun _ ↦ isPredictable_rounddown (by aesop)
   rw [tendsto_pi_nhds]
   intro ⟨i, ω⟩
-  specialize h_cont ω i; simp only [uncurry_apply_pair]
-  apply h_cont.tendsto.comp
-  rw [tendsto_nhdsWithin_iff]
+  apply (h_cont ω i).insert.tendsto.comp
+  simp_rw [Iio_insert, tendsto_nhdsWithin_iff]
   by_cases! hi_bot : i = ⊥
-  · subst hi_bot
-    simp_rw [round_down_bot]; simp
-  refine ⟨?_, .of_forall (fun _ ↦ le_of_lt <| round_down_lt_of_ne_bot hi_bot)⟩
+  · simp [hi_bot, round_down_bot]
+  refine ⟨?_, .of_forall <| fun _ ↦ le_of_lt <| round_down_lt_of_ne_bot hi_bot⟩
   apply tendsto_atTop_isLUB
-  · intro a b hab
-    apply round_down_le_of_subset
-    simp_rw [times]
-    exact Finset.image_subset_image (by aesop)
-  · by_cases! hi_bot : i = ⊥
-    · simp [hi_bot, round_down_bot]
-    rw [isLUB_congr (t := (Set.Iio i))]
-    · apply isLUB_Iio
-    ext j; simp_rw [mem_upperBounds]; constructor
-    · intro hj k hk
-      rw [mem_Iio] at hk
-      obtain ⟨r, hr_mem, hr_lt⟩ := hd_dense.exists_between hk
-      have := Set.subset_range_enumerate hd_count ⊥ hr_mem
-      obtain ⟨n, h_rn⟩ := mem_range.mp this
-      trans round_down (times (n + 1)) i
-      · trans r
-        · apply le_of_lt (by aesop)
-        apply Finset.le_max' _ _ (by aesop)
-      · apply hj _ (by aesop)
-    · intro hj k hk
-      apply hj
-      rw [mem_Iio]
-      obtain ⟨y, rfl⟩ := mem_range.1 hk
-      apply round_down_lt_of_ne_bot hi_bot
+      (fun _ _ _ ↦ round_down_le_of_subset <| Finset.image_subset_image (by aesop))
+  by_cases! hi_bot : i = ⊥
+  · simp [hi_bot, round_down_bot]
+  apply (isLUB_congr _).mp (isLUB_Iio (a := i))
+  -- TODO: clean up below
+  ext j; simp_rw [mem_upperBounds]; constructor
+  · intro hj k hk
+    apply hj
+    rw [mem_Iio]
+    obtain ⟨y, rfl⟩ := mem_range.1 hk
+    apply round_down_lt_of_ne_bot hi_bot
+  · intro hj k hk
+    rw [mem_Iio] at hk
+    obtain ⟨r, hr_mem, hr_lt⟩ := hd_dense.exists_between hk
+    have := subset_range_enumerate hd_count ⊥ hr_mem
+    obtain ⟨n, h_rn⟩ := mem_range.mp this
+    trans round_down (times (n + 1)) i
+    · trans r
+      · apply le_of_lt (by aesop)
+      apply Finset.le_max' _ _ (by aesop)
+    · apply hj _ (by aesop)
+
 
 end MeasureTheory
