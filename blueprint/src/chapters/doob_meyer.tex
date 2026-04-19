@@ -290,10 +290,12 @@ By definition.
 
 \begin{lemma}\label{lem:martingalePart_zero}
   \uses{def:martingalePart}
+  \leanok
+  \lean{MeasureTheory.martingalePart_zero}
 $M_0 = X_0$.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{def:martingalePart, lem:predictablePart_zero}
 By definition of the martingale part, $M = X - A$. By Lemma~\ref{lem:predictablePart_zero}, $A_0 = 0$, thus $M_0 = X_0 - A_0 = X_0$.
 \end{proof}
@@ -339,10 +341,12 @@ Using Lemma~\ref{lem:predictablePart_add_one}, we have for $n \in \mathbb{N}$,
 
 \begin{lemma}\label{lem:Martingale.predictablePart_eq_zero}
   \uses{def:predictablePart, def:Martingale}
+  \leanok
+  \lean{MeasureTheory.Martingale.predictablePart_eq_zero}
 If $X$ is a martingale, then $A = 0$ almost surely.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{def:predictablePart, def:Martingale}
 By the martingale property, each conditional expectation in the definition of $A$ is zero.
 \end{proof}
@@ -350,10 +354,12 @@ By the martingale property, each conditional expectation in the definition of $A
 
 \begin{lemma}\label{lem:isPredictable.predictablePart_eq}
   \uses{def:predictablePart, def:predictable}
+  \leanok
+  \lean{MeasureTheory.IsPredictable.predictablePart_eq}
 If $X$ is predictable, then $A = X - X_0$ almost surely.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{def:predictablePart, def:predictable}
 Since $X$ is predictable, for all $n \in \mathbb{N}$, $X_{n+1}$ is $\mathcal{F}_n$-measurable and thus $\mathbb{E}[X_{n+1} - X_n \mid \mathcal{F}_n] = X_{n+1} - X_n$ a.s..
 We get a telescoping sum in the definition of $A$ and thus $A_n = X_n - X_0$ a.s. for all $n \in \mathbb{N}$.
@@ -362,10 +368,12 @@ We get a telescoping sum in the definition of $A$ and thus $A_n = X_n - X_0$ a.s
 
 \begin{lemma}\label{lem:martingalePart_eq_zero}
   \uses{def:martingalePart, def:predictable}
+  \leanok
+  \lean{MeasureTheory.IsPredictable.martingalePart_eq}
 If $X$ is predictable, then $M = X_0$ almost surely.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{lem:isPredictable.predictablePart_eq}
 By definition of the martingale part, $M = X - A$. By Lemma~\ref{lem:isPredictable.predictablePart_eq}, $A = X - X_0$ almost surely, thus $M = X_0$ almost surely.
 \end{proof}
@@ -373,10 +381,12 @@ By definition of the martingale part, $M = X - A$. By Lemma~\ref{lem:isPredictab
 
 \begin{lemma}\label{lem:Martingale.martingalePart_eq}
   \uses{def:martingalePart, def:Martingale}
+  \leanok
+  \lean{MeasureTheory.Martingale.martingalePart_eq}
 If $X$ is a martingale, then $M = X$ almost surely.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{lem:Martingale.predictablePart_eq_zero}
 By definition of the martingale part, $M = X - A$. By Lemma~\ref{lem:Martingale.predictablePart_eq_zero}, $A = 0$ almost surely, thus $M = X$ almost surely.
 \end{proof}
@@ -384,10 +394,12 @@ By definition of the martingale part, $M = X - A$. By Lemma~\ref{lem:Martingale.
 
 \begin{lemma}\label{lem:predictablePart_smul}
   \uses{def:predictablePart}
+  \leanok
+  \lean{MeasureTheory.predictablePart_smul}
 For any scalar $c$, the predictable part of $c X$ is $c A$.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{def:predictablePart}
 Linearity of the conditional expectation.
 \end{proof}
@@ -395,10 +407,12 @@ Linearity of the conditional expectation.
 
 \begin{lemma}\label{lem:martingalePart_smul}
   \uses{def:martingalePart}
+  \leanok
+  \lean{MeasureTheory.martingalePart_smul}
 For any scalar $c$, the martingale part of $c X$ is $c M$.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{def:martingalePart, lem:predictablePart_smul}
 By definition of the martingale part, $M = X - A$. By Lemma~\ref{lem:predictablePart_smul}, the predictable part of $c X$ is $c A$. Therefore, the martingale part of $c X$ is $c X - c A = c M$.
 \end{proof}
@@ -406,10 +420,12 @@ By definition of the martingale part, $M = X - A$. By Lemma~\ref{lem:predictable
 
 \begin{lemma}\label{lem:predictablePart_add}
   \uses{def:predictablePart}
+  \leanok
+  \lean{MeasureTheory.predictablePart_add}
 The predictable part of $X + Y$ is the sum of the predictable part of $X$ and the predictable part of $Y$.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{def:predictablePart}
 Linearity of the conditional expectation.
 \end{proof}
@@ -417,10 +433,12 @@ Linearity of the conditional expectation.
 
 \begin{lemma}\label{lem:martingalePart_add}
   \uses{def:martingalePart}
+  \leanok
+  \lean{MeasureTheory.martingalePart_add}
 The martingale part of $X + Y$ is the sum of the martingale part of $X$ and the martingale part of $Y$.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{def:martingalePart, lem:predictablePart_add}
 By definition of the martingale part, $M = X - A$. By Lemma~\ref{lem:predictablePart_add}, the predictable part of $X + Y$ is $A + B$. Therefore, the martingale part of $X + Y$ is $(X + Y) - (A + B) = M + N$.
 \end{proof}
@@ -486,12 +504,26 @@ Thus, $(A_n)_{n \in \mathbb{N}}$ is almost surely nondecreasing.
 
 \begin{lemma}\label{lem:Submartingale.predictablePart_nonneg}
   \uses{def:predictablePart, def:Submartingale}
+  \leanok
+  \lean{MeasureTheory.Submartingale.nonneg_predictablePart}
 The predictable part of a real-valued submartingale is almost surely nonnegative.
 \end{lemma}
 
-\begin{proof}
+\begin{proof}\leanok
   \uses{lem:Submartingale.monotone_predictablePart, lem:predictablePart_zero}
 By Lemma~\ref{lem:Submartingale.monotone_predictablePart}, the predictable part $A$ is almost surely nondecreasing. By Lemma~\ref{lem:predictablePart_zero}, $A_0 = 0$. Therefore, $A_n \ge 0$ almost surely for all $n \in \mathbb{N}$.
+\end{proof}
+
+
+\begin{lemma}\label{lem:centering_basic}
+  \uses{def:predictablePart, def:martingalePart}
+  \leanok
+Fake lemma: import this lemma when using the basic properties of the Doob decomposition.
+\end{lemma}
+
+\begin{proof}\leanok
+  \uses{lem:predictablePart_zero, lem:martingalePart_zero, lem:predictablePart_add, lem:martingalePart_add, lem:predictablePart_smul, lem:martingalePart_smul, lem:Martingale.predictablePart_eq_zero, lem:isPredictable.predictablePart_eq, lem:martingalePart_eq_zero, lem:Martingale.martingalePart_eq, lem:Submartingale.monotone_predictablePart, lem:Submartingale.predictablePart_nonneg}
+
 \end{proof}
 
 
@@ -502,7 +534,7 @@ The hitting time $\tau_{A_{n + 1} > c}$ of Definition~\ref{def:leastGT} is a sto
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:predictable_predictablePart}
+  \uses{lem:predictable_predictablePart, lem:centering_basic}
 Since $A_{n}$ is predictable, $A_{n + 1}$ is adapted.
 The hitting time of an adapted process is a stopping time (we use the discrete time version of that result here, not the full Début theorem).
 \end{proof}
@@ -515,6 +547,7 @@ Then $A_{\tau_{A_{n + 1} > c}} \le c$ and if $\tau_{A_{n + 1} > c} < \infty$ the
 \end{lemma}
 
 \begin{proof}
+  \uses{lem:centering_basic}
 
 \end{proof}
 
@@ -539,7 +572,7 @@ Then for a stopping time $\tau \le T$, almost surely, $M_\tau = -\mathbb{E}[A_T 
 \end{lemma}
 
 \begin{proof}
-  \uses{def:martingalePart, lem:martingale_martingalePart}
+  \uses{def:martingalePart, lem:martingale_martingalePart, lem:centering_basic}
 By definition and since $X_T = 0$, $M_T = X_T - A_T = - A_T$.
 Since $M$ is a martingale it follows by optional sampling that for any stopping time $\tau \le T$
 \begin{align*}
@@ -561,7 +594,7 @@ Then $A_T > c \iff \tau^T(c) < T$.
 \end{lemma}
 
 \begin{proof}
-  \uses{lem:leastGT_lt_iff, lem:Submartingale.monotone_predictablePart}
+  \uses{lem:leastGT_lt_iff, lem:Submartingale.monotone_predictablePart, lem:centering_basic}
 By Lemma~\ref{lem:leastGT_lt_iff}, $\tau^T(c) < T \iff \exists s < T, A_{s+1} > c$, which is equivalent to $\exists s \in \{1, \ldots, T\}, A_s > c$.
 By monotonicity of $A$ (Lemma~\ref{lem:Submartingale.monotone_predictablePart}), this is equivalent to $A_T > c$.
 \end{proof}
