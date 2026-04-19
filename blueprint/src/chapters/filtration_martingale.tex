@@ -573,9 +573,11 @@ Fake lemma for the dependency graph. Import this to depend on Definition~\ref{de
 \begin{definition}[Usual conditions]\label{def:hasUsualConditions}
   \uses{def:rightContinuous, lem:rightContinuous_basic}
   \leanok
-  \lean{MeasureTheory.Filtration.HasUsualConditions}
-We say that a filtered probability space $(\Omega, \mathcal{F}, P)$ satisfies the usual conditions if the filtration is right-continuous and if $\mathcal{F}_0$ contains all the $P$-null sets.
+  \lean{MeasureTheory.Filtration.IsComplete}
+We say that a filtered probability space $(\Omega, \mathcal{F}, P)$ satisfies the usual conditions if the filtration is right-continuous and if $\mathcal{F}_t$ contains all the $P$-null sets for all $t \in T$.
 \end{definition}
+
+TODO: adapt this text. In Lean, we don't have a single def for the usual conditions, but rather we have separate defs for right-continuity and completeness.
 
 
 
