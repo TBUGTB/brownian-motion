@@ -54,6 +54,8 @@ namespace MeasureTheory.Filtration
 
 variable {Ω ι : Type*} {m : MeasurableSpace Ω} {E : Type*} [TopologicalSpace E] [PartialOrder ι]
 
+/-- A filtration `𝓕` is complete with respect to a measure `μ` if for all `i`, `𝓕 i` contains all
+the `μ`-null sets. -/
 class IsComplete (𝓕 : Filtration ι m) (μ : Measure Ω := by volume_tac) where
     /-- `𝓕 ⊥` contains all the null sets. -/
     measurableSet_of_null ⦃s : Set Ω⦄ (hs : μ s = 0) (t : ι) : MeasurableSet[𝓕 t] s
