@@ -100,6 +100,7 @@ variable {X : ι → Ω → β}
 private lemma StronglyAdapted.isPredictable_roundDown {times : Finset ι}
     (h_adap : StronglyAdapted 𝓕 X) :
     IsPredictable 𝓕 (fun i ω ↦ X (roundDown times i) ω) := by
+  letI : MeasurableSpace (ι × Ω) := 𝓕.predictable
   -- `X_ap i` approximates X at times `i`
   let X_ap n i := (h_adap i).approx n
   -- For `Y` and `Y_ap`, we keep `s` as a variable for use in the induction step
@@ -109,7 +110,7 @@ private lemma StronglyAdapted.isPredictable_roundDown {times : Finset ι}
   let Y_ap n s (x : ι × Ω) := X_ap n (roundDown s x.1) x.2
   apply stronglyMeasurable_of_tendsto (u := atTop) (f := fun n x ↦ Y_ap n times x)
   · intro n
-    apply (@SimpleFunc.mk _ 𝓕.predictable _ (Y_ap n times) _ _).stronglyMeasurable
+    refine SimpleFunc.mk (Y_ap n times) ?_ ?_ |>.stronglyMeasurable
     · intro b
       -- induction on the largest element of `times`
       refine times.induction_on_max ?_ ?_
