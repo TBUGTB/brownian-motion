@@ -59,22 +59,22 @@ namespace MeasureTheory
 variable {ι : Type*} [LinearOrder ι] [OrderBot ι]
 
 /-- helper function which (strictly) rounds down `i` onto the set `{⊥} ∪ s` -/
-private def round_down (s : Finset ι) (i : ι) :=
+private def roundDown (s : Finset ι) (i : ι) :=
   (insert ⊥ {j ∈ s | j < i}).max' (by simp)
 
-private lemma round_down_bot {s : Finset ι} : round_down s ⊥ = ⊥ :=
+private lemma roundDown_bot {s : Finset ι} : roundDown s ⊥ = ⊥ :=
   eq_bot_iff.mpr <| Finset.max'_le _ _ _ (by simp)
 
-private lemma round_down_lt_of_ne_bot {s : Finset ι} {i : ι} (h : i ≠ ⊥) :
-    round_down s i < i := by
+private lemma roundDown_lt_of_ne_bot {s : Finset ι} {i : ι} (h : i ≠ ⊥) :
+    roundDown s i < i := by
   apply lt_of_le_of_ne
   · apply Finset.max'_le _ _ _ (fun _ _ ↦ by grind)
   · contrapose! h
-    simp [round_down, Finset.max'_eq_iff] at h
+    simp [roundDown, Finset.max'_eq_iff] at h
     aesop
 
-private lemma round_down_le_of_subset {s t : Finset ι} {i : ι} (h : s ⊆ t) :
-    round_down s i ≤ round_down t i :=
+private lemma roundDown_le_of_subset {s t : Finset ι} {i : ι} (h : s ⊆ t) :
+    roundDown s i ≤ roundDown t i :=
   Finset.max'_le _ _ _ <| fun _ _ ↦ by apply Finset.le_max'; aesop
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {𝓕 : Filtration ι mΩ}
@@ -97,16 +97,16 @@ variable {β : Type*} {mβ : MeasurableSpace β} [TopologicalSpace β] [PseudoMe
 variable {X : ι → Ω → β}
 
 /- a 'rounded down' function is predictable -/
-private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
+private lemma StronglyAdapted.isPredictable_roundDown {times : Finset ι}
     (h_adap : StronglyAdapted 𝓕 X) :
-    IsPredictable 𝓕 (fun i ω ↦ X (round_down times i) ω) := by
+    IsPredictable 𝓕 (fun i ω ↦ X (roundDown times i) ω) := by
   -- `X_ap i` approximates X at times `i`
   let X_ap n i := (h_adap i).approx n
   -- For `Y` and `Y_ap`, we keep `s` as a variable for use in the induction step
   -- `Y` is the uncurried version of the rounded down `X`
-  let Y s (x : ι × Ω) := X (round_down s x.1) x.2
+  let Y s (x : ι × Ω) := X (roundDown s x.1) x.2
   -- `Y_ap` approximates `Y`
-  let Y_ap n s (x : ι × Ω) := X_ap n (round_down s x.1) x.2
+  let Y_ap n s (x : ι × Ω) := X_ap n (roundDown s x.1) x.2
   apply stronglyMeasurable_of_tendsto (u := atTop) (f := fun n x ↦ Y_ap n times x)
   · intro n
     apply (@SimpleFunc.mk _ 𝓕.predictable _ (Y_ap n times) _ _).stronglyMeasurable
@@ -125,13 +125,13 @@ private lemma StronglyAdapted.isPredictable_rounddown {times : Finset ι}
       · ext ⟨i, ω⟩
         simp_rw [Y_ap, mem_preimage]
         by_cases! hi : i ≤ t
-        · have : round_down (insert t times) i = round_down times i := by
-            rw [round_down]; congr 2; grind
+        · have : roundDown (insert t times) i = roundDown times i := by
+            rw [roundDown]; congr 2; grind
           rw [this]; aesop
-        · have : round_down (insert t times) i = t := by
-            rw [round_down, Finset.max'_eq_iff]; grind
+        · have : roundDown (insert t times) i = t := by
+            rw [roundDown, Finset.max'_eq_iff]; grind
           rw [this]; aesop
-    · apply Finite.subset (s := (⋃ i ∈ (range (round_down times)), range (X_ap n i))) _
+    · apply Finite.subset (s := (⋃ i ∈ (range (roundDown times)), range (X_ap n i))) _
         <| fun _ _ ↦ by aesop
       apply Finite.biUnion _ <| fun i _ ↦ by apply @(X_ap n i).finite_range
       apply Finite.subset (s := insert ⊥ times) (by aesop)
@@ -150,28 +150,28 @@ lemma StronglyAdapted.isPredictable_of_leftContinuous (h_adap : StronglyAdapted 
   obtain ⟨d, hd_count, hd_dense⟩ := exists_countable_dense ι
   let times n := Finset.image (enumerateCountable hd_count ⊥) (Finset.range n)
   rw [IsPredictable]
-  apply stronglyMeasurable_of_tendsto atTop (f := fun n x ↦ X (round_down (times n) x.1) x.2)
-  · exact fun _ ↦ isPredictable_rounddown (by aesop)
+  apply stronglyMeasurable_of_tendsto atTop (f := fun n x ↦ X (roundDown (times n) x.1) x.2)
+  · exact fun _ ↦ isPredictable_roundDown (by aesop)
   rw [tendsto_pi_nhds]
   intro ⟨i, ω⟩
   apply (h_cont ω i).insert.tendsto.comp
   simp_rw [Iio_insert, tendsto_nhdsWithin_iff]
   by_cases! hi_bot : i = ⊥
-  · simp [hi_bot, round_down_bot]
-  refine ⟨?_, .of_forall <| fun _ ↦ le_of_lt <| round_down_lt_of_ne_bot hi_bot⟩
+  · simp [hi_bot, roundDown_bot]
+  refine ⟨?_, .of_forall <| fun _ ↦ le_of_lt <| roundDown_lt_of_ne_bot hi_bot⟩
   apply tendsto_atTop_isLUB
-    (fun _ _ _ ↦ round_down_le_of_subset <| Finset.image_subset_image (by aesop))
+    (fun _ _ _ ↦ roundDown_le_of_subset <| Finset.image_subset_image (by aesop))
   apply (isLUB_congr _).mp (isLUB_Iio (a := i))
   ext j; simp_rw [mem_upperBounds, mem_Iio]
   constructor
   · intro hj k hk
     apply hj
     obtain ⟨y, rfl⟩ := mem_range.mp hk
-    apply round_down_lt_of_ne_bot hi_bot
+    apply roundDown_lt_of_ne_bot hi_bot
   · intro hj k hk
     obtain ⟨r, hr_mem, hr_lt⟩ := hd_dense.exists_between hk
     obtain ⟨n, h_rn⟩ := mem_range.mp <| subset_range_enumerate hd_count ⊥ hr_mem
-    trans round_down (times (n + 1)) i
+    trans roundDown (times (n + 1)) i
     · trans r
       · exact le_of_lt (by aesop)
       · apply Finset.le_max' _ _ (by aesop)
