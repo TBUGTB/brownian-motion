@@ -184,22 +184,14 @@ namespace MeasureTheory.Filtration
 
 variable {Ω ι : Type*} {m : MeasurableSpace Ω} {E : Type*} [TopologicalSpace E] [PartialOrder ι]
 
-/-- A filtration `𝓕` is said to satisfy the usual conditions if it is right continuous and `𝓕 0`
-  and consequently `𝓕 t` is complete (i.e. contains all null sets) for all `t`. -/
-class HasUsualConditions (𝓕 : Filtration ι m) (μ : Measure Ω := by volume_tac)
-    extends IsRightContinuous 𝓕 where
+/-- A filtration `𝓕` is complete with respect to a measure `μ` if for all `i`, `𝓕 i` contains all
+the `μ`-null sets. -/
+class IsComplete (𝓕 : Filtration ι m) (μ : Measure Ω := by volume_tac) where
     /-- `𝓕 ⊥` contains all the null sets. -/
-    IsComplete ⦃s : Set Ω⦄ (hs : μ s = 0) (t : ι) : MeasurableSet[𝓕 t] s
+    measurableSet_of_null ⦃s : Set Ω⦄ (hs : μ s = 0) (t : ι) : MeasurableSet[𝓕 t] s
 
-variable [OrderBot ι]
-
-instance {𝓕 : Filtration ι m} {μ : Measure Ω} [u : HasUsualConditions 𝓕 μ] {i : ι} :
-    @Measure.IsComplete Ω (𝓕 i) (μ.trim <| 𝓕.le _) :=
-  ⟨fun _ hs ↦ u.2 (measure_eq_zero_of_trim_eq_zero (Filtration.le 𝓕 _) hs) i⟩
-
-lemma HasUsualConditions.measurableSet_of_null
-    (𝓕 : Filtration ι m) {μ : Measure Ω} [u : HasUsualConditions 𝓕 μ] (s : Set Ω) (hs : μ s = 0) :
-    MeasurableSet[𝓕 ⊥] s :=
-  u.2 hs ⊥
+instance {𝓕 : Filtration ι m} {μ : Measure Ω} [u : IsComplete 𝓕 μ] {i : ι} :
+    (μ.trim <| 𝓕.le i).IsComplete :=
+  ⟨fun _ hs ↦ IsComplete.measurableSet_of_null (measure_eq_zero_of_trim_eq_zero (𝓕.le i) hs) i⟩
 
 end MeasureTheory.Filtration
