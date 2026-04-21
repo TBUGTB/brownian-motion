@@ -168,8 +168,11 @@ noncomputable section
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [Module ℝ E]
 
 def gtilde (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) (k : ℕ) (n : ℕ) : E :=
-  ∑ m ∈ (cwIteratedMul cw k n).support, (cwIteratedMul cw k n m) • (x (k+1) m)
+  ∑ m ∈ (convexWeightsConvolution cw k n).support, (convexWeightsConvolution cw k n m) • (x (k+1) m)
   -- note that it has to be k+1, not k for x!
+
+def gtilde' (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) (k : ℕ) (n : ℕ) : E :=
+  (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • (x (k+1) m))
 
 omit [InnerProductSpace ℝ E] [CompleteSpace E] in
 lemma gtilde_update (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) {k k' : ℕ} {f : ℕ → ℕ →₀ ℝ}
@@ -177,30 +180,55 @@ lemma gtilde_update (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E
     gtilde cw x k = gtilde (Function.update cw k' f) x k := by
   funext n
   simp only [gtilde]
-  rw [← cwIteratedMul_update cw hk']
+  rw [← convexWeightsConvolution_update cw hk']
 
-def komlos_formula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → ℕ →₀ ℝ) (k n : ℕ) : E :=
-  ∑ m ∈ (cwIteratedMul cw k n).support, cwIteratedMul cw k n m • x k m
+def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → ℕ →₀ ℝ) (k n : ℕ) : E :=
+  ∑ m ∈ (convexWeightsConvolution cw k n).support, convexWeightsConvolution cw k n m • x k m
 
-lemma komlos_formula_cong (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → ℕ →₀ ℝ} {cw2 : ℕ → ℕ → ℕ →₀ ℝ} {k : ℕ}
+omit [InnerProductSpace ℝ E] [CompleteSpace E] in
+lemma komlosFormula_cong (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → ℕ →₀ ℝ} {cw2 : ℕ → ℕ → ℕ →₀ ℝ} {k : ℕ}
   (h : ∀ k' ≤ k, cw1 k' = cw2 k') :
-  komlos_formula x cw1 k = komlos_formula x cw2 k := by
-  unfold komlos_formula
-  rw [cwIteratedMul_cong]
+  komlosFormula x cw1 k = komlosFormula x cw2 k := by
+  unfold komlosFormula
+  rw [convexWeightsConvolution_cong]
   exact h
 
 lemma komlos_base [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
   ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
-    (∃ glim : E, Tendsto (komlos_formula x cw 0) atTop (𝓝 glim))
-    ∧ (∀ k n m, 0 ≤ cw k n m) := by sorry
+    (∃ glim : E, Tendsto (komlosFormula x cw 0) atTop (𝓝 glim))
+    ∧ (∀ k n m, 0 ≤ cw k n m) := by
+    obtain ⟨g, g_conv, g_lim⟩ := komlos_norm (hx 0)
+
+    have exist_weights (n : ℕ) : ∃ w : ℕ →₀ ℝ, (∀ (i : ℕ), 0 ≤ w i) ∧
+      ∑ i ∈ w.support, w i = 1 ∧ ∑ i ∈ w.support, w i • x 0 i = g n := by
+      obtain ⟨w, hw1, hw2, hw3⟩ := convex_weights_of_mem_convexHull_indexed (g_conv n)
+      let φ : ℕ → ℕ := fun i ↦ n + i
+      let w' := Finsupp.onFinset (Finset.image (fun i ↦ i + n) w.support) (fun i ↦ w (i - n))
+        (by sorry) -- currently unprovable
+      use w'
+      have nonneg (i : ℕ) : 0 ≤ w' i := by sorry
+      have sum_one : ∑ i ∈ w'.support, w' i = 1 := by sorry
+      have sum_g : ∑ i ∈ w'.support, w' i • x 0 i = g n := by sorry
+      trivial
+
+    let cw (n : ℕ) := Classical.choose (exist_weights n)
+
+    use (fun k ↦ cw)
+    constructor
+    · have hg (n : ℕ) : ∑ i ∈ (cw n).support, (cw n) i • x 0 i = g n := by
+        exact (Classical.choose_spec (exist_weights n)).2.2
+      unfold komlosFormula
+      simp only [convexWeightsConvolution, hg, g_lim]
+    · intro k n m
+      exact (Classical.choose_spec (exist_weights n)).1 m
 
 
 lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ)
   (cw : ℕ → ℕ → ℕ →₀ ℝ) (hcw: ∀ k n m, 0 ≤ cw k n m) :
   ∃ (cw_new : ℕ → ℕ → ℕ →₀ ℝ),
-    (∃ glim : E, Tendsto (komlos_formula x cw_new (k+1)) atTop (𝓝 glim))
+    (∃ glim : E, Tendsto (komlosFormula x cw_new (k+1)) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i)
     ∧ (∀ k n m, 0 ≤ cw_new k n m) := by
 
@@ -224,30 +252,32 @@ lemma komlos_step [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
 
   let cw_new := Function.update cw (k+1) cw_step
 
-  have g_new_expression (n : ℕ) : g_step n = ∑ m ∈ (cwIteratedMul cw_new (k + 1) n).support,
-    cwIteratedMul cw_new (k + 1) n m • x (k+1) m := by
+  have g_new_expression (n : ℕ) :
+    g_step n = ∑ m ∈ (convexWeightsConvolution cw_new (k + 1) n).support,
+    convexWeightsConvolution cw_new (k + 1) n m • x (k+1) m := by
     rw [← hcombo n]
 
-    have aux: (cwIteratedMul cw_new (k + 1) n) = (cwmul (cw_step n) (cwIteratedMul cw k)) := by
-      rw [cwIteratedMul]
+    have aux: (convexWeightsConvolution cw_new (k + 1) n) =
+      (convexWeightsMul (cw_step n) (convexWeightsConvolution cw k)) := by
+      rw [convexWeightsConvolution]
       beta_reduce
       unfold cw_new
-      rw [Function.update_self, cwIteratedMul_update cw (show k+1 > k by omega)]
+      rw [Function.update_self, convexWeightsConvolution_update cw (show k+1 > k by grind)]
 
     rw [aux]
     unfold gtilde
-    rw [cwmul_eq]
+    rw [convexWeightsMul_eq]
     beta_reduce
 
-    set cwold := cwIteratedMul cw k
+    set cwold := convexWeightsConvolution cw k
     simp_rw [Finset.sum_smul, Finset.smul_sum, smul_smul]
     rw [Finset.sum_comm]
 
     refine Finset.sum_congr rfl ?_
     intro i hi
 
-    have subset: (cwold i).support ⊆ (cwmul (cw_step n) cwold).support := by
-      refine support_subset_cwmul_support hi ?_ ?_
+    have subset: (cwold i).support ⊆ (convexWeightsMul (cw_step n) cwold).support := by
+      refine support_subset_convexWeightsMul_support hi ?_ ?_
       · sorry
       · unfold cwold -- here we need to use hcw, probably through a further intermediate lemma
         sorry
@@ -274,7 +304,7 @@ def komlos_stage [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace
 
 lemma komlos_stage_lim [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
-  (∃ glim : E, Tendsto (komlos_formula x (komlos_stage hx k) k) atTop (𝓝 glim)) := by
+  (∃ glim : E, Tendsto (komlosFormula x (komlos_stage hx k) k) atTop (𝓝 glim)) := by
   induction k with
   | zero => sorry
   | succ k _ =>
@@ -295,21 +325,21 @@ lemma agreement_needed [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Complet
   let n := k-i
   suffices (komlos_stage hx i).val i = (komlos_stage hx (i+n)).val i from by
     unfold n at this
-    rw [show i + (k - i) = k by omega] at this
+    rw [show i + (k - i) = k by grind] at this
     exact this
   induction n with
   | zero => rfl
   | succ n hn =>
   rw [← add_assoc, hn]
-  apply agreement_step hx (i+n) i (by omega)
+  apply agreement_step hx (i+n) i (by grind)
 
 lemma komlos_convex_weights [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
     {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
     ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ), ∀ k : ℕ,
-    ∃ glim : E, Tendsto (komlos_formula x cw k) atTop (𝓝 glim) := by
+    ∃ glim : E, Tendsto (komlosFormula x cw k) atTop (𝓝 glim) := by
 
   have hcwStage2 (k : ℕ) :
-    ∃ glim : E, Tendsto (komlos_formula x (komlos_stage hx k).val k) atTop (𝓝 glim) := by
+    ∃ glim : E, Tendsto (komlosFormula x (komlos_stage hx k).val k) atTop (𝓝 glim) := by
     apply komlos_stage_lim
 
   let cw (k : ℕ) : ℕ → ℕ →₀ ℝ := (komlos_stage hx k).val k
@@ -320,8 +350,8 @@ lemma komlos_convex_weights [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Co
     apply agreement_needed hx
     exact hi
 
-  have transfer (k : ℕ) : komlos_formula x cw k = komlos_formula x (komlos_stage hx k).val k := by
-    apply komlos_formula_cong x
+  have transfer (k : ℕ) : komlosFormula x cw k = komlosFormula x (komlos_stage hx k).val k := by
+    apply komlosFormula_cong x
     exact agreement k
 
   use cw
