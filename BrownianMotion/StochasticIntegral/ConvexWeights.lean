@@ -2,7 +2,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Defs
 
-/-`
+/-
 # Lemmas on Convex Weights
 -/
 
@@ -12,10 +12,21 @@ variable {R E : Type*} [Field R] [AddCommGroup E] [Module R E]
   [LinearOrder R] [IsStrictOrderedRing R] {ι : Type*}
 
 lemma convex_weights_of_mem_convexHull_indexed {s : ι → E} {x : E}
-    (h : x ∈ convexHull R (Set.range s)) :
+  (hx : x ∈ convexHull R (Set.range s)) :
     ∃ (w : ι →₀ R), (∀ i, 0 ≤ w i) ∧ w.sum (fun _ wi ↦ wi) = 1
       ∧ w.sum (fun i wi ↦ wi • s i) = x := by
-      sorry
+  rw [ mem_convexHull_iff ] at hx
+  specialize hx ( { y | ∃ w : ι →₀ R, ( ∀ i, 0 ≤ w i ) ∧ w.sum (fun _ wi => wi) = 1
+    ∧ w.sum (fun i wi => wi • s i) = y } ) ?_ ?_ <;> norm_num at *;
+  · rintro _ ⟨ i, rfl ⟩ ; exact ⟨ Finsupp.single i 1, fun j => by by_cases h : j = i <;> aesop,
+      by simp, by simp⟩ ;
+  · rintro x ⟨ w₁, hw₁, hw₁', rfl ⟩ y ⟨ w₂, hw₂, hw₂', rfl ⟩ a b ha hb hab;
+    refine ⟨ a • w₁ + b • w₂, ?_, ?_, ?_ ⟩ <;> simp_all [ Finsupp.sum_add_index', Finsupp.smul_sum ];
+    · exact fun i => add_nonneg (mul_nonneg ha ( hw₁ i )) (mul_nonneg hb ( hw₂ i ));
+    · simp_all +decide [ Finsupp.sum_smul_index ];
+      simp_all +decide [ ← Finset.mul_sum _ _ _, Finsupp.sum ];
+    · simp +decide [ Finsupp.sum_add_index', Finsupp.sum_smul_index, smul_smul, add_smul];
+  · exact hx
 
 noncomputable section
 
@@ -40,11 +51,26 @@ lemma convexWeightsMul_eq (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) :
 variable {a : ℕ →₀ ℝ} {b : ℕ → ℕ →₀ ℝ}
 
 lemma convexWeightsMul_nonneg (ha : ∀ n, a n ≥ 0) (hb : ∀ n m, b n m ≥ 0) (m : ℕ) :
-  convexWeightsMul a b m ≥ 0 := by sorry
+  convexWeightsMul a b m ≥ 0 := by
+    exact Finset.sum_nonneg fun _ _ => mul_nonneg ( ha _ ) ( hb _ _ )
 
 lemma convexWeightsMul_sum_one (ha_nonneg : ∀ n, a n ≥ 0) (hb_nonneg : ∀ n m, b n m ≥ 0)
   (ha_sum_one : a.sum (fun _ ai ↦ ai) = 1) (hb_sum_one : ∀ n, (b n).sum (fun _ bi ↦ bi) = 1) :
-  (convexWeightsMul a b).sum (fun _ mi ↦ mi) = 1 := by sorry
+  (convexWeightsMul a b).sum (fun _ mi ↦ mi) = 1 := by
+    convert ha_sum_one using 1
+    convert Finset.sum_comm using 1
+    refine Finset.sum_congr rfl fun i hi => ?_;
+    rw [← Finset.mul_sum _ _ _,
+      show ( ∑ x ∈ ( convexWeightsMul a b ).support, ( b i ) x ) = 1 from ?_ ];
+    · norm_num;
+    · rw [← hb_sum_one i, Finsupp.sum_of_support_subset];
+      · intro j hj
+        simp_all only [ge_iff_le, Finsupp.mem_support_iff, ne_eq, convexWeightsMul,
+        Finsupp.onFinset_apply]
+        exact ne_of_gt (lt_of_lt_of_le (mul_pos (lt_of_le_of_ne (ha_nonneg i ) (Ne.symm hi ) )
+        (lt_of_le_of_ne (hb_nonneg i j ) (Ne.symm hj ) ) ) (Finset.single_le_sum
+        (fun k _ => mul_nonneg (ha_nonneg k ) (hb_nonneg k j )) (by aesop)))
+      · aesop
 
 def convexWeightsConvolution (cw : ℕ → ℕ → ℕ →₀ ℝ) : ℕ → ℕ → ℕ →₀ ℝ
   | 0 => fun n ↦ cw 0 n
@@ -85,8 +111,21 @@ lemma support_subset_convexWeightsMul_support {a : ℕ →₀ ℝ} {b : ℕ → 
 
 lemma convexWeightsConvolution_nonneg {cw : ℕ → ℕ → ℕ →₀ ℝ}
   (h : ∀ k n m, 0 ≤ cw k n m) (k n m : ℕ) :
-  0 ≤ convexWeightsConvolution cw k n m := by sorry
+  0 ≤ convexWeightsConvolution cw k n m := by
+    unfold convexWeightsConvolution
+    induction k <;> simp only [h]
+    apply_rules [convexWeightsMul_nonneg]
+    rename_i k hk
+    refine Nat.recOn k ?_ ?_ <;> simp only [Nat.zero_eq, ge_iff_le]
+    · exact fun n m ↦ le_of_eq_of_le rfl (h 0 n m)
+    · intro n hn n' m
+      exact convexWeightsMul_nonneg (fun k => h _ _ _ ) (fun k m => hn _ _) _
 
 lemma convexWeightsConvolution_sum_one {cw : ℕ → ℕ → ℕ →₀ ℝ} (h_nonneg : ∀ k n m, 0 ≤ cw k n m)
-  (h_sum_one : ∀ k n, (cw k n).sum (fun _ wi ↦ wi) = 1) (k n : ℕ) :
-  (convexWeightsConvolution cw k n).sum (fun _ wi ↦ wi) = 1 := by sorry
+  (h_sum_one : ∀ k n, (cw k n).sum (fun _ wi ↦ wi) = 1) (k : ℕ) :
+  ∀ n, (convexWeightsConvolution cw k n).sum (fun _ wi ↦ wi) = 1 := by
+    refine Nat.recOn k ?_ ?_ <;> simp_all only [convexWeightsConvolution, implies_true]
+    intro n hn n_1
+    exact convexWeightsMul_sum_one (fun k => h_nonneg _ _ _)
+      (fun k m => convexWeightsConvolution_nonneg (fun k n m => h_nonneg k n m) _ _ _)
+      (h_sum_one _ _) (fun k => hn k)
