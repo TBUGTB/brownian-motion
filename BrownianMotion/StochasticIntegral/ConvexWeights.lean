@@ -18,14 +18,15 @@ lemma convex_weights_of_mem_convexHull_indexed {s : ι → E} {x : E}
   rw [ mem_convexHull_iff ] at hx
   specialize hx ( { y | ∃ w : ι →₀ R, ( ∀ i, 0 ≤ w i ) ∧ w.sum (fun _ wi => wi) = 1
     ∧ w.sum (fun i wi => wi • s i) = y } ) ?_ ?_ <;> norm_num at *;
-  · rintro _ ⟨ i, rfl ⟩ ; exact ⟨ Finsupp.single i 1, fun j => by by_cases h : j = i <;> aesop,
+  · rintro _ ⟨ i, rfl ⟩
+    exact ⟨Finsupp.single i 1, fun j => by by_cases h : j = i <;> aesop,
       by simp, by simp⟩ ;
-  · rintro x ⟨ w₁, hw₁, hw₁', rfl ⟩ y ⟨ w₂, hw₂, hw₂', rfl ⟩ a b ha hb hab;
-    refine ⟨ a • w₁ + b • w₂, ?_, ?_, ?_ ⟩ <;> simp_all [ Finsupp.sum_add_index', Finsupp.smul_sum ];
+  · rintro x ⟨w₁, hw₁, hw₁', rfl⟩ y ⟨w₂, hw₂, hw₂', rfl⟩ a b ha hb hab;
+    refine ⟨a • w₁ + b • w₂, ?_, ?_, ?_⟩
     · exact fun i => add_nonneg (mul_nonneg ha ( hw₁ i )) (mul_nonneg hb ( hw₂ i ));
-    · simp_all +decide [ Finsupp.sum_smul_index ];
-      simp_all +decide [ ← Finset.mul_sum _ _ _, Finsupp.sum ];
-    · simp +decide [ Finsupp.sum_add_index', Finsupp.sum_smul_index, smul_smul, add_smul];
+    · simp_all [Finsupp.sum_add_index', Finsupp.sum_smul_index];
+      simp_all [← Finset.mul_sum _ _ _, Finsupp.sum]
+    · simp [Finsupp.smul_sum, Finsupp.sum_add_index', Finsupp.sum_smul_index, smul_smul, add_smul];
   · exact hx
 
 noncomputable section
@@ -43,7 +44,6 @@ def convexWeightsMul (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) : ℕ →
       rcases eq_or_ne (a k) 0 with ha | ha
       · simp [ha]
       · simp [h k (Finsupp.mem_support_iff.mp hk)])
-
 
 lemma convexWeightsMul_eq (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) :
   convexWeightsMul a b = fun m ↦ ∑ k ∈ a.support, a k * (b k m) := rfl
@@ -129,3 +129,19 @@ lemma convexWeightsConvolution_sum_one {cw : ℕ → ℕ → ℕ →₀ ℝ} (h_
     exact convexWeightsMul_sum_one (fun k => h_nonneg _ _ _)
       (fun k m => convexWeightsConvolution_nonneg (fun k n m => h_nonneg k n m) _ _ _)
       (h_sum_one _ _) (fun k => hn k)
+
+omit [AddCommGroup E] in
+lemma convex_combination_bounded [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  {x : ℕ → E} {w : ℕ → ℕ →₀ ℝ} (hw : ∀ n, (w n).sum (fun _ wi ↦ wi) = 1)
+  (hw_nonneg : ∀ n m, 0 ≤ (w n) m)
+  (hx : ∃ M : ℝ, ∀ n, ‖x n‖ ≤ M) :
+  ∃ M, ∀ n, ‖(w n).sum (fun i wi ↦ wi • x i)‖ ≤ M := by
+  obtain ⟨M, hM⟩ := hx
+  use M
+  intro n
+  have h_sum : ‖(w n).sum (fun i wi => wi • x i)‖ ≤ ∑ i ∈ (w n).support, (w n i) * ‖x i‖ := by
+    convert norm_sum_le _ _ using 2
+    simp [norm_smul, abs_of_nonneg (hw_nonneg _ _)]
+  refine le_trans h_sum (le_trans (Finset.sum_le_sum fun i hi =>
+    mul_le_mul_of_nonneg_left (hM i) (hw_nonneg n i)) ?_)
+  simp_all [← Finset.sum_mul _ _ _, Finsupp.sum]
