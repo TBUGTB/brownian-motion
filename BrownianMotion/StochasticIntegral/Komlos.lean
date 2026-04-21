@@ -198,16 +198,15 @@ lemma komlos_base [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
     obtain ⟨g, g_conv, g_lim⟩ := komlos_norm (hx 0)
 
     have exist_weights (n : ℕ) : ∃ w : ℕ →₀ ℝ, (∀ (i : ℕ), 0 ≤ w i) ∧
-      ∑ i ∈ w.support, w i = 1 ∧ ∑ i ∈ w.support, w i • x 0 i = g n := by
-      obtain ⟨w, hw1, hw2, hw3⟩ := convex_weights_of_mem_convexHull_indexed (g_conv n)
-      let φ : ℕ → ℕ := fun i ↦ n + i
-      let w' := Finsupp.onFinset (Finset.image (fun i ↦ i + n) w.support) (fun i ↦ w (i - n))
-        (by sorry) -- currently unprovable
-      use w'
-      have nonneg (i : ℕ) : 0 ≤ w' i := by sorry
-      have sum_one : ∑ i ∈ w'.support, w' i = 1 := by sorry
-      have sum_g : ∑ i ∈ w'.support, w' i • x 0 i = g n := by sorry
-      trivial
+      ∑ i ∈ w.support, w i = 1 ∧ w.sum (fun i wi ↦ wi  • x 0 i) = g n := by
+      obtain ⟨w, hw⟩ := convex_weights_of_mem_convexHull_indexed (g_conv n)
+      let w' := Finsupp.embDomain ⟨fun i ↦ n + i, add_right_injective n⟩ w
+      have sum_w' : w'.sum (fun i wi ↦ wi • x 0 i) = g n := by
+        rw [Finsupp.sum_embDomain]
+        simp [hw]
+      have nonneg (i : ℕ) : 0 ≤ w' i := by grind
+      have sum_one : w'.sum (fun _ wi ↦ wi) = 1 := by grind [Finsupp.sum_embDomain]
+      use w'; trivial
 
     let cw (n : ℕ) := Classical.choose (exist_weights n)
 

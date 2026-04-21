@@ -13,7 +13,8 @@ variable {R E : Type*} [Field R] [AddCommGroup E] [Module R E]
 
 lemma convex_weights_of_mem_convexHull_indexed {s : ι → E} {x : E}
     (h : x ∈ convexHull R (Set.range s)) :
-    ∃ (w : ι →₀ R), (∀ i, 0 ≤ w i) ∧ ∑ i ∈ w.support, w i = 1 ∧ ∑ i ∈ w.support, w i • s i = x := by
+    ∃ (w : ι →₀ R), (∀ i, 0 ≤ w i) ∧ w.sum (fun _ wi ↦ wi) = 1
+      ∧ w.sum (fun i wi ↦ wi • s i) = x := by
       sorry
 
 noncomputable section
