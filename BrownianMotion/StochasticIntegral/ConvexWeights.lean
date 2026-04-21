@@ -2,7 +2,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Defs
 
-/-
+/-`
 # Lemmas on Convex Weights
 -/
 
@@ -37,13 +37,18 @@ def convexWeightsMul (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) : ℕ →
 lemma convexWeightsMul_eq (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) :
   convexWeightsMul a b = fun m ↦ ∑ k ∈ a.support, a k * (b k m) := rfl
 
--- Need to add lemmas that show compatibility between convexWeightsMul (+ iterated variant) with the complex
--- weights conditions: nonegativity and summing up to one
+variable {a : ℕ →₀ ℝ} {b : ℕ → ℕ →₀ ℝ}
+
+lemma convexWeightsMul_nonneg (ha : ∀ n, a n ≥ 0) (hb : ∀ n m, b n m ≥ 0) (m : ℕ) :
+  convexWeightsMul a b m ≥ 0 := by sorry
+
+lemma convexWeightsMul_sum_one (ha_nonneg : ∀ n, a n ≥ 0) (hb_nonneg : ∀ n m, b n m ≥ 0)
+  (ha_sum_one : a.sum (fun _ ai ↦ ai) = 1) (hb_sum_one : ∀ n, (b n).sum (fun _ bi ↦ bi) = 1) :
+  (convexWeightsMul a b).sum (fun _ mi ↦ mi) = 1 := by sorry
 
 def convexWeightsConvolution (cw : ℕ → ℕ → ℕ →₀ ℝ) : ℕ → ℕ → ℕ →₀ ℝ
   | 0 => fun n ↦ cw 0 n
   | k + 1 => fun n ↦ convexWeightsMul (cw (k+1) n) (convexWeightsConvolution cw k)
-
 
 lemma convexWeightsConvolution_cong {cw1 cw2 : ℕ → ℕ → ℕ →₀ ℝ} {k : ℕ}
     (h : ∀ i ≤ k, cw1 i = cw2 i) :
@@ -77,3 +82,11 @@ lemma support_subset_convexWeightsMul_support {a : ℕ →₀ ℝ} {b : ℕ → 
   · refine ⟨i, hi, mul_pos ?_ ?_⟩
     · exact lt_of_le_of_ne (ha i hi) (Ne.symm (Finsupp.mem_support_iff.mp hi))
     · exact lt_of_le_of_ne (hb i hi j) (Ne.symm (Finsupp.mem_support_iff.mp hj))
+
+lemma convexWeightsConvolution_nonneg {cw : ℕ → ℕ → ℕ →₀ ℝ}
+  (h : ∀ k n m, 0 ≤ cw k n m) (k n m : ℕ) :
+  0 ≤ convexWeightsConvolution cw k n m := by sorry
+
+lemma convexWeightsConvolution_sum_one {cw : ℕ → ℕ → ℕ →₀ ℝ} (h_nonneg : ∀ k n m, 0 ≤ cw k n m)
+  (h_sum_one : ∀ k n, (cw k n).sum (fun _ wi ↦ wi) = 1) (k n : ℕ) :
+  (convexWeightsConvolution cw k n).sum (fun _ wi ↦ wi) = 1 := by sorry
