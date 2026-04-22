@@ -145,3 +145,17 @@ lemma convex_combination_bounded [NormedAddCommGroup E] [InnerProductSpace ℝ E
   refine le_trans h_sum (le_trans (Finset.sum_le_sum fun i hi =>
     mul_le_mul_of_nonneg_left (hM i) (hw_nonneg n i)) ?_)
   simp_all [← Finset.sum_mul _ _ _, Finsupp.sum]
+
+lemma convexWeightsMul_sum_smul [Module ℝ E]
+    (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) (f : ℕ → E)
+    (ha : ∀ k ∈ a.support, 0 ≤ a k) (hb : ∀ k ∈ a.support, ∀ m, 0 ≤ b k m) :
+    a.sum (fun i wi ↦ wi • (b i).sum (fun m bm ↦ bm • f m))
+      = (convexWeightsMul a b).sum (fun m cwm ↦ cwm • f m) := by
+  simp only [Finsupp.sum, Finset.smul_sum, convexWeightsMul_eq, Finset.sum_smul]
+  rw [Finset.sum_comm, Finset.sum_congr rfl]
+  intro k hk
+  have inclusion: (b k).support ⊆ (convexWeightsMul a b).support :=
+    support_subset_convexWeightsMul_support hk ha hb
+  rw [← Finset.sum_subset inclusion]
+  · simp only [mul_smul]
+  · aesop

@@ -217,35 +217,14 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
   let cw_new := Function.update cw (k+1) cw_step
   have g_new_expression (n : ℕ) :
     g_step n = (convexWeightsConvolution cw_new (k + 1) n).sum (fun m cwm ↦ cwm • x (k+1) m) := by
-    rw [← hcombo n]
-    set cwold := convexWeightsConvolution cw k
-    have aux: (convexWeightsConvolution cw_new (k + 1) n) = (convexWeightsMul (cw_step n) cwold)
-      := by
-      unfold cw_new cwold
+    have aux : (convexWeightsConvolution cw_new (k + 1) n)
+      = (convexWeightsMul (cw_step n) (convexWeightsConvolution cw k)) := by
+      unfold cw_new
       rw [convexWeightsConvolution, Function.update_self,
           convexWeightsConvolution_update cw (show k+1 > k by grind)]
-    rw [aux]
-    unfold gtilde
-    simp only [Finsupp.sum]
-    rw [convexWeightsMul_eq (cw_step n) (convexWeightsConvolution cw k)]
-    simp_rw [Finset.sum_smul]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl ?_
-    intro i hi
-    have subset: (cwold i).support ⊆ (convexWeightsMul (cw_step n) cwold).support := by
-      refine support_subset_convexWeightsMul_support hi ?_ ?_
-      · grind only
-      · unfold cwold
-        intro a ha m
-        exact convexWeightsConvolution_nonneg cw_nonneg k a m
-    rw [Finset.smul_sum]
-    simp_rw [← smul_smul]
-    apply Finset.sum_subset subset ?_
-    intro m hm1 hm2
-    have is_zero: cwold i m = 0 := by
-      grind => instantiate only [= Finsupp.mem_support_iff]
-    rw [is_zero]
-    simp
+    rw [← hcombo n, aux]
+    exact convexWeightsMul_sum_smul (cw_step n) (convexWeightsConvolution cw k) (x (k + 1))
+      (fun _ hk => hnonneg _ _) (fun i _ m => convexWeightsConvolution_nonneg cw_nonneg k i m)
   have old_indices_untouched: ∀ i ≤ k, cw_new i = cw i := by grind
   have sum_one (k' n : ℕ) : ((cw_new k' n).sum fun x wi ↦ wi) = 1 := by
     unfold cw_new
