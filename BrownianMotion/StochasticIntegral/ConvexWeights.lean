@@ -37,7 +37,7 @@ def convexWeightsMul (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) : ℕ →
     (fun m hm ↦ by
       simp only [Finset.mem_biUnion, Finsupp.mem_support_iff]
       by_contra h
-      push_neg at h
+      push Not at h
       apply hm
       apply Finset.sum_eq_zero
       intro k hk
