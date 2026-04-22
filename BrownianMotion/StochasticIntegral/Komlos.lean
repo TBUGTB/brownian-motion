@@ -172,35 +172,32 @@ variable [CompleteSpace E]
 lemma komlos_base {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
   ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
     (∃ glim : E, Tendsto (komlosFormula x cw 0) atTop (𝓝 glim))
-    ∧ (∀ k n m, 0 ≤ cw k n m) := by
+    ∧ (∀ k n m, 0 ≤ cw k n m) ∧ (∀ k n, (cw k n).sum (fun _ wi ↦ wi) = 1) := by
     obtain ⟨g, h_convex, h_lim⟩ := komlos_norm (hx 0)
     let cw (n : ℕ) := Classical.choose (convex_weights_of_mem_convexHull_reindexed h_convex n)
     use (fun k ↦ cw)
-    constructor
+    refine ⟨?_, ?_, ?_⟩
     · have hg (n : ℕ) : (cw n).sum (fun m cwm ↦ cwm • x 0 m) = g n := by
         exact (Classical.choose_spec (convex_weights_of_mem_convexHull_reindexed h_convex n)).2.2.2
       unfold komlosFormula
       simp only [convexWeightsConvolution, hg, h_lim]
-    · intro k n m
-      exact (Classical.choose_spec (convex_weights_of_mem_convexHull_reindexed h_convex n)).1 m
+    · intro k n
+      exact (Classical.choose_spec (convex_weights_of_mem_convexHull_reindexed h_convex n)).1
+    · intro k n
+      exact (Classical.choose_spec (convex_weights_of_mem_convexHull_reindexed h_convex n)).2.2.1
 
 lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ)
-  (cw : ℕ → ℕ → ℕ →₀ ℝ) (hcw: ∀ k n m, 0 ≤ cw k n m) :
+  (cw : ℕ → ℕ → ℕ →₀ ℝ) (cw_nonneg : ∀ k n m, 0 ≤ cw k n m)
+  (cw_sum_one : ∀ k n, (cw k n).sum (fun _ wi ↦ wi) = 1) :
   ∃ (cw_new : ℕ → ℕ → ℕ →₀ ℝ),
     (∃ glim : E, Tendsto (komlosFormula x cw_new (k+1)) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i)
-    ∧ (∀ k n m, 0 ≤ cw_new k n m) := by
-
-  have gtilde_bound : ∃ M, ∀ n, ‖gtilde cw x k n‖ ≤ M := by
-    unfold gtilde
-    apply convex_combination_bounded ?_ ?_ (hx (k+1))
-    · sorry
-    -- this requires an extra assumption on cw: we need that the cw sum up to one since otherwise
-    -- gtilde might not be bounded
-    · exact fun n m ↦ convexWeightsConvolution_nonneg hcw k n m
-
+    ∧ (∀ k n m, 0 ≤ cw_new k n m)
+    ∧ (∀ k n, (cw_new k n).sum (fun _ wi ↦ wi) = 1) := by
+  have gtilde_bound : ∃ M, ∀ n, ‖gtilde cw x k n‖ ≤ M := convex_combination_bounded
+      (convexWeightsConvolution_sum_one cw_nonneg cw_sum_one k)
+      (convexWeightsConvolution_nonneg cw_nonneg k) (hx (k+1))
   obtain ⟨g_step, gstep_conv, gstep_lim⟩ := komlos_norm (gtilde_bound)
-
   have cw_step_exists : ∃ w : ℕ → ℕ →₀ ℝ,
     (∀ n m, 0 ≤ w n m) ∧ (∀ n, ∀ m < n, w n m = 0)
     ∧ (∀ n, (w n).sum (fun _ wi ↦ wi) = 1)
@@ -216,40 +213,31 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
       exact (Classical.choose_spec (convex_weights_of_mem_convexHull_reindexed gstep_conv n)).2.2.1
     · intro n
       exact (Classical.choose_spec (convex_weights_of_mem_convexHull_reindexed gstep_conv n)).2.2.2
-
   obtain ⟨cw_step, ⟨hnonneg, hzero, hsum, hcombo⟩⟩ := cw_step_exists
-
   let cw_new := Function.update cw (k+1) cw_step
-
   have g_new_expression (n : ℕ) :
     g_step n = (convexWeightsConvolution cw_new (k + 1) n).sum (fun m cwm ↦ cwm • x (k+1) m) := by
     rw [← hcombo n]
-
-    have aux: (convexWeightsConvolution cw_new (k + 1) n) =
-      (convexWeightsMul (cw_step n) (convexWeightsConvolution cw k)) := by
-      rw [convexWeightsConvolution]
-      unfold cw_new
-      rw [Function.update_self, convexWeightsConvolution_update cw (show k+1 > k by grind)]
-
+    set cwold := convexWeightsConvolution cw k
+    have aux: (convexWeightsConvolution cw_new (k + 1) n) = (convexWeightsMul (cw_step n) cwold)
+      := by
+      unfold cw_new cwold
+      rw [convexWeightsConvolution, Function.update_self,
+          convexWeightsConvolution_update cw (show k+1 > k by grind)]
     rw [aux]
     unfold gtilde
     simp only [Finsupp.sum]
     rw [convexWeightsMul_eq (cw_step n) (convexWeightsConvolution cw k)]
-
-    set cwold := convexWeightsConvolution cw k
     simp_rw [Finset.sum_smul]
     rw [Finset.sum_comm]
-
     refine Finset.sum_congr rfl ?_
     intro i hi
-
     have subset: (cwold i).support ⊆ (convexWeightsMul (cw_step n) cwold).support := by
       refine support_subset_convexWeightsMul_support hi ?_ ?_
       · grind only
       · unfold cwold
         intro a ha m
-        exact convexWeightsConvolution_nonneg hcw k a m
-
+        exact convexWeightsConvolution_nonneg cw_nonneg k a m
     rw [Finset.smul_sum]
     simp_rw [← smul_smul]
     apply Finset.sum_subset subset ?_
@@ -258,11 +246,17 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
       grind => instantiate only [= Finsupp.mem_support_iff]
     rw [is_zero]
     simp
-
   have old_indices_untouched: ∀ i ≤ k, cw_new i = cw i := by grind
-
+  have sum_one (k' n : ℕ) : ((cw_new k' n).sum fun x wi ↦ wi) = 1 := by
+    unfold cw_new
+    by_cases hk': k+1 = k'
+    · simp_rw [hk']
+      simp only [Function.update_self]
+      exact (hsum n)
+    · rw [← cw_sum_one k' n, Function.update_of_ne]
+      grind
   use cw_new
-  refine ⟨?_, old_indices_untouched, ?_⟩
+  refine ⟨?_, old_indices_untouched, ?_, sum_one⟩
   · obtain ⟨glim, hglim⟩ := gstep_lim
     use glim
     exact Tendsto.congr g_new_expression hglim
@@ -272,17 +266,17 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
     split_ifs
     · simp only [eq_rec_constant]
       exact hnonneg _ _
-    · exact hcw k' n m
+    · exact cw_nonneg k' n m
 
 def komlos_stage {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (stage : ℕ) :
-  { w : ℕ → ℕ → ℕ →₀ ℝ // ∀ k n m, 0 ≤ w k n m } :=
+  { w : ℕ → ℕ → ℕ →₀ ℝ // (∀ k n m, 0 ≤ w k n m) ∧ ∀ k n, (w k n).sum (fun _ wi ↦ wi) = 1} :=
   match stage with
   | 0 => by
     use Classical.choose (komlos_base hx)
     exact Classical.choose_spec (komlos_base hx) |>.2
   | stage+1 => by
       let ⟨previous, hprevious⟩ := komlos_stage hx stage
-      let step := komlos_step hx stage previous hprevious
+      let step := komlos_step hx stage previous hprevious.1 hprevious.2
       use Classical.choose step
       exact Classical.choose_spec step |>.2.2
 
@@ -291,12 +285,14 @@ lemma komlos_stage_lim {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, �
   induction k with
   | zero => exact Classical.choose_spec (komlos_base hx) |>.1
   | succ k _ => exact
-      Classical.choose_spec (komlos_step hx k (komlos_stage hx k).val (komlos_stage hx k).prop) |>.1
+      Classical.choose_spec (komlos_step hx k
+        (komlos_stage hx k).val (komlos_stage hx k).prop.1 (komlos_stage hx k).prop.2) |>.1
 
 lemma agreement_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
   ∀ i ≤ k, (komlos_stage hx k).val i = (komlos_stage hx (k+1)).val i := by
   intro i hi
-  let aux := komlos_step hx k (komlos_stage hx k).val (komlos_stage hx k).prop
+  let aux := komlos_step hx k (komlos_stage hx k).val (komlos_stage hx k).prop.1
+    (komlos_stage hx k).prop.2
   let ⟨_, aux2, _⟩ := Classical.choose_spec aux
   exact Eq.symm (aux2 i hi)
 
