@@ -123,16 +123,19 @@ lemma komlos_norm [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
 noncomputable section
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-def gtilde (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) (k : ℕ) (n : ℕ) : E :=
+private def gtilde (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) (k : ℕ) (n : ℕ) : E :=
   (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • (x (k+1) m))
 
-lemma gtilde_update (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) {k k' : ℕ} {f : ℕ → ℕ →₀ ℝ}
+private lemma gtilde_update (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → ℕ → E) {k k' : ℕ} {f : ℕ → ℕ →₀ ℝ}
     (hk' : k' > k) :
     gtilde cw x k = gtilde (Function.update cw k' f) x k := by
   funext n
   simp only [gtilde]
   rw [← convexWeightsConvolution_update cw hk']
 
+/-- `komlosFormula x cw k n` is the convex combination of the stage-`k` vectors `x k m`,
+weighted by `convexWeightsConvolution cw k n`. It is the sequence whose convergence is
+established at each stage of the Komlós construction. -/
 def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → ℕ →₀ ℝ) (k n : ℕ) : E :=
   (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • x k m)
 
@@ -247,7 +250,7 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
       exact hnonneg _ _
     · exact cw_nonneg k' n m
 
-def komlos_stage {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (stage : ℕ) :
+private def komlos_stage {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (stage : ℕ) :
   { w : ℕ → ℕ → ℕ →₀ ℝ // (∀ k n m, 0 ≤ w k n m) ∧ ∀ k n, (w k n).sum (fun _ wi ↦ wi) = 1} :=
   match stage with
   | 0 => by
@@ -259,7 +262,7 @@ def komlos_stage {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, 
       use Classical.choose step
       exact Classical.choose_spec step |>.2.2
 
-lemma komlos_stage_lim {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
+private lemma komlos_stage_lim {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
   (∃ glim : E, Tendsto (komlosFormula x (komlos_stage hx k) k) atTop (𝓝 glim)) := by
   induction k with
   | zero => exact Classical.choose_spec (komlos_base hx) |>.1
@@ -267,7 +270,7 @@ lemma komlos_stage_lim {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, �
       Classical.choose_spec (komlos_step hx k
         (komlos_stage hx k).val (komlos_stage hx k).prop.1 (komlos_stage hx k).prop.2) |>.1
 
-lemma agreement_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
+private lemma agreement_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
   ∀ i ≤ k, (komlos_stage hx k).val i = (komlos_stage hx (k+1)).val i := by
   intro i hi
   let aux := komlos_step hx k (komlos_stage hx k).val (komlos_stage hx k).prop.1
@@ -275,7 +278,8 @@ lemma agreement_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀
   let ⟨_, aux2, _⟩ := Classical.choose_spec aux
   exact Eq.symm (aux2 i hi)
 
-lemma agreement_necessary_condition {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
+private lemma agreement_necessary_condition {x : ℕ → ℕ → E}
+    (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
   (i k : ℕ) (hi : i ≤ k) :
   (komlos_stage hx i).val i = (komlos_stage hx k).val i := by
   let n := k-i

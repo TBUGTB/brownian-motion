@@ -31,6 +31,9 @@ lemma convex_weights_of_mem_convexHull_indexed {s : ι → E} {x : E}
 
 noncomputable section
 
+/-- Given convex weights `a : ℕ →₀ ℝ` and a family of convex weights `b : ℕ → ℕ →₀ ℝ`,
+`convexWeightsMul a b` is the convex combination of the `b k`, weighted by `a`. That is,
+`(convexWeightsMul a b) m = ∑ k ∈ a.support, a k * b k m`. -/
 def convexWeightsMul (a : ℕ →₀ ℝ) (b : ℕ → ℕ →₀ ℝ) : ℕ →₀ ℝ :=
   Finsupp.onFinset (a.support.biUnion (fun k ↦ (b k).support))
     (fun m ↦ ∑ k ∈ a.support, a k * (b k m))
@@ -72,6 +75,9 @@ lemma convexWeightsMul_sum_one (ha_nonneg : ∀ n, a n ≥ 0) (hb_nonneg : ∀ n
         (fun k _ => mul_nonneg (ha_nonneg k ) (hb_nonneg k j )) (by aesop)))
       · aesop
 
+/-- Given a doubly-indexed family of convex weights `cw : ℕ → ℕ → ℕ →₀ ℝ`,
+`convexWeightsConvolution cw k n` is the iterated convex multiplication obtained by combining
+the weights `cw 0 n, cw 1 n, …, cw k n` via `convexWeightsMul`. -/
 def convexWeightsConvolution (cw : ℕ → ℕ → ℕ →₀ ℝ) : ℕ → ℕ → ℕ →₀ ℝ
   | 0 => fun n ↦ cw 0 n
   | k + 1 => fun n ↦ convexWeightsMul (cw (k+1) n) (convexWeightsConvolution cw k)
