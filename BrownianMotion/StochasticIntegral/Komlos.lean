@@ -123,17 +123,6 @@ lemma komlos_norm [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
 noncomputable section
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-private def gtilde (cw : ℕ → ℕ → StdSimplex ℝ ℕ) (x : ℕ → ℕ → E) (k : ℕ) (n : ℕ) : E :=
-  (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • (x (k+1) m))
-
-private lemma gtilde_update (cw : ℕ → ℕ → StdSimplex ℝ ℕ) (x : ℕ → ℕ → E) {k k' : ℕ}
-    {f : ℕ → StdSimplex ℝ ℕ} (hk' : k' > k) :
-    gtilde cw x k = gtilde (Function.update cw k' f) x k := by
-  funext n
-  simp only [gtilde]
-  rw [convexWeightsConvolution_cong]
-  grind
-
 /-- `komlosFormula x cw k n` is the convex combination of the stage-`k` vectors `x k m`,
 weighted by `convexWeightsConvolutionSimplex cw k n`. It is the sequence whose convergence is
 established at each stage of the Komlós construction. -/
@@ -200,12 +189,13 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
   ∃ (cw_new : ℕ → ℕ → StdSimplex ℝ ℕ),
     (∃ glim : E, Tendsto (komlosFormula x cw_new (k+1) (k+1)) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i) ∧ (∀ n, ∀ m < n, (cw_new (k+1) n).toFun m = 0) := by
-  have gtilde_bound : ∃ M, ∀ n, ‖gtilde cw x k n‖ ≤ M :=
+  let gtilde' := fun n ↦ (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • (x (k+1) m))
+  have gtilde_bound : ∃ M, ∀ n, ‖gtilde' n‖ ≤ M :=
     convex_combination_bounded (hx (k+1))
   obtain ⟨g_step, gstep_conv, gstep_lim⟩ := komlos_norm (gtilde_bound)
   have cw_step_exists : ∃ w : ℕ → StdSimplex ℝ ℕ,
     (∀ n, ∀ m < n, (w n).weights m = 0)
-    ∧ ∀ n, g_step n = (w n).sum (fun i wi ↦ wi • gtilde cw x k i) := by
+    ∧ ∀ n, g_step n = (w n).sum (fun i wi ↦ wi • gtilde' i) := by
     refine ⟨fun n ↦ Classical.choose (convex_weights_of_mem_convexHull_reindexed gstep_conv n), ?_⟩
     exact And.intro
       (fun n ↦ (Classical.choose_spec (convex_weights_of_mem_convexHull_reindexed gstep_conv n)).2)
@@ -221,7 +211,6 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
           convexWeightsConvolution_cong]
       grind
     rw [hcombo n, aux, ← convexWeightsMul_sum_smul]
-    unfold gtilde; rfl
   have old_indices_untouched: ∀ i ≤ k, cw_new i = cw i := by grind
   use cw_new
   refine ⟨?_, old_indices_untouched, ?_⟩
