@@ -136,8 +136,8 @@ private lemma gtilde_update (cw : ℕ → ℕ → ℕ →₀ ℝ) (x : ℕ → �
 /-- `komlosFormula x cw k n` is the convex combination of the stage-`k` vectors `x k m`,
 weighted by `convexWeightsConvolution cw k n`. It is the sequence whose convergence is
 established at each stage of the Komlós construction. -/
-def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → ℕ →₀ ℝ) (k n : ℕ) : E :=
-  (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • x k m)
+def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → ℕ →₀ ℝ) (k i n : ℕ) : E :=
+  (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • x i m)
 
 lemma komlosFormula_cong (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → ℕ →₀ ℝ} {cw2 : ℕ → ℕ → ℕ →₀ ℝ} {k : ℕ}
   (h : ∀ k' ≤ k, cw1 k' = cw2 k') :
@@ -174,7 +174,7 @@ variable [CompleteSpace E]
 
 lemma komlos_base {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
   ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ),
-    (∃ glim : E, Tendsto (komlosFormula x cw 0) atTop (𝓝 glim))
+    (∃ glim : E, Tendsto (komlosFormula x cw 0 0) atTop (𝓝 glim))
     ∧ (∀ k n m, 0 ≤ cw k n m) ∧ (∀ k n, (cw k n).sum (fun _ wi ↦ wi) = 1) := by
     obtain ⟨g, h_convex, h_lim⟩ := komlos_norm (hx 0)
     let cw (n : ℕ) := Classical.choose (convex_weights_of_mem_convexHull_reindexed h_convex n)
@@ -193,7 +193,7 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
   (cw : ℕ → ℕ → ℕ →₀ ℝ) (cw_nonneg : ∀ k n m, 0 ≤ cw k n m)
   (cw_sum_one : ∀ k n, (cw k n).sum (fun _ wi ↦ wi) = 1) :
   ∃ (cw_new : ℕ → ℕ → ℕ →₀ ℝ),
-    (∃ glim : E, Tendsto (komlosFormula x cw_new (k+1)) atTop (𝓝 glim))
+    (∃ glim : E, Tendsto (komlosFormula x cw_new (k+1) (k+1)) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i)
     ∧ (∀ k n m, 0 ≤ cw_new k n m)
     ∧ (∀ k n, (cw_new k n).sum (fun _ wi ↦ wi) = 1) := by
@@ -263,7 +263,7 @@ private def komlos_stage {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ,
       exact Classical.choose_spec step |>.2.2
 
 private lemma komlos_stage_lim {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
-  (∃ glim : E, Tendsto (komlosFormula x (komlos_stage hx k) k) atTop (𝓝 glim)) := by
+  (∃ glim : E, Tendsto (komlosFormula x (komlos_stage hx k) k k) atTop (𝓝 glim)) := by
   induction k with
   | zero => exact Classical.choose_spec (komlos_base hx) |>.1
   | succ k _ => exact
@@ -297,10 +297,10 @@ private lemma agreement_necessary_condition {x : ℕ → ℕ → E}
 lemma komlos_convex_weights
     {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
     ∃ (cw : ℕ → ℕ → ℕ →₀ ℝ), ∀ k : ℕ,
-    ∃ glim : E, Tendsto (komlosFormula x cw k) atTop (𝓝 glim) := by
+    ∃ glim : E, Tendsto (komlosFormula x cw k k) atTop (𝓝 glim) := by
   have hcwStage2 (k : ℕ) :
-    ∃ glim : E, Tendsto (komlosFormula x (komlos_stage hx k).val k) atTop (𝓝 glim) := by
-    apply komlos_stage_lim
+    ∃ glim : E, Tendsto (komlosFormula x (komlos_stage hx k).val k k) atTop (𝓝 glim) := by
+    simpa using (komlos_stage_lim (x := x) hx k)
   let cw (k : ℕ) : ℕ → ℕ →₀ ℝ := (komlos_stage hx k).val k
   have agreement (k i : ℕ) (hi : i ≤ k) :
     cw i = (komlos_stage hx k).val i := by
@@ -314,6 +314,73 @@ lemma komlos_convex_weights
   intro k
   simp_rw [transfer k]
   exact hcwStage2 k
+
+
+def convexTail (x : ℕ → E) : Set (ℕ → E) :=
+  { y | ∀ n, y n ∈ convexHull ℝ (Set.range (fun m ↦ x (n + m))) }
+
+omit [CompleteSpace E] in
+lemma TendstoUniformly_convexTail {x : ℕ → E} {xlim : E} (hx : Tendsto x atTop (𝓝 xlim)) :
+  TendstoUniformly (fun (n : ℕ) (y : convexTail x) ↦ (y.val) n) (fun _ ↦ xlim) atTop := by
+  -- GPT 5.2 proof:
+  -- Unfolding `TendstoUniformly` gives an entourage `u` and we must show that eventually,
+  -- `(xlim, y n) ∈ u` for all `y : convexTail x`.
+  intro u hu
+  rcases Metric.mem_uniformity_dist.1 hu with ⟨ε, εpos, hεu⟩
+  have hxε : ∀ᶠ n in atTop, dist (x n) xlim < ε := by
+    have hx' : ∀ᶠ n in atTop, x n ∈ Metric.ball xlim ε :=
+      hx (Metric.ball_mem_nhds _ εpos)
+    simpa [Metric.mem_ball] using hx'
+  rcases Filter.eventually_atTop.1 hxε with ⟨N, hN⟩
+  refine Filter.eventually_atTop.2 ⟨N, ?_⟩
+  intro n hn y
+  apply hεu
+  -- Reduce to a ball estimate, then use convexity of balls.
+  have htail : Set.range (fun m ↦ x (n + m)) ⊆ Metric.ball xlim ε := by
+    rintro _ ⟨m, rfl⟩
+    have : dist (x (n + m)) xlim < ε :=
+      hN (n + m) (le_trans hn (Nat.le_add_right n m))
+    simpa [Metric.mem_ball] using this
+  have hconv : convexHull ℝ (Set.range (fun m ↦ x (n + m))) ⊆ Metric.ball xlim ε := by
+    refine convexHull_min htail (convex_ball xlim ε)
+  have hy : y.1 n ∈ convexHull ℝ (Set.range (fun m ↦ x (n + m))) := y.2 n
+  have hyball : y.1 n ∈ Metric.ball xlim ε := hconv hy
+  have : dist xlim (y.1 n) < ε := by
+    have : dist (y.1 n) xlim < ε := by
+      simpa [Metric.mem_ball] using hyball
+    simpa [dist_comm] using this
+  simpa using this
+
+omit [CompleteSpace E] in
+lemma Tendsto_convexTail {x : ℕ → E} {xlim : E} (hx : Tendsto x atTop (𝓝 xlim)) :
+  ∀ y ∈ convexTail x, Tendsto y atTop (𝓝 xlim) := by
+  intro y hy
+  exact TendstoUniformly.tendsto_at (TendstoUniformly_convexTail hx) ⟨y, hy⟩
+
+-- 12.5
+lemma komlos_uniform_convergence
+    {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
+    (cw : ℕ → ℕ → ℕ →₀ ℝ) (lim : ℕ → E)
+    (hcw: ∀ k : ℕ, Tendsto (komlosFormula x cw k k) atTop (𝓝 (lim k))) :
+    ∀ i, TendstoUniformly (fun k ↦ komlosFormula x cw k i) lim atTop
+    -- maybe too strong, the blueprint statement limits to k ≥ i
+     := by
+    intro i
+    sorry
+
+-- 12.6
+lemma komlos_convex_weights_consolidated
+    {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
+    ∃ (η : ℕ → ℕ →₀ ℝ), (∀ n, ∀ m < n, η n m = 0) ∧ ∀ i : ℕ,
+    ∃ glim : E, Tendsto (fun n ↦ (η n).sum (fun m ηm ↦ ηm • x i m)) atTop (𝓝 glim) := by sorry
+
+-- 12.7
+lemma komlos_convergence_L2
+    (f : ℕ → Ω → E) {P : Measure Ω} :
+    let f' : ℕ → ℕ → Ω → E := fun i n ↦ Set.indicator {ω : Ω | ‖f n ω‖ ≤ i} (f n);
+    ∃ cw : ℕ → ℕ →₀ ℝ, ∀ i : ℕ, ∃ lim : Ω → E,
+    Tendsto (fun n ↦ eLpNorm (fun ω ↦ ((cw n).sum (fun i wi ↦ wi • f' i n)) ω - lim ω) 2 P)
+      atTop (𝓝 0) := by sorry
 
 theorem komlos_L1 [MeasurableSpace E] [BorelSpace E] {f : ℕ → Ω → E} {P : Measure Ω}
     (hf : UniformIntegrable f 1 P) :
