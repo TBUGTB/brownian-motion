@@ -135,6 +135,10 @@ lemma komlosFormula_cong (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → StdSimpl
   unfold komlosFormula; rw [convexWeightsConvolution_cong]
   exact h
 
+/--
+We define the `convexTail` of a sequence `x` to be the set of sequences `y` with the property that
+every `y n` can be written as a convex combination of elements `x k` with `k ≥ n`.
+-/
 def convexTail (x : ℕ → E) : Set (ℕ → E) :=
   { y | ∀ n, y n ∈ convexHull ℝ (Set.range (fun m ↦ x (n + m))) }
 
