@@ -334,7 +334,6 @@ lemma Tendsto_convexTail {x : ℕ → E} {xlim : E} (hx : Tendsto x atTop (𝓝 
   intro y hy
   exact TendstoUniformly.tendsto_at (TendstoUniformly_convexTail hx) ⟨y, hy⟩
 
--- 12.5
 lemma komlos_uniform_convergence
     {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
     (cw : ℕ → ℕ → StdSimplex ℝ ℕ) (lim : ℕ → E)
@@ -345,13 +344,11 @@ lemma komlos_uniform_convergence
     intro i
     sorry
 
--- 12.6
-lemma komlos_convex_weights_consolidated
+lemma komlos_convex_weights_diagonal
     {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
     ∃ (η : ℕ → StdSimplex ℝ ℕ), (∀ n, ∀ m < n, (η n).weights m = 0) ∧ ∀ i : ℕ,
     ∃ glim : E, Tendsto (fun n ↦ (η n).sum (fun m ηm ↦ ηm • x i m)) atTop (𝓝 glim) := by sorry
 
--- 12.7
 lemma komlos_convergence_L2
     (f : ℕ → Ω → E) {P : Measure Ω} :
     let f' : ℕ → ℕ → Ω → E := fun i n ↦ Set.indicator {ω : Ω | ‖f n ω‖ ≤ i} (f n);

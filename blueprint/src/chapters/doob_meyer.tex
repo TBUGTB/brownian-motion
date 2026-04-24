@@ -69,17 +69,13 @@ But the left-hand side is equal to $\|g_n - g_m\|_2^2/4$ by the parallelogram id
 \end{proof}
 
 
-\begin{lemma}\label{lem:convex_of_converg_seq_is_converg}
+\begin{lemma}\label{lem:convex_of_converg_seq_is_converg}\lean{TendstoUniformly_convexTail}\leanok
   Let $(x_n)_{n \in \mathbb{N}}$ be a sequence in a real vector space converging to $x$.
   Let $\mathcal{C}((x_n))$ be the set of sequences $(y_n)_{n \in \mathbb{N}}$ such that for all $n$, $y_n \in convex(x_n, x_{n+1}, \ldots)$.
-  Then we have
-  \begin{enumerate}
-    \item uniform convergence over $\mathcal{C}((x_n))$: for all $\varepsilon > 0$, there exists $\bar{n}$ such that for all $n \ge \bar{n}$, for all $(y_n)_{n \in \mathbb{N}} \in \mathcal{C}((x_n))$, $\Vert y_n - x \Vert \le \varepsilon$;
-    \item pointwise convergence: for all $(y_n)_{n \in \mathbb{N}} \in \mathcal{C}((x_n))$, $(y_n)_{n \in \mathbb{N}}$ converges to $x$.
-  \end{enumerate}
+  Then we have uniform convergence over $\mathcal{C}((x_n))$: for all $\varepsilon > 0$, there exists $\bar{n}$ such that for all $n \ge \bar{n}$, for all $(y_n)_{n \in \mathbb{N}} \in \mathcal{C}((x_n))$, $\Vert y_n - x \Vert \le \varepsilon$;
 \end{lemma}
 
-\begin{proof}
+\begin{proof} \leanok
 The second point is a direct consequence of the first one, so we only prove the first one.
 Let $\varepsilon>0$.
 By convergence of $x_n$, there exists $\bar{n}$ such that for all $n \ge \bar{n}$, $\Vert x_n-x \Vert \le \varepsilon$.
@@ -135,9 +131,10 @@ We have thus defined, for all $k, n \in \mathbb{N}$, convex weights $(\lambda^{k
 \end{proof}
 
 
-
 \begin{lemma}\label{lem:komlos_convex_weights_tendsto}
+  \lean{komlos_uniform_convergence}
   \uses{lem:komlos_convex_weights}
+  \leanok
 Let $E$ be a Hilbert space and for $i \in \mathbb{N}$, let $(x_n^{(i)})_{n \in \mathbb{N}}$ be a bounded sequence in $E$.
 Let $(\lambda^{k,n}_\cdot)_{k, n \in \mathbb{N}}$ be convex weights satisfying the conclusion of Lemma~\ref{lem:komlos_convex_weights}, and let $(g^i)_{i\in \mathbb{N}}$ be the sequence of limits of the sums.
 
@@ -153,6 +150,8 @@ All sums $\sum_{m \ge n} \left((\lambda^{k,n}_\cdot) * \ldots * (\lambda^{1,\cdo
 
 
 \begin{lemma}\label{lem:komlos_convex_weights_diagonal}
+  \lean{komlos_convex_weights_diagonal}
+  \leanok
 Let $E$ be a Hilbert space and for $i \in \mathbb{N}$, let $(x_n^{(i)})_{n \in \mathbb{N}}$ be a bounded sequence in $E$.
 Then there exists a sequence of convex weights $(\eta^n_\cdot)_{n \in \mathbb{N}}$ with $\eta^n_m = 0$ for $m < n$ such that for all $i \in \mathbb{N}$, the sequence $\left(\sum_{m \ge n} \eta^n_m x_m^{(i)}\right)_{n \in \mathbb{N}}$ converges.
 \end{lemma}
@@ -176,6 +175,8 @@ Hence for $n \ge \max(\bar{n}, i)$,
 
 
 \begin{lemma}\label{lem:komlos_convex_aux}
+  \lean{komlos_convergence_L2}
+  \leanok
 Let $E$ be a Hilbert space and let $(f_n)_{n \in \mathbb{N}}$ be a sequence in $\Omega \to E$.
 For $i \in \mathbb{N}$, set $f_n^{(i)} = f_n \mathbb{1}_{(\Vert f_n \Vert \le i)}$, such that $f_n^{(i)} \in L^2(E)$.
 Then there exists a sequence of convex weights $\lambda_n^{n}, \ldots, \lambda_{N_n}^{n}$ such that the functions
