@@ -145,7 +145,7 @@ def convexTail (x : ℕ → E) : Set (ℕ → E) :=
 lemma convex_weights_of_mem_convexHull_reindexed {x g : ℕ → E} (hg : g ∈ convexTail x) :
   ∀ n, ∃ w : StdSimplex ℝ ℕ, g n = w.sum (fun i wi ↦ wi • x i) ∧ ∀ m < n, w.weights m = 0 := by
   intro n
-  obtain ⟨w₀, hw₀⟩ := stdSimplex_of_mem_convexHull_indexed (hg n)
+  obtain ⟨w₀, hw₀⟩ := stdSimplex_of_mem_convexHull (hg n)
   let weights := Finsupp.embDomain ⟨fun i ↦ n + i, add_right_injective n⟩ w₀.weights
   have nonneg (i : ℕ) : 0 ≤ weights i := by
     unfold weights
