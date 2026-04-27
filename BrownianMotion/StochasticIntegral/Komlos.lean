@@ -282,34 +282,20 @@ lemma komlos_convex_weights {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : �
 omit [CompleteSpace E] in
 lemma TendstoUniformly_convexTail {x : ℕ → E} {xlim : E} (hx : Tendsto x atTop (𝓝 xlim)) :
   TendstoUniformly (fun (n : ℕ) (y : convexTail x) ↦ (y.val) n) (fun _ ↦ xlim) atTop := by
-  -- GPT 5.2 proof:
-  -- Unfolding `TendstoUniformly` gives an entourage `u` and we must show that eventually,
-  -- `(xlim, y n) ∈ u` for all `y : convexTail x`.
   intro u hu
-  rcases Metric.mem_uniformity_dist.1 hu with ⟨ε, εpos, hεu⟩
+  rcases Metric.mem_uniformity_dist.mp hu with ⟨ε, εpos, hεu⟩
   have hxε : ∀ᶠ n in atTop, dist (x n) xlim < ε := by
-    have hx' : ∀ᶠ n in atTop, x n ∈ Metric.ball xlim ε :=
-      hx (Metric.ball_mem_nhds _ εpos)
-    simpa [Metric.mem_ball] using hx'
-  rcases Filter.eventually_atTop.1 hxε with ⟨N, hN⟩
-  refine Filter.eventually_atTop.2 ⟨N, ?_⟩
+    simpa using hx (Metric.ball_mem_nhds _ εpos)
+  rcases Filter.eventually_atTop.mp hxε with ⟨N, hN⟩
+  refine Filter.eventually_atTop.mpr ⟨N, ?_⟩
   intro n hn y
   apply hεu
-  -- Reduce to a ball estimate, then use convexity of balls.
   have htail : Set.range (fun m ↦ x (n + m)) ⊆ Metric.ball xlim ε := by
     rintro _ ⟨m, rfl⟩
-    have : dist (x (n + m)) xlim < ε :=
-      hN (n + m) (le_trans hn (Nat.le_add_right n m))
-    simpa [Metric.mem_ball] using this
-  have hconv : convexHull ℝ (Set.range (fun m ↦ x (n + m))) ⊆ Metric.ball xlim ε := by
-    refine convexHull_min htail (convex_ball xlim ε)
-  have hy : y.1 n ∈ convexHull ℝ (Set.range (fun m ↦ x (n + m))) := y.2 n
-  have hyball : y.1 n ∈ Metric.ball xlim ε := hconv hy
+    simpa using hN (n + m) (le_trans hn (Nat.le_add_right n m))
   have : dist xlim (y.1 n) < ε := by
-    have : dist (y.1 n) xlim < ε := by
-      simpa [Metric.mem_ball] using hyball
-    simpa [dist_comm] using this
-  simpa using this
+    simpa [dist_comm] using (convexHull_min htail (convex_ball xlim ε)) (y.2 n)
+  simpa only [gt_iff_lt] using this
 
 omit [CompleteSpace E] in
 lemma Tendsto_convexTail {x : ℕ → E} {xlim : E} (hx : Tendsto x atTop (𝓝 xlim)) :
