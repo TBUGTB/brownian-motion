@@ -46,8 +46,7 @@ lemma convexWeightsMul_eq :
   (convexWeightsMul a b).weights = (fun m ↦ ∑ k ∈ a.support, a.weights k * (b k).weights m) := by
   ext m
   rw [convexWeightsMul, StdSimplex.join, StdSimplex.map]
-  change ((Finsupp.mapDomain b a.weights).sum (fun d r => r • d.weights)) m = _
-  simp only [Finsupp.sum_apply, Finsupp.coe_smul, Pi.smul_apply, smul_eq_mul]
+  simp only [Finsupp.sum_apply]
   rw [Finsupp.sum_mapDomain_index (fun _ => by simp) (fun _ _ _ => by simp [add_mul])]
   simp [Finsupp.sum]
 
@@ -55,44 +54,28 @@ lemma support_subset_convexWeightsMul_support {a : StdSimplex R ι} (b : ι → 
     {i : ι} (hi : i ∈ a.support) :
     (b i).support ⊆ (convexWeightsMul a b).support := by
   intro m hm
-  have hbim_ne : (b i).weights m ≠ 0 := by
-    simpa [Finsupp.mem_support_iff] using hm
-  have hai_ne : a.weights i ≠ 0 := by
-    simpa [Finsupp.mem_support_iff] using hi
-  have hpos_term : 0 < a.weights i * (b i).weights m := by
-    have hai_pos : 0 < a.weights i := (a.nonneg i).lt_of_ne' hai_ne
-    have hbim_pos : 0 < (b i).weights m := ((b i).nonneg m).lt_of_ne' hbim_ne
-    exact mul_pos hai_pos hbim_pos
-  have hnonneg : ∀ k ∈ a.support, 0 ≤ a.weights k * (b k).weights m := by
-    intro k hk
+  have hpos : 0 < a.weights i * (b i).weights m :=
+    mul_pos ((a.nonneg i).lt_of_ne' (by grind)) (((b i).nonneg m).lt_of_ne' (by grind))
+  have hnonneg (k : ι) (hk : k ∈ a.support) : 0 ≤ a.weights k * (b k).weights m := by
     exact mul_nonneg (a.nonneg k) ((b k).nonneg m)
-  have hle : a.weights i * (b i).weights m ≤ ∑ k ∈ a.support, a.weights k * (b k).weights m := by
-    exact Finset.single_le_sum hnonneg hi
   have hsum_pos : 0 < ∑ k ∈ a.support, a.weights k * (b k).weights m :=
-    lt_of_lt_of_le hpos_term hle
-  have hsum_ne : (∑ k ∈ a.support, a.weights k * (b k).weights m) ≠ 0 := ne_of_gt hsum_pos
-  have hm_eq : (convexWeightsMul a b).weights m
-      = ∑ k ∈ a.support, a.weights k * (b k).weights m := by
-    simpa using congrArg (fun f => f m) (convexWeightsMul_eq a b)
-  have : (convexWeightsMul a b).weights m ≠ 0 := by
-    simpa [hm_eq] using hsum_ne
-  simpa [Finsupp.mem_support_iff] using this
+    lt_of_lt_of_le hpos (Finset.single_le_sum hnonneg hi)
+  rw [Finsupp.mem_support_iff, convexWeightsMul_eq]
+  positivity
 
 lemma convexWeightsMul_sum_smul (f : ι' → E) [Module R E] :
     a.sum (fun i wi ↦ wi • (b i).sum (fun m bm ↦ bm • f m))
     = (convexWeightsMul a b).sum (fun m cwm ↦ cwm • f m) := by
   classical
   simp only [convexWeightsMul, StdSimplex.join, StdSimplex.map]
-  rw [Finsupp.sum_sum_index (fun _ => by simp) (fun _ _ _ => by simp [add_smul])]
-  rw [Finsupp.sum_mapDomain_index (fun _ => by simp)
-    (fun d r₁ r₂ => by simp [add_smul, Finsupp.sum_add_index, add_smul])]
+  rw [Finsupp.sum_sum_index (fun _ => by simp) (fun _ _ _ => by simp [add_smul]),
+      Finsupp.sum_mapDomain_index (fun _ => by simp)
+      (fun d r₁ r₂ => by simp [add_smul, Finsupp.sum_add_index, add_smul])]
   simp only [Finsupp.sum]
   refine Finset.sum_congr rfl ?_
   intro i hi
-  have hai_ne : a.weights i ≠ 0 := by
-    simpa [Finsupp.mem_support_iff] using hi
-  have hsupp : (a.weights i • (b i).weights).support = (b i).weights.support := by
-    simpa using Finsupp.support_smul_eq hai_ne
+  have hsupp : (a.weights i • (b i).weights).support = (b i).weights.support :=
+    Finsupp.support_smul_eq (by grind)
   simp [hsupp, Finset.smul_sum, Finsupp.smul_apply, smul_smul]
 
 /-- Given a doubly-indexed family of convex weights `cw : ℕ → ℕ → StdSimplex R ℕ`,
@@ -118,14 +101,12 @@ lemma convex_combination_bounded [NormedAddCommGroup E] [InnerProductSpace ℝ E
   intro n
   have h_sum : ‖(w n).sum (fun i wi => wi • x i)‖ ≤ ∑ i ∈ (w n).support, ((w n).weights i) * ‖x i‖
     := by
-    convert norm_sum_le _ _ using 2
+    convert norm_sum_le _ _
     simp [norm_smul, abs_of_nonneg ((w _).nonneg _)]
   refine le_trans h_sum (le_trans (Finset.sum_le_sum fun i hi =>
     mul_le_mul_of_nonneg_left (hM i) ((w n).nonneg i)) ?_)
   rw [← Finset.sum_mul _ _ _]
   have bound : (∑ i ∈ (w n).support, (w n).weights i) ≤ 1 := by
-    have : (∑ i ∈ (w n).support, (w n).weights i) = (1 : ℝ) := by
-      simpa [Finsupp.sum] using (w n).total
-    exact this.le
+    rw [← (w n).total, Finsupp.sum]
   refine mul_le_of_le_one_left ?_ bound
   exact le_trans (norm_nonneg (x 0)) (hM 0)
