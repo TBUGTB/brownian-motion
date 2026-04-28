@@ -193,7 +193,7 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
     ∧ (∀ i ≤ k, cw_new i = cw i) ∧ (∀ n, ∀ m < n, (cw_new (k+1) n).weights m = 0) := by
   let gtilde := fun n ↦ (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • (x (k+1) m))
   have gtilde_bound : ∃ M, ∀ n, ‖gtilde n‖ ≤ M := convex_combination_bounded (hx (k+1))
-  obtain ⟨g_step, gstep_conv, gstep_lim⟩ := komlos_norm (gtilde_bound)
+  obtain ⟨g_step, gstep_conv, glim, hglim⟩ := komlos_norm (gtilde_bound)
   obtain ⟨cw_step, ⟨hzero, g_step_eq_gtilde⟩⟩ : ∃ w : ℕ → StdSimplex ℝ ℕ,
     (∀ n, ∀ m < n, (w n).weights m = 0) ∧ ∀ n, g_step n = (w n).sum (fun i wi ↦ wi • gtilde i) := by
     refine ⟨fun n ↦ Classical.choose (convex_weights_of_mem_convexTail_reindexed gstep_conv n), ?_⟩
@@ -209,15 +209,12 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
       rw [convexWeightsConvolution, Function.update_self, convexWeightsConvolution_cong]
       grind
     rw [g_step_eq_gtilde n, aux, ← convexWeightsMul_sum_smul]
-  have old_indices_untouched: ∀ i ≤ k, cw_new i = cw i := by grind
   use cw_new
-  refine ⟨?_, old_indices_untouched, ?_⟩
-  · obtain ⟨glim, hglim⟩ := gstep_lim
-    use glim
-    exact Tendsto.congr g_step_eq hglim
+  refine ⟨?_, by grind, ?_⟩
+  · use glim; exact Tendsto.congr g_step_eq hglim
   · unfold cw_new
     simp only [Function.update_self]
-    refine hzero
+    exact hzero
 
 private def komlosStage {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (stage : ℕ) :
   { w : ℕ → ℕ → StdSimplex ℝ ℕ // ∀ k ≤ stage, ∀ n, ∀ m < n, (w k n).weights m = 0 } :=
@@ -246,21 +243,18 @@ private lemma komlosStage_lim {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M :
   | zero => exact (Classical.choose_spec (komlos_base hx)).1
   | succ k _ => exact Classical.choose_spec (komlos_step hx k (komlosStage hx k)) |>.1
 
-private lemma komlosStage_cong_succ {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ) :
-  ∀ i ≤ k, (komlosStage hx k).val i = (komlosStage hx (k+1)).val i := by
+private lemma komlosStage_cong_succ {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
+  (k : ℕ) : ∀ i ≤ k, (komlosStage hx k).val i = (komlosStage hx (k+1)).val i := by
   intro i hi
   let aux := komlos_step hx k (komlosStage hx k)
   let ⟨_, aux2, _⟩ := Classical.choose_spec aux
   exact Eq.symm (aux2 i hi)
 
-private lemma komlosStage_cong {x : ℕ → ℕ → E}
-    (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (i k : ℕ) (hi : i ≤ k) :
-    (komlosStage hx i).val i = (komlosStage hx k).val i := by
+private lemma komlosStage_cong {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
+    (i k : ℕ) (hi : i ≤ k) : (komlosStage hx i).val i = (komlosStage hx k).val i := by
   let n := k-i
-  suffices (komlosStage hx i).val i = (komlosStage hx (i+n)).val i from by
-    unfold n at this
-    rw [show i + (k - i) = k by grind] at this
-    exact this
+  suffices (komlosStage hx i).val i = (komlosStage hx (i+n)).val i by
+    rwa [show k = i + (k - i) by grind]
   induction n with
   | zero => rfl
   | succ n hn =>
