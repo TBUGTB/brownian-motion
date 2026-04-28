@@ -76,7 +76,6 @@ But the left-hand side is equal to $\|g_n - g_m\|_2^2/4$ by the parallelogram id
 \end{lemma}
 
 \begin{proof} \leanok
-The second point is a direct consequence of the first one, so we only prove the first one.
 Let $\varepsilon>0$.
 By convergence of $x_n$, there exists $\bar{n}$ such that for all $n \ge \bar{n}$, $\Vert x_n-x \Vert \le \varepsilon$.
 Let $a_{n, m}$ be convex weights such that $y_n = \sum_{m = n}^{N_n} a_{n, m} x_m$.
@@ -141,7 +140,7 @@ Let $(\lambda^{k,n}_\cdot)_{k, n \in \mathbb{N}}$ be convex weights satisfying t
 Then for every $k \ge i$, the sequence $\left(\sum_{m \ge n} \left((\lambda^{k,n}_\cdot) * \ldots * (\lambda^{1,\cdot}_\cdot)\right)_m x_m^{(i)}\right)_{n \in \mathbb{N}}$ converges to $g^i$, uniformly in $k$.
 \end{lemma}
 
-\begin{proof}
+\begin{proof} \leanok
   \uses{lem:convex_of_converg_seq_is_converg}
 Let $i \in \mathbb{N}$.
 By Lemma~\ref{lem:convex_of_converg_seq_is_converg}, there is uniform convergence over all convex combinations of the sequence $\left(\sum_{m \ge n} \left((\lambda^{i,n}_\cdot) * \ldots * (\lambda^{1,\cdot}_\cdot)\right)_m x_m^{(i)}\right)_{n \in \mathbb{N}}$ to $g^i$.
