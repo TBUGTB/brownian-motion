@@ -4,70 +4,75 @@ public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.LinearAlgebra.ConvexSpace
 
 /-
-# Lemmas on Convex Weights
+# Lemmas on StdSimplex
 -/
 
 @[expose] public noncomputable section
 
-variable {ι ι' E R : Type*} [AddCommGroup E] [Field R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [PartialOrder R] [Semiring R] {M N P : Type*}
 
-lemma stdSimplex_of_mem_convexHull [Module R E] {s : ι → E} {x : E}
-    (hx : x ∈ convexHull R (Set.range s)) :
-    ∃ (w : StdSimplex R ι), x = w.sum (fun i wi ↦ wi • s i) := by
-  classical
-  rw [mem_convexHull_iff] at hx
-  specialize hx {y | ∃ w : StdSimplex R ι, y = w.sum (fun i wi => wi • s i)} ?_ ?_
-  · rintro _ ⟨i, rfl⟩
-    use StdSimplex.single i
-    simp
-  · rintro x ⟨w₁, hw₁⟩ y ⟨w₂, hw₂⟩ a b ha hb hab
-    use (StdSimplex.duple w₁ w₂ ha hb hab).join
-    simp only [StdSimplex.join, StdSimplex.duple]
-    repeat rw [Finsupp.sum_add_index (by simp) (fun _ _ _ _ ↦ Module.add_smul _ _ _)]
-    have aux (c : R) (w : StdSimplex R ι) : c • (w.sum fun i wi ↦ wi • s i)
-      = ((Finsupp.single w c).sum fun d r ↦ r • d.weights).sum fun i wi ↦ wi • s i := by
-      simp only [zero_smul, Finsupp.sum_single_index]
-      rw [Finsupp.sum_smul_index (by simp only [zero_smul, implies_true])]
-      simp_rw [mul_smul, ← Finsupp.smul_sum]
-    simp [aux, hw₁, hw₂]
-  exact hx
+namespace StdSimplex
+
+instance instFunLike : FunLike (StdSimplex R M) M R := {
+  coe s := s.weights.toFun
+  coe_injective' := fun _ _ h ↦ ext (Finsupp.ext fun i ↦ congrFun h i)
+}
+
+variable [IsStrictOrderedRing R]
 
 /-- Given convex weights `a : StdSimplex R ι` and a family of convex weights
-`b : ι → StdSimplex R ι'`, `convexWeightsMul a b` is the convex combination of the `b k`, weighted
-by `a`. We show that, `(convexWeightsMul a b) m = ∑ k ∈ a.support, a k * b k m` in
-`convexWeightsMul_eq` and define it here more abstractly using `StdSimplex.map` and
-`StdSimplex.join`. -/
-def convexWeightsMul (a : StdSimplex R ι) (b : ι → StdSimplex R ι') : StdSimplex R ι' :=
-  (a.map b).join
+`b : ι → StdSimplex R ι'`, `StdSimplex.bind a b` is the convex combination of the `b k`, weighted
+by `a`, defined as monadic bind. -/
+def bind (a : StdSimplex R M) (b : M → StdSimplex R N) : StdSimplex R N := (a.map b).join
 
-variable (a : StdSimplex R ι) (b : ι → StdSimplex R ι')
+variable (a : StdSimplex R M) (b : M → StdSimplex R N)
 
-lemma convexWeightsMul_eq :
-  (convexWeightsMul a b).weights = (fun m ↦ ∑ k ∈ a.support, a.weights k * (b k).weights m) := by
+@[simp]
+lemma bind_single (i : M) : bind (single i) b = b i := by simp [bind, join]
+
+@[simp]
+lemma bind_const (c : StdSimplex R N) : bind a (fun _ ↦ c) = c := by simp [bind, join]
+
+lemma bind_weights :
+  (bind a b).weights = (fun m ↦ ∑ k ∈ a.support, a.weights k * (b k).weights m) := by
   ext m
-  rw [convexWeightsMul, StdSimplex.join, StdSimplex.map]
+  rw [bind, join, map]
   simp only [Finsupp.sum_apply]
   rw [Finsupp.sum_mapDomain_index (fun _ => by simp) (fun _ _ _ => by simp [add_mul])]
   simp [Finsupp.sum]
 
-lemma support_subset_convexWeightsMul_support {a : StdSimplex R ι} (b : ι → StdSimplex R ι')
-    {i : ι} (hi : i ∈ a.support) :
-    (b i).support ⊆ (convexWeightsMul a b).support := by
+lemma support_subset_bind_support {a : StdSimplex R M} (b : M → StdSimplex R N)
+    {i : M} (hi : i ∈ a.support) :
+    (b i).support ⊆ (bind a b).support := by
   intro m hm
   have hpos : 0 < a.weights i * (b i).weights m :=
     mul_pos ((a.nonneg i).lt_of_ne' (by grind)) (((b i).nonneg m).lt_of_ne' (by grind))
-  have hnonneg (k : ι) (hk : k ∈ a.support) : 0 ≤ a.weights k * (b k).weights m := by
+  have hnonneg (k : M) (hk : k ∈ a.support) : 0 ≤ a.weights k * (b k).weights m := by
     exact mul_nonneg (a.nonneg k) ((b k).nonneg m)
   have hsum_pos : 0 < ∑ k ∈ a.support, a.weights k * (b k).weights m :=
     lt_of_lt_of_le hpos (Finset.single_le_sum hnonneg hi)
-  rw [Finsupp.mem_support_iff, convexWeightsMul_eq]
+  rw [Finsupp.mem_support_iff, bind_weights]
   positivity
 
-lemma convexWeightsMul_sum_smul (f : ι' → E) [Module R E] :
-    a.sum (fun i wi ↦ wi • (b i).sum (fun m bm ↦ bm • f m))
-    = (convexWeightsMul a b).sum (fun m cwm ↦ cwm • f m) := by
+/-- Given a doubly-indexed family of convex weights `cw : ℕ → ℕ → StdSimplex R ℕ`,
+`iteratedBind cw k n` is the iterated convex multiplication obtained by combining
+the weights `cw 0 n, cw 1 n, …, cw k n` via `StdSimplex.bind`. -/
+def iteratedBind (cw : ℕ → ℕ → StdSimplex R ℕ) : ℕ → ℕ → StdSimplex R ℕ
+  | 0 => cw 0
+  | k + 1 => fun n ↦ bind (cw (k + 1) n) (iteratedBind cw k)
+
+lemma iteratedBind_cong {cw1 cw2 : ℕ → ℕ → StdSimplex R ℕ} {k : ℕ}
+    (h : ∀ i ≤ k, cw1 i = cw2 i) :
+    iteratedBind cw1 k = iteratedBind cw2 k := by
+  induction k with
+  | zero => simp [iteratedBind, h]
+  | succ k ih => simp [iteratedBind, h, ih (fun i hi => h i (Nat.le_succ_of_le hi))]
+
+lemma bind_sum_smul {E : Type*} (f : N → E) [AddCommGroup E] [Module R E] [IsDomain R] :
+  (bind a b).sum (fun m cwm ↦ cwm • f m) =
+  a.sum (fun i wi ↦ wi • (b i).sum (fun m bm ↦ bm • f m)) := by
   classical
-  simp only [convexWeightsMul, StdSimplex.join, StdSimplex.map]
+  simp only [bind, StdSimplex.join, StdSimplex.map]
   rw [Finsupp.sum_sum_index (fun _ => by simp) (fun _ _ _ => by simp [add_smul]),
       Finsupp.sum_mapDomain_index (fun _ => by simp)
       (fun d r₁ r₂ => by simp [add_smul, Finsupp.sum_add_index, add_smul])]
@@ -78,35 +83,4 @@ lemma convexWeightsMul_sum_smul (f : ι' → E) [Module R E] :
     Finsupp.support_smul_eq (by grind)
   simp [hsupp, Finset.smul_sum, Finsupp.smul_apply, smul_smul]
 
-/-- Given a doubly-indexed family of convex weights `cw : ℕ → ℕ → StdSimplex R ℕ`,
-`convexWeightsConvolution cw k n` is the iterated convex multiplication obtained by combining
-the weights `cw 0 n, cw 1 n, …, cw k n` via `convexWeightsMul`. -/
-def convexWeightsConvolution (cw : ℕ → ℕ → StdSimplex R ℕ) : ℕ → ℕ → StdSimplex R ℕ
-  | 0 => fun n ↦ cw 0 n
-  | k + 1 => fun n ↦ convexWeightsMul (cw (k + 1) n) (convexWeightsConvolution cw k)
-
-lemma convexWeightsConvolution_cong {cw1 cw2 : ℕ → ℕ → StdSimplex R ℕ} {k : ℕ}
-    (h : ∀ i ≤ k, cw1 i = cw2 i) :
-    convexWeightsConvolution cw1 k = convexWeightsConvolution cw2 k := by
-  induction k with
-  | zero => simp [convexWeightsConvolution, h]
-  | succ k ih => simp [convexWeightsConvolution, h, ih (fun i hi => h i (Nat.le_succ_of_le hi))]
-
-omit [AddCommGroup E] in
-lemma convex_combination_bounded [NormedAddCommGroup E] [InnerProductSpace ℝ E] {x : ℕ → E}
-    {w : ℕ → StdSimplex ℝ ℕ} (hx : ∃ M : ℝ, ∀ n, ‖x n‖ ≤ M) :
-    ∃ M, ∀ n, ‖(w n).sum (fun i wi ↦ wi • x i)‖ ≤ M := by
-  obtain ⟨M, hM⟩ := hx
-  use M
-  intro n
-  have h_sum : ‖(w n).sum (fun i wi => wi • x i)‖ ≤ ∑ i ∈ (w n).support, ((w n).weights i) * ‖x i‖
-    := by
-    convert norm_sum_le _ _
-    simp [norm_smul, abs_of_nonneg ((w _).nonneg _)]
-  refine le_trans h_sum (le_trans (Finset.sum_le_sum fun i hi =>
-    mul_le_mul_of_nonneg_left (hM i) ((w n).nonneg i)) ?_)
-  rw [← Finset.sum_mul _ _ _]
-  have bound : (∑ i ∈ (w n).support, (w n).weights i) ≤ 1 := by
-    rw [← (w n).total, Finsupp.sum]
-  refine mul_le_of_le_one_left ?_ bound
-  exact le_trans (norm_nonneg (x 0)) (hM 0)
+end StdSimplex

@@ -120,19 +120,60 @@ lemma komlos_norm [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
   rcases CompleteSpace.complete g_cauchy with ⟨x, hx⟩
   tauto
 
+
+lemma stdSimplex_of_mem_convexHull {M ι : Type*} [AddCommGroup E] [Field M] [LinearOrder M]
+    [IsStrictOrderedRing M] [Module M E] {s : ι → E} {x : E}
+    (hx : x ∈ convexHull M (Set.range s)) :
+    ∃ (w : StdSimplex M ι), x = w.sum (fun i wi ↦ wi • s i) := by
+  classical
+  rw [mem_convexHull_iff] at hx
+  specialize hx {y | ∃ w : StdSimplex M ι, y = w.sum (fun i wi => wi • s i)} ?_ ?_
+  · rintro _ ⟨i, rfl⟩
+    use StdSimplex.single i
+    simp
+  · rintro x ⟨w₁, hw₁⟩ y ⟨w₂, hw₂⟩ a b ha hb hab
+    use (StdSimplex.duple w₁ w₂ ha hb hab).join
+    simp only [StdSimplex.join, StdSimplex.duple]
+    repeat rw [Finsupp.sum_add_index (by simp) (fun _ _ _ _ ↦ Module.add_smul _ _ _)]
+    have aux (c : M) (w : StdSimplex M ι) : c • (w.sum fun i wi ↦ wi • s i)
+      = ((Finsupp.single w c).sum fun d r ↦ r • d.weights).sum fun i wi ↦ wi • s i := by
+      simp only [zero_smul, Finsupp.sum_single_index]
+      rw [Finsupp.sum_smul_index (by simp only [zero_smul, implies_true])]
+      simp_rw [mul_smul, ← Finsupp.smul_sum]
+    simp [aux, hw₁, hw₂]
+  exact hx
+
 noncomputable section
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+lemma convex_combination_bounded {x : ℕ → E}
+    {w : ℕ → StdSimplex ℝ ℕ} (hx : ∃ M : ℝ, ∀ n, ‖x n‖ ≤ M) :
+    ∃ M, ∀ n, ‖(w n).sum (fun i wi ↦ wi • x i)‖ ≤ M := by
+  obtain ⟨M, hM⟩ := hx
+  use M
+  intro n
+  have h_sum : ‖(w n).sum (fun i wi => wi • x i)‖ ≤ ∑ i ∈ (w n).support, ((w n).weights i) * ‖x i‖
+    := by
+    convert norm_sum_le _ _
+    simp [norm_smul, abs_of_nonneg ((w _).nonneg _)]
+  refine le_trans h_sum (le_trans (Finset.sum_le_sum fun i hi =>
+    mul_le_mul_of_nonneg_left (hM i) ((w n).nonneg i)) ?_)
+  rw [← Finset.sum_mul _ _ _]
+  have bound : (∑ i ∈ (w n).support, (w n).weights i) ≤ 1 := by
+    rw [← (w n).total, Finsupp.sum]
+  refine mul_le_of_le_one_left ?_ bound
+  exact le_trans (norm_nonneg (x 0)) (hM 0)
+
 /-- `komlosFormula x cw k n` is the convex combination of the stage-`k` vectors `x k m`,
-weighted by `convexWeightsConvolutionSimplex cw k n`. It is the sequence whose convergence is
+weighted by `iteratedBindSimplex cw k n`. It is the sequence whose convergence is
 established at each stage of the Komlós construction. -/
 def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → StdSimplex ℝ ℕ) (k i n : ℕ) : E :=
-  (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • x i m)
+  (StdSimplex.iteratedBind cw k n).sum (fun m cwm ↦ cwm • x i m)
 
 lemma komlosFormula_cong (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → StdSimplex ℝ ℕ}
   {cw2 : ℕ → ℕ → StdSimplex ℝ ℕ} {k : ℕ} (h : ∀ k' ≤ k, cw1 k' = cw2 k') :
   komlosFormula x cw1 k = komlosFormula x cw2 k := by
-  unfold komlosFormula; rw [convexWeightsConvolution_cong]
+  unfold komlosFormula; rw [StdSimplex.iteratedBind_cong]
   exact h
 
 /--
@@ -186,12 +227,14 @@ lemma komlos_base {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
   · intro n
     exact (Classical.choose_spec (convex_weights_of_mem_convexTail_reindexed h_convex n)).2
 
+open StdSimplex
+
 lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (k : ℕ)
   (cw : ℕ → ℕ → StdSimplex ℝ ℕ) :
   ∃ (cw_new : ℕ → ℕ → StdSimplex ℝ ℕ),
     (∃ glim : E, Tendsto (komlosFormula x cw_new (k+1) (k+1)) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i) ∧ (∀ n, ∀ m < n, (cw_new (k+1) n).weights m = 0) := by
-  let gtilde := fun n ↦ (convexWeightsConvolution cw k n).sum (fun m cwm ↦ cwm • (x (k+1) m))
+  let gtilde := fun n ↦ (iteratedBind cw k n).sum (fun m cwm ↦ cwm • (x (k+1) m))
   have gtilde_bound : ∃ M, ∀ n, ‖gtilde n‖ ≤ M := convex_combination_bounded (hx (k+1))
   obtain ⟨g_step, gstep_conv, glim, hglim⟩ := komlos_norm (gtilde_bound)
   obtain ⟨cw_step, ⟨hzero, g_step_eq_gtilde⟩⟩ : ∃ w : ℕ → StdSimplex ℝ ℕ,
@@ -202,13 +245,13 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
       (fun n ↦ (Classical.choose_spec (convex_weights_of_mem_convexTail_reindexed gstep_conv n)).1)
   let cw_new := Function.update cw (k+1) cw_step
   have g_step_eq (n : ℕ) : g_step n =
-    (convexWeightsConvolution cw_new (k + 1) n).sum (fun m cwm ↦ cwm • x (k+1) m) := by
-    have aux : (convexWeightsConvolution cw_new (k + 1) n)
-      = (convexWeightsMul (cw_step n) (convexWeightsConvolution cw k)) := by
+    (iteratedBind cw_new (k + 1) n).sum (fun m cwm ↦ cwm • x (k+1) m) := by
+    have aux : (iteratedBind cw_new (k + 1) n)
+      = (bind (cw_step n) (iteratedBind cw k)) := by
       unfold cw_new
-      rw [convexWeightsConvolution, Function.update_self, convexWeightsConvolution_cong]
+      rw [iteratedBind, Function.update_self, iteratedBind_cong]
       grind
-    rw [g_step_eq_gtilde n, aux, ← convexWeightsMul_sum_smul]
+    rw [g_step_eq_gtilde n, aux, ← bind_sum_smul]
   use cw_new
   refine ⟨?_, by grind, ?_⟩
   · use glim; exact Tendsto.congr g_step_eq hglim
