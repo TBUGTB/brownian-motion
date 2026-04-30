@@ -121,7 +121,7 @@ lemma komlos_norm [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpac
   tauto
 
 
-lemma stdSimplex_of_mem_convexHull {M ι : Type*} [AddCommGroup E] [Field M] [LinearOrder M]
+lemma exists_stdSimplex_of_mem_convexHull {M ι : Type*} [AddCommGroup E] [Field M] [LinearOrder M]
     [IsStrictOrderedRing M] [Module M E] {s : ι → E} {x : E}
     (hx : x ∈ convexHull M (Set.range s)) :
     ∃ (w : StdSimplex M ι), x = w.sum (fun i wi ↦ wi • s i) := by
@@ -147,11 +147,8 @@ noncomputable section
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 lemma convex_combination_bounded {x : ℕ → E}
-    {w : ℕ → StdSimplex ℝ ℕ} (hx : ∃ M : ℝ, ∀ n, ‖x n‖ ≤ M) :
-    ∃ M, ∀ n, ‖(w n).sum (fun i wi ↦ wi • x i)‖ ≤ M := by
-  obtain ⟨M, hM⟩ := hx
-  use M
-  intro n
+    {w : ℕ → StdSimplex ℝ ℕ} {M : ℝ} (hx : ∀ n, ‖x n‖ ≤ M) (n : ℕ) :
+    ‖(w n).sum (fun i wi ↦ wi • x i)‖ ≤ M := by
   have h_sum : ‖(w n).sum (fun i wi => wi • x i)‖ ≤ ∑ i ∈ (w n).support, ((w n).weights i) * ‖x i‖
     := by
     convert norm_sum_le _ _
@@ -170,7 +167,7 @@ established at each stage of the Komlós construction. -/
 def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → StdSimplex ℝ ℕ) (k i n : ℕ) : E :=
   (StdSimplex.iteratedBind cw k n).sum (fun m cwm ↦ cwm • x i m)
 
-lemma komlosFormula_cong (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → StdSimplex ℝ ℕ}
+lemma komlosFormula_congr (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → StdSimplex ℝ ℕ}
   {cw2 : ℕ → ℕ → StdSimplex ℝ ℕ} {k : ℕ} (h : ∀ k' ≤ k, cw1 k' = cw2 k') :
   komlosFormula x cw1 k = komlosFormula x cw2 k := by
   unfold komlosFormula; rw [StdSimplex.iteratedBind_cong]
@@ -183,9 +180,8 @@ every `y n` can be written as a convex combination of elements `x k` with `k ≥
 def convexTail (x : ℕ → E) : Set (ℕ → E) :=
   { y | ∀ n, y n ∈ convexHull ℝ (Set.range (fun m ↦ x (n + m))) }
 
-lemma convex_weights_of_mem_convexTail_reindexed {x g : ℕ → E} (hg : g ∈ convexTail x) :
-  ∀ n, ∃ w : StdSimplex ℝ ℕ, g n = w.sum (fun i wi ↦ wi • x i) ∧ ∀ m < n, w.weights m = 0 := by
-  intro n
+lemma exists_stdSimplex_of_mem_convexTail_reindexed {x g : ℕ → E} (hg : g ∈ convexTail x) (n : ℕ) :
+  ∃ w : StdSimplex ℝ ℕ, g n = w.sum (fun i wi ↦ wi • x i) ∧ ∀ m < n, w.weights m = 0 := by
   obtain ⟨w₀, hw₀⟩ := stdSimplex_of_mem_convexHull (hg n)
   let weights := Finsupp.embDomain ⟨fun i ↦ n + i, add_right_injective n⟩ w₀.weights
   have nonneg (i : ℕ) : 0 ≤ weights i := by

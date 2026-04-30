@@ -33,15 +33,15 @@ lemma bind_single (i : M) : bind (single i) b = b i := by simp [bind, join]
 @[simp]
 lemma bind_const (c : StdSimplex R N) : bind a (fun _ ↦ c) = c := by simp [bind, join]
 
-lemma bind_weights :
-  (bind a b).weights = (fun m ↦ ∑ k ∈ a.support, a.weights k * (b k).weights m) := by
+lemma weights_bind :
+    (bind a b).weights = (fun m ↦ ∑ k ∈ a.support, a.weights k * (b k).weights m) := by
   ext m
   rw [bind, join, map]
   simp only [Finsupp.sum_apply]
   rw [Finsupp.sum_mapDomain_index (fun _ => by simp) (fun _ _ _ => by simp [add_mul])]
   simp [Finsupp.sum]
 
-lemma support_subset_bind_support {a : StdSimplex R M} (b : M → StdSimplex R N)
+lemma support_subset_support_bind {a : StdSimplex R M} (b : M → StdSimplex R N)
     {i : M} (hi : i ∈ a.support) :
     (b i).support ⊆ (bind a b).support := by
   intro m hm
@@ -61,7 +61,7 @@ def iteratedBind (cw : ℕ → ℕ → StdSimplex R ℕ) : ℕ → ℕ → StdSi
   | 0 => cw 0
   | k + 1 => fun n ↦ bind (cw (k + 1) n) (iteratedBind cw k)
 
-lemma iteratedBind_cong {cw1 cw2 : ℕ → ℕ → StdSimplex R ℕ} {k : ℕ}
+lemma iteratedBind_congr {cw1 cw2 : ℕ → ℕ → StdSimplex R ℕ} {k : ℕ}
     (h : ∀ i ≤ k, cw1 i = cw2 i) :
     iteratedBind cw1 k = iteratedBind cw2 k := by
   induction k with
