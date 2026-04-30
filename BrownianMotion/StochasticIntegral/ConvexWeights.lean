@@ -7,7 +7,7 @@ public import Mathlib.LinearAlgebra.ConvexSpace
 # Lemmas on StdSimplex
 -/
 
-@[expose] public noncomputable section
+@[expose] public section
 
 variable {R : Type*} [PartialOrder R] [Semiring R] {M N P : Type*}
 
@@ -23,7 +23,8 @@ variable [IsStrictOrderedRing R]
 /-- Given convex weights `a : StdSimplex R ι` and a family of convex weights
 `b : ι → StdSimplex R ι'`, `StdSimplex.bind a b` is the convex combination of the `b k`, weighted
 by `a`, defined as monadic bind. -/
-def bind (a : StdSimplex R M) (b : M → StdSimplex R N) : StdSimplex R N := (a.map b).join
+noncomputable def bind (a : StdSimplex R M) (b : M → StdSimplex R N) : StdSimplex R N :=
+  (a.map b).join
 
 variable (a : StdSimplex R M) (b : M → StdSimplex R N)
 
@@ -51,13 +52,13 @@ lemma support_subset_support_bind {a : StdSimplex R M} (b : M → StdSimplex R N
     exact mul_nonneg (a.nonneg k) ((b k).nonneg m)
   have hsum_pos : 0 < ∑ k ∈ a.support, a.weights k * (b k).weights m :=
     lt_of_lt_of_le hpos (Finset.single_le_sum hnonneg hi)
-  rw [Finsupp.mem_support_iff, bind_weights]
+  rw [Finsupp.mem_support_iff, weights_bind]
   positivity
 
 /-- Given a doubly-indexed family of convex weights `cw : ℕ → ℕ → StdSimplex R ℕ`,
 `iteratedBind cw k n` is the iterated convex multiplication obtained by combining
 the weights `cw 0 n, cw 1 n, …, cw k n` via `StdSimplex.bind`. -/
-def iteratedBind (cw : ℕ → ℕ → StdSimplex R ℕ) : ℕ → ℕ → StdSimplex R ℕ
+noncomputable def iteratedBind (cw : ℕ → ℕ → StdSimplex R ℕ) : ℕ → ℕ → StdSimplex R ℕ
   | 0 => cw 0
   | k + 1 => fun n ↦ bind (cw (k + 1) n) (iteratedBind cw k)
 

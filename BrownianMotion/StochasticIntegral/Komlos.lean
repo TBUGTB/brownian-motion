@@ -143,7 +143,7 @@ lemma exists_stdSimplex_of_mem_convexHull {M ι : Type*} [AddCommGroup E] [Field
     simp [aux, hw₁, hw₂]
   exact hx
 
-noncomputable section
+section
 variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 lemma convex_combination_bounded {x : ℕ → E}
@@ -154,17 +154,17 @@ lemma convex_combination_bounded {x : ℕ → E}
     convert norm_sum_le _ _
     simp [norm_smul, abs_of_nonneg ((w _).nonneg _)]
   refine le_trans h_sum (le_trans (Finset.sum_le_sum fun i hi =>
-    mul_le_mul_of_nonneg_left (hM i) ((w n).nonneg i)) ?_)
+    mul_le_mul_of_nonneg_left (hx i) ((w n).nonneg i)) ?_)
   rw [← Finset.sum_mul _ _ _]
   have bound : (∑ i ∈ (w n).support, (w n).weights i) ≤ 1 := by
     rw [← (w n).total, Finsupp.sum]
   refine mul_le_of_le_one_left ?_ bound
-  exact le_trans (norm_nonneg (x 0)) (hM 0)
+  exact le_trans (norm_nonneg (x 0)) (hx 0)
 
 /-- `komlosFormula x cw k n` is the convex combination of the stage-`k` vectors `x k m`,
 weighted by `iteratedBindSimplex cw k n`. It is the sequence whose convergence is
 established at each stage of the Komlós construction. -/
-def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → StdSimplex ℝ ℕ) (k i n : ℕ) : E :=
+noncomputable def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → StdSimplex ℝ ℕ) (k i n : ℕ) : E :=
   (StdSimplex.iteratedBind cw k n).sum (fun m cwm ↦ cwm • x i m)
 
 lemma komlosFormula_congr (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → StdSimplex ℝ ℕ}
@@ -182,7 +182,7 @@ def convexTail (x : ℕ → E) : Set (ℕ → E) :=
 
 lemma exists_stdSimplex_of_mem_convexTail_reindexed {x g : ℕ → E} (hg : g ∈ convexTail x) (n : ℕ) :
   ∃ w : StdSimplex ℝ ℕ, g n = w.sum (fun i wi ↦ wi • x i) ∧ ∀ m < n, w.weights m = 0 := by
-  obtain ⟨w₀, hw₀⟩ := stdSimplex_of_mem_convexHull (hg n)
+  obtain ⟨w₀, hw₀⟩ := exists_stdSimplex_of_mem_convexHull (hg n)
   let weights := Finsupp.embDomain ⟨fun i ↦ n + i, add_right_injective n⟩ w₀.weights
   have nonneg (i : ℕ) : 0 ≤ weights i := by
     unfold weights
@@ -211,17 +211,17 @@ lemma komlos_base {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
     ∃ (cw : ℕ → ℕ → StdSimplex ℝ ℕ), (∃ glim : E,
     Tendsto (komlosFormula x cw 0 0) atTop (𝓝 glim)) ∧ ∀ n, ∀ m < n, (cw 0 n).weights m = 0 := by
   obtain ⟨g, h_convex, lim, hlim⟩ := komlos_norm (hx 0)
-  let cw (n : ℕ) := Classical.choose (convex_weights_of_mem_convexTail_reindexed h_convex n)
+  let cw (n : ℕ) := Classical.choose (exists_stdSimplex_of_mem_convexTail_reindexed h_convex n)
   use (fun k ↦ cw)
   have hg (n : ℕ) : g n = (cw n).weights.sum (fun m cwm ↦ cwm • x 0 m) := by
-    exact (Classical.choose_spec (convex_weights_of_mem_convexTail_reindexed h_convex n)).1
+    exact (Classical.choose_spec (exists_stdSimplex_of_mem_convexTail_reindexed h_convex n)).1
   unfold komlosFormula
   constructor
   · use lim
     apply Tendsto.congr hg
     exact hlim
   · intro n
-    exact (Classical.choose_spec (convex_weights_of_mem_convexTail_reindexed h_convex n)).2
+    exact (Classical.choose_spec (exists_stdSimplex_of_mem_convexTail_reindexed h_convex n)).2
 
 open StdSimplex
 
@@ -231,14 +231,15 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
     (∃ glim : E, Tendsto (komlosFormula x cw_new (k+1) (k+1)) atTop (𝓝 glim))
     ∧ (∀ i ≤ k, cw_new i = cw i) ∧ (∀ n, ∀ m < n, (cw_new (k+1) n).weights m = 0) := by
   let gtilde := fun n ↦ (iteratedBind cw k n).sum (fun m cwm ↦ cwm • (x (k+1) m))
-  have gtilde_bound : ∃ M, ∀ n, ‖gtilde n‖ ≤ M := convex_combination_bounded (hx (k+1))
+  obtain ⟨M, hM⟩ := hx (k+1)
+  have gtilde_bound : ∃ M, ∀ n, ‖gtilde n‖ ≤ M := ⟨M, convex_combination_bounded hM⟩
   obtain ⟨g_step, gstep_conv, glim, hglim⟩ := komlos_norm (gtilde_bound)
   obtain ⟨cw_step, ⟨hzero, g_step_eq_gtilde⟩⟩ : ∃ w : ℕ → StdSimplex ℝ ℕ,
     (∀ n, ∀ m < n, (w n).weights m = 0) ∧ ∀ n, g_step n = (w n).sum (fun i wi ↦ wi • gtilde i) := by
-    refine ⟨fun n ↦ Classical.choose (convex_weights_of_mem_convexTail_reindexed gstep_conv n), ?_⟩
-    exact And.intro
-      (fun n ↦ (Classical.choose_spec (convex_weights_of_mem_convexTail_reindexed gstep_conv n)).2)
-      (fun n ↦ (Classical.choose_spec (convex_weights_of_mem_convexTail_reindexed gstep_conv n)).1)
+    let existence (n : ℕ) := exists_stdSimplex_of_mem_convexTail_reindexed gstep_conv n
+    exact ⟨fun n ↦ Classical.choose (existence n), And.intro
+      (fun n ↦ (Classical.choose_spec (existence n)).2)
+      (fun n ↦ (Classical.choose_spec (existence n)).1)⟩
   let cw_new := Function.update cw (k+1) cw_step
   have g_step_eq (n : ℕ) : g_step n =
     (iteratedBind cw_new (k + 1) n).sum (fun m cwm ↦ cwm • x (k+1) m) := by
@@ -255,8 +256,9 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
     simp only [Function.update_self]
     exact hzero
 
-private def komlosStage {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) (stage : ℕ) :
-  { w : ℕ → ℕ → StdSimplex ℝ ℕ // ∀ k ≤ stage, ∀ n, ∀ m < n, (w k n).weights m = 0 } :=
+private noncomputable def komlosStage {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
+    (stage : ℕ) :
+    { w : ℕ → ℕ → StdSimplex ℝ ℕ // ∀ k ≤ stage, ∀ n, ∀ m < n, (w k n).weights m = 0 } :=
   match stage with
   | 0 => by
       use Classical.choose (komlos_base hx)
@@ -306,7 +308,7 @@ lemma komlos_convex_weights {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : �
     ∧ (∀ k n, ∀ m < n, (cw k n).weights m = 0) := by
   let cw (k : ℕ) : ℕ → StdSimplex ℝ ℕ := (komlosStage hx k).val k
   have transfer (k : ℕ) : komlosFormula x cw k = komlosFormula x (komlosStage hx k) k :=
-    komlosFormula_cong x (fun i hi ↦ komlosStage_cong hx i k hi)
+    komlosFormula_congr x (fun i hi ↦ komlosStage_cong hx i k hi)
   use cw
   constructor
   · intro k; simp [transfer k, komlosStage_lim hx k]
