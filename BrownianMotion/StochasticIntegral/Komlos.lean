@@ -170,7 +170,7 @@ noncomputable def komlosFormula (x : ℕ → ℕ → E) (cw : ℕ → ℕ → St
 lemma komlosFormula_congr (x : ℕ → ℕ → E) {cw1 : ℕ → ℕ → StdSimplex ℝ ℕ}
   {cw2 : ℕ → ℕ → StdSimplex ℝ ℕ} {k : ℕ} (h : ∀ k' ≤ k, cw1 k' = cw2 k') :
   komlosFormula x cw1 k = komlosFormula x cw2 k := by
-  unfold komlosFormula; rw [StdSimplex.iteratedBind_cong]
+  unfold komlosFormula; rw [StdSimplex.iteratedBind_congr]
   exact h
 
 /--
@@ -246,7 +246,7 @@ lemma komlos_step {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n,
     have aux : (iteratedBind cw_new (k + 1) n)
       = (bind (cw_step n) (iteratedBind cw k)) := by
       unfold cw_new
-      rw [iteratedBind, Function.update_self, iteratedBind_cong]
+      rw [iteratedBind, Function.update_self, iteratedBind_congr]
       grind
     rw [g_step_eq_gtilde n, aux, ← bind_sum_smul]
   use cw_new
