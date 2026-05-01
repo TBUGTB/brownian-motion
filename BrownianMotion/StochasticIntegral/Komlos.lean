@@ -287,14 +287,14 @@ private lemma komlosStage_lim {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M :
   | zero => exact (Classical.choose_spec (komlos_base hx)).1
   | succ k _ => exact Classical.choose_spec (komlos_step hx k (komlosStage hx k)) |>.1
 
-private lemma komlosStage_cong_succ {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
-  (k : ℕ) : ∀ i ≤ k, (komlosStage hx k).val i = (komlosStage hx (k+1)).val i := by
-  intro i hi
+private lemma komlosStage_congr_succ {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
+    (k i : ℕ) (hi : i ≤ k) :
+    (komlosStage hx k).val i = (komlosStage hx (k+1)).val i := by
   let aux := komlos_step hx k (komlosStage hx k)
   let ⟨_, aux2, _⟩ := Classical.choose_spec aux
   exact Eq.symm (aux2 i hi)
 
-private lemma komlosStage_cong {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
+private lemma komlosStage_congr {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M)
     (i k : ℕ) (hi : i ≤ k) : (komlosStage hx i).val i = (komlosStage hx k).val i := by
   let n := k-i
   suffices (komlosStage hx i).val i = (komlosStage hx (i+n)).val i by
@@ -303,7 +303,7 @@ private lemma komlosStage_cong {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M 
   | zero => rfl
   | succ n hn =>
   rw [← add_assoc, hn]
-  apply komlosStage_cong_succ hx (i+n) i (by grind)
+  apply komlosStage_congr_succ hx (i+n) i (by grind)
 
 lemma komlos_convex_weights {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
     ∃ (cw : ℕ → ℕ → StdSimplex ℝ ℕ),
@@ -311,7 +311,7 @@ lemma komlos_convex_weights {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : �
     ∧ (∀ k n, ∀ m < n, (cw k n).weights m = 0) := by
   let cw (k : ℕ) : ℕ → StdSimplex ℝ ℕ := (komlosStage hx k).val k
   have transfer (k : ℕ) : komlosFormula x cw k = komlosFormula x (komlosStage hx k) k :=
-    komlosFormula_congr x (fun i hi ↦ komlosStage_cong hx i k hi)
+    komlosFormula_congr x (fun i hi ↦ komlosStage_congr hx i k hi)
   use cw
   constructor
   · intro k; simp [transfer k, komlosStage_lim hx k]
@@ -337,7 +337,7 @@ lemma TendstoUniformly_convexTail {x : ℕ → E} {xlim : E} (hx : Tendsto x atT
 
 omit [CompleteSpace E] in
 lemma Tendsto_convexTail {x : ℕ → E} {xlim : E} (hx : Tendsto x atTop (𝓝 xlim)) :
-  ∀ y ∈ convexTail x, Tendsto y atTop (𝓝 xlim) := by
+    ∀ y ∈ convexTail x, Tendsto y atTop (𝓝 xlim) := by
   intro y hy
   exact TendstoUniformly.tendsto_at (TendstoUniformly_convexTail hx) ⟨y, hy⟩
 
@@ -348,8 +348,8 @@ lemma komlos_uniform_convergence
     ∀ i, TendstoUniformly (fun k ↦ komlosFormula x cw k i) lim atTop
     -- maybe too strong, the blueprint statement limits to k ≥ i
      := by
-    intro i
-    sorry
+  intro i
+  sorry
 
 lemma komlos_convex_weights_diagonal
     {x : ℕ → ℕ → E} (hx : ∀ i : ℕ, ∃ M : ℝ, ∀ n, ‖x i n‖ ≤ M) :
